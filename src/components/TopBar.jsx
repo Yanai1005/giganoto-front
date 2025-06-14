@@ -1,39 +1,64 @@
-import { useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, SignalHigh } from 'lucide-react';
+import { useBattery, useTime, useWifi } from '../hooks';
 
 const TopBar = ({ userProfile, onUserClick }) => {
-    const [currentTime, setCurrentTime] = useState(new Date());
-    const [batteryLevel] = useState(85);
-    const [wifiStrength] = useState(75);
+    const batteryIconRef = useRef(null);
 
+    // カスタムフックを使用
+    const { currentTime, formatTime } = useTime();
+    const {
+        level: batteryLevel,
+        charging,
+        getBatteryClass,
+        getBatteryTooltip,
+        getBatteryStatusText,
+        loading: batteryLoading,
+        error: batteryError
+    } = useBattery();
+    const {
+        strength: wifiStrength,
+        getWifiClass,
+        getConnectionDescription,
+        isOnline
+    } = useWifi();
+
+    // バッテリー表示の動的更新
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
+        if (batteryIconRef.current && !batteryLoading) {
+            const batteryWidth = `${Math.max(batteryLevel, 5)}%`;
+            batteryIconRef.current.style.setProperty('--battery-width', batteryWidth);
+        }
+    }, [batteryLevel, batteryLoading]);
 
-    const formatTime = (date) => {
-        return date.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+    // Wi-Fiアイコンを強度に応じて選択
+    const getWifiIcon = () => {
+        const iconProps = {
+            size: 18,
+            className: 'wifi-icon__svg'
+        };
+
+        if (!isOnline) {
+            return <WifiOff {...iconProps} />;
+        }
+
+        if (wifiStrength > 70) {
+            return <Wifi {...iconProps} />;
+        } else if (wifiStrength > 40) {
+            return <SignalHigh {...iconProps} />;
+        } else if (wifiStrength > 20) {
+            return <SignalMedium {...iconProps} />;
+        } else if (wifiStrength > 10) {
+            return <SignalLow {...iconProps} />;
+        } else {
+            return <WifiOff {...iconProps} />;
+        }
     };
 
-    const getBatteryClass = (level) => {
-        if (level > 60) return 'battery-icon--high';
-        if (level > 20) return 'battery-icon--medium';
-        if (level > 10) return 'battery-icon--low';
-        return 'battery-icon--critical';
-    };
-
-    const getWifiClass = (strength) => {
-        if (strength > 70) return 'wifi-icon--strong';
-        if (strength > 40) return 'wifi-icon--medium';
-        if (strength > 10) return 'wifi-icon--weak';
-        return 'wifi-icon--disconnected';
-    };
+    // バッテリーの状態に応じたスタイルクラス
+    const batteryClass = getBatteryClass();
+    const wifiClass = getWifiClass();
 
     return (
         <div className="top-bar">
@@ -49,15 +74,51 @@ const TopBar = ({ userProfile, onUserClick }) => {
             </div>
 
             <div className="top-bar__status-section">
-                <div className="top-bar__time">{formatTime(currentTime)}</div>
+                <div className="top-bar__time">
+                    {formatTime()}
+                </div>
+
                 <div
-                    className={`wifi-icon ${getWifiClass(wifiStrength)}`}
-                    title={`Wi-Fi強度: ${wifiStrength}%`}
-                />
-                <div
-                    className={`battery-icon ${getBatteryClass(batteryLevel)}`}
-                    title={`バッテリー: ${batteryLevel}%`}
-                />
+                    className={`wifi-icon ${wifiClass}`}
+                    title={getConnectionDescription()}
+                    aria-label={getConnectionDescription()}
+                >
+                    {getWifiIcon()}
+                </div>
+
+                <div className="battery-container">
+                    {batteryLoading ? (
+                        <div className="battery-loading">
+                            <div className="loading-spinner" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="battery-info">
+                                <div className="battery-percentage">
+                                    {batteryError ? '--' : `${batteryLevel}%`}
+                                </div>
+                                {getBatteryStatusText() && (
+                                    <div className="battery-status">
+                                        {getBatteryStatusText()}
+                                    </div>
+                                )}
+                            </div>
+                            <div
+                                ref={batteryIconRef}
+                                className={`battery-icon ${batteryClass}`}
+                                title={getBatteryTooltip()}
+                                aria-label={getBatteryTooltip()}
+                            >
+                                {charging && (
+                                    <div className="battery-icon__charging-indicator">⚡</div>
+                                )}
+                                {batteryError && (
+                                    <div className="battery-icon__error-indicator">❌</div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
