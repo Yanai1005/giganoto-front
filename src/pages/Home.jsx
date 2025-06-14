@@ -4,6 +4,7 @@ import GameTile from '../components/GameTile';
 import TopBar from '../components/TopBar';
 import SystemMenu from '../components/SystemMenu';
 import SettingsOverlay from '../components/SettingsOverlay';
+import GameRegistry from '../gameManager/GameRegistry';
 import gamesData from '../data/games.json';
 
 const Home = () => {
@@ -14,6 +15,11 @@ const Home = () => {
     const [activeSystemIcon, setActiveSystemIcon] = useState('');
     const [loading, setLoading] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    // ゲームシステムの初期化
+    useEffect(() => {
+        GameRegistry.initializeFromJson(gamesData);
+    }, []);
 
     useEffect(() => {
         document.body.className = `theme-${theme}`;
@@ -67,7 +73,12 @@ const Home = () => {
 
         setTimeout(() => {
             setLoading(false);
-            navigate(game.path);
+            navigate(game.path, {
+                state: {
+                    gameType: game.gameType,
+                    gameTitle: game.title
+                }
+            });
         }, 1000);
     };
 
@@ -97,9 +108,7 @@ const Home = () => {
         setShowSettings(false);
     };
 
-    const notifications = {
-        news: 0
-    };
+    const notifications = {};
 
     return (
         <div className="switch-home">

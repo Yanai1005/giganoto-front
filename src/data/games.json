@@ -1,36 +1,40 @@
 {
     "games": [
         {
-            "id": 1,
-            "title": "Game",
-            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
-            "path": "/game"
-        },
-        {
             "id": 2,
-            "title": "Game",
-            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
-            "path": "/game"
+            "title": "Gem Matcher",
+            "description": "宝石を組み合わせるマッチ3パズルゲーム",
+            "image": "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop",
+            "path": "/game",
+            "gameType": "puzzle",
+            "category": "puzzle",
+            "difficulty": "easy",
+            "featured": false
         },
         {
             "id": 3,
-            "title": "Game",
-            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
-            "path": "/game"
-        },
-        {
-            "id": 4,
-            "title": "Game",
-            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
-            "path": "/game"
-        },
-        {
-            "id": 5,
-            "title": "Game",
-            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
-            "path": "/game"
+            "title": "Space Shooter",
+            "description": "宇宙を舞台にした縦スクロールシューティング",
+            "image": "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop",
+            "path": "/game",
+            "gameType": "shooter",
+            "category": "action",
+            "difficulty": "hard",
+            "featured": true
         }
     ],
+    "gameTypes": {
+        "platformer": {
+            "name": "プラットフォーマー",
+            "description": "ジャンプアクションゲーム",
+            "controls": "矢印キーまたはWASDで移動・ジャンプ"
+        },
+        "puzzle": {
+            "name": "パズル",
+            "description": "思考力を試すパズルゲーム",
+            "controls": "クリックまたはタッチで操作"
+        }
+    },
     "systemIcons": [
         {
             "id": "news",
