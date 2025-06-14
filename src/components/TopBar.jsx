@@ -6,7 +6,6 @@ import { useBattery, useTime, useWifi } from '../hooks';
 const TopBar = ({ onUserClick }) => {
     const batteryIconRef = useRef(null);
 
-    // カスタムフックを使用
     const { currentTime, formatTime } = useTime();
     const {
         level: batteryLevel,
@@ -23,7 +22,6 @@ const TopBar = ({ onUserClick }) => {
         isOnline
     } = useWifi();
 
-    // バッテリー表示の動的更新
     useEffect(() => {
         if (batteryIconRef.current && !batteryLoading) {
             const batteryWidth = `${Math.max(batteryLevel, 5)}%`;
@@ -31,7 +29,6 @@ const TopBar = ({ onUserClick }) => {
         }
     }, [batteryLevel, batteryLoading]);
 
-    // Wi-Fiアイコンを強度に応じて選択
     const getWifiIcon = () => {
         const iconProps = {
             size: 18,
@@ -55,7 +52,6 @@ const TopBar = ({ onUserClick }) => {
         }
     };
 
-    // バッテリーの状態に応じたスタイルクラス
     const batteryClass = getBatteryClass();
     const wifiClass = getWifiClass();
 
@@ -69,7 +65,6 @@ const TopBar = ({ onUserClick }) => {
                 >
                     <User size={20} />
                 </button>
-                <div className="top-bar__home-indicator">HOME</div>
             </div>
 
             <div className="top-bar__status-section">
