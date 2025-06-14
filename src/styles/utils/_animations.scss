@@ -1,0 +1,169 @@
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+
+    70% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-2px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(2px);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@mixin fade-in($duration: 0.3s, $delay: 0s) {
+    animation: fade-in $duration ease-out $delay both;
+}
+
+@mixin slide-up($duration: 0.3s, $delay: 0s) {
+    animation: slide-up $duration ease-out $delay both;
+}
+
+@mixin bounce-in($duration: 0.6s, $delay: 0s) {
+    animation: bounce-in $duration ease-out $delay both;
+}
+
+@mixin pulse($duration: 1s) {
+    animation: pulse $duration ease-in-out infinite;
+}
+
+@mixin shake($duration: 0.3s) {
+    animation: shake $duration ease-in-out;
+}
+
+@mixin spin($duration: 1s) {
+    animation: spin $duration linear infinite;
+}
+
+@mixin smooth-transition($properties: all, $duration: 0.3s, $timing: ease) {
+    transition: $properties $duration $timing;
+}
+
+@mixin hover-lift {
+    transition: transform 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+@mixin hover-scale($scale: 1.05) {
+    transition: transform 0.2s ease;
+
+    &:hover {
+        transform: scale($scale);
+    }
+}
+
+.animate-fade-in {
+    @include fade-in;
+}
+
+.animate-slide-up {
+    @include slide-up;
+}
+
+.animate-bounce-in {
+    @include bounce-in;
+}
+
+.animate-pulse {
+    @include pulse;
+}
+
+.animate-shake {
+    @include shake;
+}
+
+.animate-spin {
+    @include spin;
+}
+
+.hover-lift {
+    @include hover-lift;
+}
+
+.hover-scale {
+    @include hover-scale;
+}
+
+@for $i from 1 through 10 {
+    .animate-delay-#{$i} {
+        animation-delay: #{$i * 0.1}s;
+    }
+}

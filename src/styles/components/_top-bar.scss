@@ -1,0 +1,293 @@
+// _top-bar.scss - トップバーのスタイル
+
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.top-bar {
+    @include themed-top-bar;
+    @include flex-between;
+    padding: $spacing-3 $spacing-6;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: $z-fixed;
+    height: $top-bar-height;
+    transition: all $transition-smooth;
+
+    // ユーザーセクション
+    &__user-section {
+        @include flex-center;
+        gap: $spacing-3;
+    }
+
+    // ホームインジケーター
+    &__home-indicator {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+        opacity: 0.8;
+    }
+
+    // ステータスセクション
+    &__status-section {
+        @include flex-center;
+        gap: $spacing-4;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        @include themed-text('secondary');
+    }
+
+    // 時刻表示
+    &__time {
+        font-variant-numeric: tabular-nums;
+        min-width: 40px;
+        text-align: center;
+        font-weight: $font-weight-medium;
+    }
+
+    // ステータスアイコン
+    &__status-icon {
+        font-size: $font-size-base;
+        opacity: 0.8;
+        transition: opacity $transition-fast;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+// ========================================
+// ユーザーアバター
+// ========================================
+
+.user-avatar {
+    @include button-reset;
+    @include flex-center;
+    @include themed-focus-ring;
+    width: $user-avatar-size;
+    height: $user-avatar-size;
+    border-radius: $border-radius-full;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    font-size: $font-size-xl;
+    cursor: pointer;
+    transition: all $transition-fast;
+    box-shadow: 0 2px 4px var(--shadow-color);
+
+    &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px var(--shadow-hover);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    // アバター画像がある場合
+    &__image {
+        width: 100%;
+        height: 100%;
+        border-radius: $border-radius-full;
+        object-fit: cover;
+    }
+}
+
+// ========================================
+// バッテリーアイコン
+// ========================================
+
+.battery-icon {
+    @include themed-battery-icon;
+    position: relative;
+    width: 24px;
+    height: 12px;
+    border-radius: 2px;
+    opacity: 0.8;
+    transition: opacity $transition-fast;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    // バッテリー端子
+    &::before {
+        content: '';
+        position: absolute;
+        right: -3px;
+        top: 3px;
+        width: 2px;
+        height: 6px;
+        border-radius: 0 1px 1px 0;
+    }
+
+    // バッテリー残量
+    &::after {
+        content: '';
+        position: absolute;
+        left: 1px;
+        top: 1px;
+        right: 1px;
+        bottom: 1px;
+        border-radius: 1px;
+        transition: all $transition-smooth;
+    }
+
+    // バッテリーレベル別の色
+    &--high::after {
+        background: #4CAF50;
+        width: calc(100% - 2px);
+    }
+
+    &--medium::after {
+        background: #FF9800;
+        width: calc(60% - 2px);
+    }
+
+    &--low::after {
+        background: #F44336;
+        width: calc(20% - 2px);
+    }
+
+    &--critical::after {
+        background: #F44336;
+        width: calc(10% - 2px);
+        @include pulse-animation(1s);
+    }
+}
+
+// ========================================
+// Wi-Fiアイコン
+// ========================================
+
+.wifi-icon {
+    @include themed-wifi-icon;
+    position: relative;
+    width: 18px;
+    height: 14px;
+    opacity: 0.8;
+    transition: opacity $transition-fast;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        border: 2px solid currentColor;
+        border-radius: 0 0 20px 20px;
+        border-top: none;
+    }
+
+    // 外側の電波
+    &::before {
+        width: 18px;
+        height: 14px;
+    }
+
+    // 内側の電波
+    &::after {
+        width: 12px;
+        height: 9px;
+        left: 3px;
+        top: 3px;
+    }
+
+    // 電波強度別の表示
+    &--strong {
+
+        &::before,
+        &::after {
+            opacity: 1;
+        }
+    }
+
+    &--medium {
+        &::before {
+            opacity: 0.3;
+        }
+
+        &::after {
+            opacity: 1;
+        }
+    }
+
+    &--weak {
+
+        &::before,
+        &::after {
+            opacity: 0.3;
+        }
+    }
+
+    &--disconnected {
+
+        &::before,
+        &::after {
+            opacity: 0.2;
+        }
+
+        // 切断マーク
+        &::before {
+            content: '×';
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: $font-size-sm;
+            width: 18px;
+            height: 14px;
+        }
+    }
+}
+
+// ========================================
+// レスポンシブ対応
+// ========================================
+
+@include sm {
+    .top-bar {
+        padding: $spacing-3 $spacing-4;
+
+        &__user-section {
+            gap: $spacing-2;
+        }
+
+        &__status-section {
+            gap: $spacing-3;
+        }
+
+        &__home-indicator {
+            font-size: $font-size-base;
+        }
+    }
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: $font-size-lg;
+    }
+}
+
+// ========================================
+// ダークモード特有のスタイル
+// ========================================
+
+.theme-dark {
+    .user-avatar {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+}
+
+// ========================================
+// ライトモード特有のスタイル
+// ========================================
+
+.theme-light {
+    .user-avatar {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+}

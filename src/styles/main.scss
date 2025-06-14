@@ -1,0 +1,256 @@
+@use 'globals/variables' as *;
+@use 'globals/mixins' as *;
+@use 'globals/themes' as *;
+@use 'globals/reset';
+@use 'utils/animations';
+@use 'utils/utilities' as *;
+@use 'components/switch-home';
+@use 'components/game-tile';
+@use 'components/top-bar';
+@use 'components/system-menu';
+@use 'components/settings-overlay';
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: $font-family-primary;
+    @include font-smoothing;
+    overflow: hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color $transition-smooth, color $transition-smooth;
+
+    // デフォルトはダークテーマ
+    @include theme-colors('dark');
+
+    &.theme-light {
+        @include theme-colors('light');
+    }
+
+    &.theme-dark {
+        @include theme-colors('dark');
+    }
+}
+
+button,
+[tabindex],
+input,
+select,
+textarea,
+a {
+    @include themed-focus-ring;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: $border-radius-sm;
+    opacity: 0.5;
+
+    &:hover {
+        background: var(--text-secondary);
+        opacity: 0.8;
+    }
+}
+
+.sr-only {
+    @include sr-only;
+}
+
+.fade-in {
+    @include animations.fade-in;
+}
+
+.slide-up {
+    @include animations.slide-up;
+}
+
+.bounce-in {
+    @include animations.bounce-in;
+}
+
+.container {
+    width: 100%;
+    max-width: $container-xl;
+    margin: 0 auto;
+    padding: 0 $spacing-4;
+
+    @include sm {
+        padding: 0 $spacing-6;
+    }
+
+    @include lg {
+        padding: 0 $spacing-8;
+    }
+}
+
+.btn {
+    @include button-reset;
+    @include themed-focus-ring;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-3 $spacing-4;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    border-radius: $border-radius-base;
+    transition: all $transition-fast;
+    cursor: pointer;
+    text-decoration: none;
+
+    &--primary {
+        @include themed-button('primary');
+    }
+
+    &--secondary {
+        @include themed-button('secondary');
+    }
+
+    &--ghost {
+        @include themed-button('ghost');
+    }
+
+    &--small {
+        padding: $spacing-2 $spacing-3;
+        font-size: $font-size-sm;
+    }
+
+    &--large {
+        padding: $spacing-4 $spacing-6;
+        font-size: $font-size-lg;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+}
+
+.loading {
+    position: relative;
+
+    &::after {
+        content: '';
+        @include absolute-center;
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: $border-radius-full;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.error-message {
+    color: #FF4444;
+    font-size: $font-size-sm;
+    margin-top: $spacing-2;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+
+    &::before {
+        content: '⚠️';
+        font-size: $font-size-base;
+    }
+}
+
+.success-message {
+    color: #4CAF50;
+    font-size: $font-size-sm;
+    margin-top: $spacing-2;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+
+    &::before {
+        content: '✅';
+        font-size: $font-size-base;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .btn {
+        border-width: 2px;
+    }
+
+    .game-tile {
+        border: 2px solid var(--border-color);
+
+        &--selected {
+            border-width: 4px;
+        }
+    }
+}
+
+@media print {
+
+    .switch-home,
+    .system-menu,
+    .top-bar {
+        display: none !important;
+    }
+
+    .game-grid {
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+        padding: 0 !important;
+    }
+
+    .game-tile {
+        break-inside: avoid;
+        margin-bottom: $spacing-4;
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+}
+
+@if $development-mode ==true {
+    .debug-grid {
+        background-image:
+            linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    .debug-outline * {
+        outline: 1px solid red !important;
+    }
+}

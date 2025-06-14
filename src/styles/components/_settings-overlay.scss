@@ -1,0 +1,322 @@
+// _settings-overlay.scss - 設定オーバーレイスタイル
+
+@use 'sass:color';
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.settings-overlay {
+    @include themed-settings-overlay;
+    position: absolute;
+    top: $top-bar-height + $spacing-2;
+    right: $spacing-6;
+    border-radius: $border-radius-lg;
+    padding: $spacing-5;
+    min-width: 220px;
+    max-width: 300px;
+    z-index: $z-modal;
+    animation: fadeInScale $duration-smooth ease-out;
+
+    // 設定タイトル
+    &__title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+        margin-bottom: $spacing-4;
+        padding-bottom: $spacing-2;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    // 設定項目
+    &__item {
+        @include flex-between;
+        padding: $spacing-3 0;
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-child {
+            border-bottom: none;
+            margin-bottom: $spacing-3;
+        }
+    }
+
+    // 設定ラベル
+    &__label {
+        font-size: $font-size-sm;
+        @include themed-text('primary');
+        font-weight: $font-weight-medium;
+    }
+
+    // フッター
+    &__footer {
+        border-top: 1px solid var(--border-color);
+        padding-top: $spacing-3;
+        text-align: center;
+    }
+
+    // バージョン情報
+    &__version {
+        font-size: $font-size-xs;
+        @include themed-text('secondary');
+        opacity: 0.7;
+    }
+}
+
+// ========================================
+// 背景オーバーレイ
+// ========================================
+
+.settings-backdrop {
+    @include fixed-full;
+    background: var(--overlay-color);
+    z-index: $z-modal-backdrop;
+    animation: fadeIn $duration-smooth ease-out;
+    cursor: pointer;
+}
+
+// ========================================
+// テーマ切り替えボタン
+// ========================================
+
+.theme-toggle {
+    @include button-reset;
+    @include themed-focus-ring;
+    background: var(--accent-primary);
+    color: white;
+    border-radius: $border-radius-sm;
+    padding: $spacing-2 $spacing-3;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+    min-width: 60px;
+
+    &:hover {
+        background: var(--accent-secondary);
+        transform: scale(1.05);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    // テーマ別の表示
+    &--light {
+        background: $nintendo-red;
+
+        &:hover {
+            background: color.adjust($nintendo-red, $lightness: -10%);
+        }
+    }
+
+    &--dark {
+        background: $nintendo-blue;
+
+        &:hover {
+            background: color.adjust($nintendo-blue, $lightness: -10%);
+        }
+    }
+}
+
+// ========================================
+// 設定スイッチ（トグル）
+// ========================================
+
+.setting-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &__thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: $border-radius-full;
+        transition: all $transition-fast;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    // オン状態
+    &--on {
+        background: var(--accent-primary);
+
+        .setting-switch__thumb {
+            transform: translateX(20px);
+        }
+    }
+
+    &:hover {
+        .setting-switch__thumb {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+    }
+}
+
+// ========================================
+// 設定セクション
+// ========================================
+
+.settings-section {
+    margin-bottom: $spacing-4;
+
+    &__title {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+        margin-bottom: $spacing-2;
+        opacity: 0.8;
+    }
+
+    &__description {
+        font-size: $font-size-xs;
+        @include themed-text('secondary');
+        line-height: $line-height-relaxed;
+        margin-top: $spacing-1;
+    }
+}
+
+// ========================================
+// 設定ボタングループ
+// ========================================
+
+.setting-buttons {
+    @include flex-center;
+    gap: $spacing-2;
+
+    .btn {
+        flex: 1;
+        padding: $spacing-2 $spacing-3;
+        font-size: $font-size-xs;
+
+        &--active {
+            background: var(--accent-primary);
+            color: white;
+        }
+    }
+}
+
+// ========================================
+// アニメーション
+// ========================================
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+// ========================================
+// レスポンシブ対応
+// ========================================
+
+@include sm {
+    .settings-overlay {
+        right: $spacing-4;
+        left: $spacing-4;
+        top: $top-bar-height + $spacing-1;
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+@include md {
+    .settings-overlay {
+        right: $spacing-6;
+        left: auto;
+        max-width: 300px;
+    }
+}
+
+// ========================================
+// ダークモード特有のスタイル
+// ========================================
+
+.theme-dark {
+    .settings-overlay {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .setting-switch {
+        background: #555555;
+
+        &--on {
+            background: $nintendo-blue;
+        }
+    }
+}
+
+// ========================================
+// ライトモード特有のスタイル
+// ========================================
+
+.theme-light {
+    .settings-overlay {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    .setting-switch {
+        background: #E0E0E0;
+
+        &--on {
+            background: $nintendo-red;
+        }
+    }
+}
+
+// ========================================
+// アクセシビリティ
+// ========================================
+
+.settings-overlay {
+    &:focus-within {
+        .settings-backdrop {
+            background: rgba(var(--overlay-color-rgb), 0.6);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .settings-overlay,
+    .settings-backdrop {
+        animation: none;
+    }
+
+    .setting-switch__thumb {
+        transition: none;
+    }
+}
+
+// ========================================
+// プリント時の非表示
+// ========================================
+
+@media print {
+
+    .settings-overlay,
+    .settings-backdrop {
+        display: none !important;
+    }
+}

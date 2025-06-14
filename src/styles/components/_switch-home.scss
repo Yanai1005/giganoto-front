@@ -1,0 +1,542 @@
+// _switch-home.scss - メインレイアウトスタイル
+
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.switch-home {
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    @include flex-column;
+    position: relative;
+    overflow: hidden;
+    transition: all $transition-smooth;
+
+    // メイン表示エリア
+    &__main {
+        flex: 1;
+        position: relative;
+        @include flex-center;
+    }
+
+    // 読み込み状態
+    &--loading {
+        .game-grid {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+    }
+
+    // エラー状態
+    &--error {
+        .game-grid {
+            opacity: 0.5;
+        }
+    }
+}
+
+// ========================================
+// キーボードナビゲーション表示
+// ========================================
+
+.keyboard-hint {
+    position: absolute;
+    bottom: $system-menu-height + $spacing-16;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: $font-size-xs;
+    @include themed-text('secondary');
+    text-align: center;
+    opacity: 0.6;
+    transition: opacity $transition-smooth;
+    pointer-events: none;
+
+    &--visible {
+        opacity: 1;
+    }
+
+    &__keys {
+        @include flex-center;
+        gap: $spacing-2;
+        margin-bottom: $spacing-1;
+    }
+
+    &__key {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: $border-radius-sm;
+        padding: $spacing-1 $spacing-2;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        min-width: 24px;
+        text-align: center;
+    }
+}
+
+// ========================================
+// ゲーム詳細表示
+// ========================================
+
+.game-detail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-secondary);
+    border-radius: $border-radius-xl;
+    padding: $spacing-8;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 16px 48px var(--shadow-hover);
+    z-index: $z-modal;
+    text-align: center;
+    animation: bounceIn $duration-smooth $bounce-timing;
+
+    &__image {
+        width: 200px;
+        height: 150px;
+        border-radius: $border-radius-lg;
+        margin: 0 auto $spacing-4;
+        background-size: cover;
+        background-position: center;
+        background-color: var(--bg-primary);
+    }
+
+    &__title {
+        font-size: $font-size-2xl;
+        font-weight: $font-weight-bold;
+        @include themed-text('primary');
+        margin-bottom: $spacing-2;
+    }
+
+    &__description {
+        font-size: $font-size-base;
+        @include themed-text('secondary');
+        line-height: $line-height-relaxed;
+        margin-bottom: $spacing-6;
+    }
+
+    &__actions {
+        @include flex-center;
+        gap: $spacing-3;
+    }
+}
+
+// ========================================
+// アニメーション
+// ========================================
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0;
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.05);
+        opacity: 0.8;
+    }
+
+    70% {
+        transform: translate(-50%, -50%) scale(0.9);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+// ========================================
+// レスポンシブ対応
+// ========================================
+
+@include sm {
+    .switch-home {
+        &__main {
+            padding: 0 $spacing-4;
+        }
+    }
+
+    .game-grid {
+        padding: ($top-bar-height + $spacing-4) $spacing-4 (
+            $system-menu-height + $spacing-4
+        );
+    justify-content: flex-start;
+
+    // モバイルでは縦方向スクロールに変更
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    height: calc(100vh - #{$top-bar-height + $system-menu-height + $spacing-8});
+
+    .game-tile {
+        scroll-snap-align: start;
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+.keyboard-hint {
+    display: none;
+}
+
+.game-detail {
+    padding: $spacing-6;
+    width: 95%;
+
+    &__image {
+        width: 150px;
+        height: 113px;
+    }
+
+    &__title {
+        font-size: $font-size-xl;
+    }
+
+    &__actions {
+        flex-direction: column;
+    }
+}
+}
+
+@include md {
+    .game-grid {
+        justify-content: center;
+        flex-wrap: wrap;
+        overflow-y: auto;
+        scroll-snap-type: none;
+
+        .game-tile {
+            scroll-snap-align: none;
+            margin-bottom: $spacing-4;
+        }
+    }
+}
+
+@include lg {
+    .game-grid {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+
+        .game-tile {
+            scroll-snap-align: center;
+            margin-bottom: 0;
+        }
+    }
+}
+
+// ========================================
+// ダークモード特有のスタイル
+// ========================================
+
+.theme-dark {
+    .switch-home {
+        background: linear-gradient(135deg, #232526 0%, #414345 100%);
+    }
+
+    .game-detail,
+    .error-overlay {
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .keyboard-hint__key {
+        background: #404040;
+        border-color: #555555;
+    }
+}
+
+// ========================================
+// ライトモード特有のスタイル
+// ========================================
+
+.theme-light {
+    .switch-home {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background-size: 200% 200%;
+        animation: gradientShift 10s ease infinite;
+    }
+
+    .game-detail,
+    .error-overlay {
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .keyboard-hint__key {
+        background: #FFFFFF;
+        border-color: #E0E0E0;
+    }
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+// ========================================
+// フォーカス管理
+// ========================================
+
+.switch-home {
+    &:focus-within {
+        .keyboard-hint {
+            opacity: 1;
+        }
+    }
+}
+
+// ========================================
+// プリント対応
+// ========================================
+
+@media print {
+    .switch-home {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .game-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+        gap: $spacing-4 !important;
+        overflow: visible !important;
+        height: auto !important;
+        padding: $spacing-4 !important;
+    }
+
+    .loading-overlay,
+    .error-overlay,
+    .game-detail,
+    .keyboard-hint {
+        display: none !important;
+    }
+}
+
+// ========================================
+// パフォーマンス最適化
+// ========================================
+
+.switch-home {
+    // GPU加速を有効化
+    transform: translateZ(0);
+    will-change: auto;
+
+    // スクロール最適化
+    .game-grid {
+        contain: layout style paint;
+
+        .game-tile {
+            contain: layout style paint;
+        }
+    }
+}
+
+// ========================================
+// アクセシビリティ改善
+// ========================================
+
+@media (prefers-reduced-motion: reduce) {
+
+    .switch-home,
+    .game-grid,
+    .game-detail,
+    .loading-overlay {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .game-tile {
+        animation: none !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .switch-home {
+        background: var(--bg-primary) !important;
+    }
+
+    .keyboard-hint__key,
+    .game-detail,
+    .error-overlay {
+        border-width: 2px !important;
+    }
+}
+
+
+.game-grid {
+    display: flex;
+    gap: $game-tile-gap;
+    padding: ($top-bar-height + $spacing-5) $spacing-6 (
+        $system-menu-height + $spacing-5
+    );
+overflow-x: auto;
+overflow-y: hidden;
+align-items: center;
+height: 100vh;
+width: 100%;
+scroll-snap-type: x mandatory;
+scroll-behavior: smooth;
+
+@include scrollbar-hidden;
+
+// ゲームタイルの配置
+.game-tile {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+}
+
+// 初期表示アニメーション
+&--loaded {
+    .game-tile {
+        @for $i from 1 through 10 {
+            &:nth-child(#{$i}) {
+                animation: slideInFromRight ($duration-smooth + ($i * 100ms)) ease-out;
+                animation-fill-mode: both;
+            }
+        }
+    }
+}
+
+// 空の状態
+&--empty {
+    @include flex-column-center;
+
+    .empty-state {
+        text-align: center;
+        max-width: 400px;
+    }
+}
+}
+
+// ========================================
+// 空の状態表示
+// ========================================
+
+.empty-state {
+    &__icon {
+        font-size: 4rem;
+        margin-bottom: $spacing-4;
+        opacity: 0.5;
+    }
+
+    &__title {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+        margin-bottom: $spacing-2;
+    }
+
+    &__description {
+        font-size: $font-size-base;
+        @include themed-text('secondary');
+        line-height: $line-height-relaxed;
+        margin-bottom: $spacing-4;
+    }
+
+    &__action {
+        .btn {
+            @include themed-button('primary');
+        }
+    }
+}
+
+// ========================================
+// ローディング状態
+// ========================================
+
+.loading-overlay {
+    @include absolute-center;
+    @include flex-column-center;
+    gap: $spacing-4;
+    z-index: $z-modal;
+
+    &__spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--accent-primary);
+        border-radius: $border-radius-full;
+        animation: spin 1s linear infinite;
+    }
+
+    &__text {
+        font-size: $font-size-sm;
+        @include themed-text('secondary');
+        font-weight: $font-weight-medium;
+    }
+}
+
+// ========================================
+// エラー状態
+// ========================================
+
+.error-overlay {
+    @include absolute-center;
+    @include flex-column-center;
+    gap: $spacing-4;
+    text-align: center;
+    max-width: 400px;
+    padding: $spacing-6;
+    background: var(--bg-secondary);
+    border-radius: $border-radius-lg;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px var(--shadow-hover);
+    z-index: $z-modal;
+
+    &__icon {
+        font-size: 3rem;
+        color: #FF4444;
+    }
+
+    &__title {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+    }
+
+    &__message {
+        font-size: $font-size-sm;
+        @include themed-text('secondary');
+        line-height: $line-height-relaxed;
+    }
+
+    &__actions {
+        @include flex-center;
+        gap: $spacing-3;
+        margin-top: $spacing-2;
+    }
+}

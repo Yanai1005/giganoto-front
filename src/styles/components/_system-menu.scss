@@ -1,0 +1,341 @@
+// _system-menu.scss - システムメニュースタイル
+
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.system-menu {
+    @include themed-system-menu;
+    @include flex-between;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: $spacing-4 $spacing-6;
+    height: $system-menu-height;
+    z-index: $z-fixed;
+    transition: all $transition-smooth;
+
+    // アイコンコンテナ
+    &__icons {
+        @include flex-center;
+        gap: $spacing-6;
+        flex: 1;
+        justify-content: center;
+    }
+
+    // パワーセクション
+    &__power {
+        @include flex-center;
+        gap: $spacing-2;
+        font-size: $font-size-sm;
+        @include themed-text('secondary');
+        min-width: 80px;
+        justify-content: flex-end;
+    }
+}
+
+// ========================================
+// システムアイコン
+// ========================================
+
+.system-icon {
+    @include system-icon-base;
+    @include themed-system-icon;
+    @include themed-focus-ring;
+    position: relative;
+
+    // ホバー効果
+    &:hover {
+        background-color: var(--accent-primary);
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px var(--shadow-hover);
+
+        .system-icon__label {
+            opacity: 1;
+        }
+    }
+
+    // アクティブ効果
+    &:active {
+        transform: scale(0.95);
+    }
+
+    // アクティブ状態
+    &--active {
+        background-color: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+        box-shadow: 0 4px 8px var(--shadow-hover);
+    }
+
+    // 特別なカラー設定
+    &--special {
+        background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, var(--accent-secondary), var(--accent-primary));
+        }
+    }
+
+    // ラベル
+    &__label {
+        position: absolute;
+        bottom: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: $font-size-xs;
+        @include themed-text('secondary');
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity $transition-fast;
+        pointer-events: none;
+        background: var(--bg-secondary);
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px var(--shadow-color);
+        z-index: 1;
+    }
+
+    // 通知バッジ
+    &__notification {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 16px;
+        height: 16px;
+        background: #FF4444;
+        border-radius: $border-radius-full;
+        font-size: $font-size-xs;
+        color: white;
+        z-index: 2;
+        @include flex-center;
+        font-weight: $font-weight-bold;
+        border: 2px solid var(--bg-primary);
+        @include pulse-animation(2s);
+
+        // 9+表示
+        &--many {
+            font-size: 8px;
+            padding: 0 1px;
+        }
+    }
+}
+
+// ========================================
+// Nintendo Switchアイコン
+// ========================================
+
+.switch-icon {
+    @include nintendo-switch-icon;
+    @include themed-switch-icon;
+    opacity: 0.7;
+    transition: opacity $transition-fast;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+// ========================================
+// 個別アイコンのスタイル
+// ========================================
+
+.system-icon {
+
+    // Nintendo Switch Online
+    &--online {
+        background: linear-gradient(45deg, #E70009, #FF4444);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #FF4444, #E70009);
+        }
+    }
+
+    // ニュース
+    &--news {
+        background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #FF8E8E, #FF6B6B);
+        }
+    }
+
+    // eショップ
+    &--shop {
+        background: linear-gradient(45deg, #FFA500, #FFB733);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #FFB733, #FFA500);
+        }
+    }
+
+    // Mii
+    &--mii {
+        background: linear-gradient(45deg, #4ECDC4, #6EE8E0);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #6EE8E0, #4ECDC4);
+        }
+    }
+
+    // コントローラー
+    &--controller {
+        background: linear-gradient(45deg, #45B7D1, #6CC5DC);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #6CC5DC, #45B7D1);
+        }
+    }
+
+    // 設定
+    &--settings {
+        background: linear-gradient(45deg, #96CEB4, #A8D5C4);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(45deg, #A8D5C4, #96CEB4);
+        }
+    }
+}
+
+// ========================================
+// アニメーション
+// ========================================
+
+.system-menu {
+    // 初期表示アニメーション
+    animation: slideUpFromBottom $duration-smooth ease-out;
+
+    .system-icon {
+        @for $i from 1 through 6 {
+            &:nth-child(#{$i}) {
+                animation: bounceInUp ($duration-smooth + ($i * 50ms)) ease-out;
+                animation-fill-mode: both;
+            }
+        }
+    }
+}
+
+@keyframes slideUpFromBottom {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bounceInUp {
+    0% {
+        transform: translateY(40px) scale(0.8);
+        opacity: 0;
+    }
+
+    60% {
+        transform: translateY(-10px) scale(1.1);
+        opacity: 1;
+    }
+
+    80% {
+        transform: translateY(2px) scale(0.95);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+// ========================================
+// レスポンシブ対応
+// ========================================
+
+@include sm {
+    .system-menu {
+        padding: $spacing-3 $spacing-4;
+
+        &__icons {
+            gap: $spacing-4;
+        }
+
+        &__power {
+            gap: $spacing-1;
+            font-size: $font-size-xs;
+        }
+    }
+
+    .system-icon {
+        width: 40px;
+        height: 40px;
+        font-size: $font-size-lg;
+
+        &__label {
+            bottom: -30px;
+            font-size: 10px;
+        }
+
+        &__notification {
+            width: 14px;
+            height: 14px;
+            font-size: 10px;
+        }
+    }
+
+    .switch-icon {
+        width: 28px;
+        height: 16px;
+    }
+}
+
+// ========================================
+// キーボードナビゲーション
+// ========================================
+
+.system-icon {
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        z-index: 3;
+
+        .system-icon__label {
+            opacity: 1;
+        }
+    }
+}
+
+// ========================================
+// ダークモード特有のスタイル
+// ========================================
+
+.theme-dark {
+    .system-icon__label {
+        background: rgba(64, 64, 64, 0.95);
+        border-color: #555555;
+    }
+}
+
+// ========================================
+// ライトモード特有のスタイル
+// ========================================
+
+.theme-light {
+    .system-icon__label {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #E0E0E0;
+        color: #000000;
+    }
+}
