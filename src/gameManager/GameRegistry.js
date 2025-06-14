@@ -52,10 +52,12 @@ class GameRegistry {
 
             this.debugLog(`Game config found for ${gameId}:`, gameConfig);
 
+            // ゲームモジュールをロード
             this.debugLog(`Loading game module for: ${gameId}`);
             const gameModule = await gameConfig.loader();
             this.debugLog(`Game module loaded:`, gameModule);
 
+            // コンテナをクリア
             if (container) {
                 container.innerHTML = '';
                 this.debugLog(`Container cleared for game: ${gameId}`);
@@ -63,6 +65,7 @@ class GameRegistry {
                 this.errorLog('No container provided for game loading');
             }
 
+            // ゲームインスタンスを作成
             this.debugLog(`Creating game instance for: ${gameId}`);
             const gameInstance = gameModule.initializeGame(container);
             this.currentGameInstance = gameInstance;
@@ -101,11 +104,13 @@ class GameRegistry {
             return;
         }
 
+        // ゲームタイプ設定を保存
         this.gameTypeConfig = gamesData.gameTypes || {};
         this.debugLog('Game type configuration loaded:', this.gameTypeConfig);
 
         this.debugLog(`Found ${gamesData.games.length} games in JSON data`);
 
+        // gamesDataの各ゲームを登録
         gamesData.games.forEach((gameData, index) => {
             this.debugLog(`Processing game ${index + 1}:`, gameData);
 
@@ -129,15 +134,18 @@ class GameRegistry {
         const registeredGames = this.getAllGames();
         this.debugLog('Games registration complete. Registered games:', registeredGames.map(g => g.id));
     }
+
     static getDynamicLoader(gameType) {
         this.debugLog(`Getting dynamic loader for: ${gameType}`);
 
+        // JSONの gameTypes 設定を確認
         const gameTypeInfo = this.gameTypeConfig && this.gameTypeConfig[gameType];
         if (gameTypeInfo && gameTypeInfo.modulePath) {
             this.debugLog(`Using module path from JSON config: ${gameTypeInfo.modulePath}`);
             return import(/* @vite-ignore */ gameTypeInfo.modulePath);
         }
 
+        // JSONに設定がない場合はエラー
         this.errorLog(`No configuration found for game type: ${gameType}`);
         this.debugLog('Available game types from JSON:', Object.keys(this.gameTypeConfig || {}));
         throw new Error(`Game type "${gameType}" not found in JSON configuration. Please add it to gameTypes in games.json`);

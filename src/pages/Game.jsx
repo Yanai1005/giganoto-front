@@ -13,18 +13,18 @@ const Game = () => {
 
     useEffect(() => {
         const loadGame = async () => {
+            // ゲームレジストリを初期化
             if (!GameRegistry.isInitialized()) {
                 const gamesData = await import('../data/games.json');
                 GameRegistry.initializeFromJson(gamesData.default);
             }
 
+            // ゲームタイプの操作方法を取得
             const gameTypeConfig = GameRegistry.getGameTypeConfig(gameType);
-            if (gameTypeConfig && gameTypeConfig.controls) {
-                setGameControls(gameTypeConfig.controls);
-            } else {
-                setGameControls('ゲームの操作方法をお楽しみください');
-            }
+            const controls = gameTypeConfig?.controls || 'ゲームの操作方法をお楽しみください';
+            setGameControls(controls);
 
+            // ゲームを読み込み
             if (gameRef.current && !phaserGameRef.current) {
                 try {
                     console.log(`Loading game: ${gameType}`);
@@ -34,6 +34,7 @@ const Game = () => {
                 } catch (error) {
                     console.error('Failed to load game:', error);
 
+                    // エラー表示
                     if (gameRef.current) {
                         gameRef.current.innerHTML = `
                             <div style="
@@ -56,7 +57,7 @@ const Game = () => {
 
         loadGame();
 
-        // クリーンアップ関数
+        // クリーンアップ
         return () => {
             GameRegistry.cleanupCurrentGame();
             phaserGameRef.current = null;

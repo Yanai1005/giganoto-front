@@ -21,10 +21,12 @@ const Home = () => {
         GameRegistry.initializeFromJson(gamesData);
     }, []);
 
+    // テーマの適用
     useEffect(() => {
         document.body.className = `theme-${theme}`;
     }, [theme]);
 
+    // ロードアニメーション
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsLoaded(true);
@@ -32,6 +34,7 @@ const Home = () => {
         return () => clearTimeout(timer);
     }, []);
 
+    // キーボードナビゲーション
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (showSettings) return;
@@ -71,6 +74,7 @@ const Home = () => {
 
         setLoading(true);
 
+        // ゲーム読み込みシミュレーション
         setTimeout(() => {
             setLoading(false);
             navigate(game.path, {

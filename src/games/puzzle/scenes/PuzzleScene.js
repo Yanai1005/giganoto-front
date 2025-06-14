@@ -9,10 +9,9 @@ class PuzzleScene extends Phaser.Scene {
         this.grid = [];
         this.selectedTile = null;
         this.score = 0;
-        this.debugMode = true; // デバッグモード
+        this.debugMode = true;
     }
 
-    // デバッグログ
     debugLog(message, data = null) {
         if (this.debugMode) {
             console.log(`[Gem Matcher] ${message}`, data || '');
@@ -22,7 +21,7 @@ class PuzzleScene extends Phaser.Scene {
     preload() {
         this.debugLog('Preloading puzzle assets...');
 
-        // 色付きタイルを作成
+        // 色付きタイルテクスチャを生成
         this.colors.forEach((color, index) => {
             this.add.graphics()
                 .fillStyle(parseInt(color.slice(1), 16))
@@ -30,7 +29,7 @@ class PuzzleScene extends Phaser.Scene {
                 .generateTexture(`tile${index}`, this.tileSize - 2, this.tileSize - 2);
         });
 
-        // 選択インジケーター
+        // 選択インジケーターテクスチャを生成
         this.add.graphics()
             .lineStyle(4, 0xffffff)
             .strokeRect(0, 0, this.tileSize - 2, this.tileSize - 2)
@@ -42,6 +41,14 @@ class PuzzleScene extends Phaser.Scene {
     create() {
         this.debugLog('Creating puzzle scene...');
 
+        this.createUI();
+        this.createGrid();
+        this.setupInput();
+
+        this.debugLog('Puzzle scene creation complete');
+    }
+
+    createUI() {
         // タイトル
         this.add.text(400, 30, 'Gem Matcher', {
             fontSize: '32px',
@@ -69,15 +76,6 @@ class PuzzleScene extends Phaser.Scene {
             fill: '#bdc3c7',
             align: 'center'
         }).setOrigin(0.5);
-
-        // グリッド作成
-        this.debugLog('Creating puzzle grid...');
-        this.createGrid();
-
-        // 入力設定
-        this.input.on('pointerdown', this.handleTileClick, this);
-
-        this.debugLog('Puzzle scene creation complete');
     }
 
     createGrid() {
@@ -109,6 +107,10 @@ class PuzzleScene extends Phaser.Scene {
         }
 
         this.debugLog(`Grid created: ${this.gridSize}x${this.gridSize} tiles`);
+    }
+
+    setupInput() {
+        this.input.on('pointerdown', this.handleTileClick, this);
     }
 
     handleTileClick(pointer) {
@@ -215,11 +217,21 @@ class PuzzleScene extends Phaser.Scene {
         const matches = [];
         const checked = [];
 
+        // チェック済み配列を初期化
         for (let row = 0; row < this.gridSize; row++) {
             checked[row] = new Array(this.gridSize).fill(false);
         }
 
-        // 水平マッチ
+        // 水平マッチを検索
+        this.findHorizontalMatches(matches, checked);
+
+        // 垂直マッチを検索
+        this.findVerticalMatches(matches, checked);
+
+        return matches;
+    }
+
+    findHorizontalMatches(matches, checked) {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize - 2; col++) {
                 const color = this.grid[row][col];
@@ -241,8 +253,9 @@ class PuzzleScene extends Phaser.Scene {
                 }
             }
         }
+    }
 
-        // 垂直マッチ
+    findVerticalMatches(matches, checked) {
         for (let col = 0; col < this.gridSize; col++) {
             for (let row = 0; row < this.gridSize - 2; row++) {
                 const color = this.grid[row][col];
@@ -264,8 +277,6 @@ class PuzzleScene extends Phaser.Scene {
                 }
             }
         }
-
-        return matches;
     }
 
     processMatches(matches) {
