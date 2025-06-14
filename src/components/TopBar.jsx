@@ -1,39 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useBattery, useTime, useWifi } from '../hooks';
 
 const TopBar = ({ userProfile, onUserClick }) => {
-    const [currentTime, setCurrentTime] = useState(new Date());
-    const [batteryLevel] = useState(85);
-    const [wifiStrength] = useState(75);
+    const batteryIconRef = useRef(null);
+
+    const { currentTime, formatTime } = useTime();
+    const {
+        level: batteryLevel,
+        charging,
+        getBatteryClass,
+        getBatteryTooltip,
+        getBatteryStatusText,
+        loading: batteryLoading,
+        error: batteryError
+    } = useBattery();
+    const {
+        strength: wifiStrength,
+        getWifiClass,
+        getConnectionDescription,
+        isOnline
+    } = useWifi();
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
+        if (batteryIconRef.current && !batteryLoading) {
+            const batteryWidth = `${Math.max(batteryLevel, 5)}%`;
+            batteryIconRef.current.style.setProperty('--battery-width', batteryWidth);
+        }
+    }, [batteryLevel, batteryLoading]);
 
-    const formatTime = (date) => {
-        return date.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    };
-
-    const getBatteryClass = (level) => {
-        if (level > 60) return 'battery-icon--high';
-        if (level > 20) return 'battery-icon--medium';
-        if (level > 10) return 'battery-icon--low';
-        return 'battery-icon--critical';
-    };
-
-    const getWifiClass = (strength) => {
-        if (strength > 70) return 'wifi-icon--strong';
-        if (strength > 40) return 'wifi-icon--medium';
-        if (strength > 10) return 'wifi-icon--weak';
-        return 'wifi-icon--disconnected';
-    };
+    const batteryClass = getBatteryClass();
+    const wifiClass = getWifiClass();
 
     return (
         <div className="top-bar">
@@ -49,15 +46,51 @@ const TopBar = ({ userProfile, onUserClick }) => {
             </div>
 
             <div className="top-bar__status-section">
-                <div className="top-bar__time">{formatTime(currentTime)}</div>
+                <div className="top-bar__time">
+                    {formatTime()}
+                </div>
+
                 <div
-                    className={`wifi-icon ${getWifiClass(wifiStrength)}`}
-                    title={`Wi-Fi強度: ${wifiStrength}%`}
-                />
-                <div
-                    className={`battery-icon ${getBatteryClass(batteryLevel)}`}
-                    title={`バッテリー: ${batteryLevel}%`}
-                />
+                    className={`wifi-icon ${wifiClass}`}
+                    title={getConnectionDescription()}
+                    aria-label={getConnectionDescription()}
+                >
+                    {isOnline ? '📶' : '📵'}
+                </div>
+
+                <div className="battery-container">
+                    {batteryLoading ? (
+                        <div className="battery-loading">
+                            <div className="loading-spinner" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="battery-info">
+                                <div className="battery-percentage">
+                                    {batteryError ? '--' : `${batteryLevel}%`}
+                                </div>
+                                {getBatteryStatusText() && (
+                                    <div className="battery-status">
+                                        {getBatteryStatusText()}
+                                    </div>
+                                )}
+                            </div>
+                            <div
+                                ref={batteryIconRef}
+                                className={`battery-icon ${batteryClass}`}
+                                title={getBatteryTooltip()}
+                                aria-label={getBatteryTooltip()}
+                            >
+                                {charging && (
+                                    <div className="battery-icon__charging-indicator">⚡</div>
+                                )}
+                                {batteryError && (
+                                    <div className="battery-icon__error-indicator">❌</div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
