@@ -1,10 +1,12 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, SignalHigh } from 'lucide-react';
 import { useBattery, useTime, useWifi } from '../hooks';
 
 const TopBar = ({ userProfile, onUserClick }) => {
     const batteryIconRef = useRef(null);
 
+    // カスタムフックを使用
     const { currentTime, formatTime } = useTime();
     const {
         level: batteryLevel,
@@ -22,6 +24,7 @@ const TopBar = ({ userProfile, onUserClick }) => {
         isOnline
     } = useWifi();
 
+    // バッテリー表示の動的更新
     useEffect(() => {
         if (batteryIconRef.current && !batteryLoading) {
             const batteryWidth = `${Math.max(batteryLevel, 5)}%`;
@@ -29,6 +32,31 @@ const TopBar = ({ userProfile, onUserClick }) => {
         }
     }, [batteryLevel, batteryLoading]);
 
+    // Wi-Fiアイコンを強度に応じて選択
+    const getWifiIcon = () => {
+        const iconProps = {
+            size: 18,
+            className: 'wifi-icon__svg'
+        };
+
+        if (!isOnline) {
+            return <WifiOff {...iconProps} />;
+        }
+
+        if (wifiStrength > 70) {
+            return <Wifi {...iconProps} />;
+        } else if (wifiStrength > 40) {
+            return <SignalHigh {...iconProps} />;
+        } else if (wifiStrength > 20) {
+            return <SignalMedium {...iconProps} />;
+        } else if (wifiStrength > 10) {
+            return <SignalLow {...iconProps} />;
+        } else {
+            return <WifiOff {...iconProps} />;
+        }
+    };
+
+    // バッテリーの状態に応じたスタイルクラス
     const batteryClass = getBatteryClass();
     const wifiClass = getWifiClass();
 
@@ -55,7 +83,7 @@ const TopBar = ({ userProfile, onUserClick }) => {
                     title={getConnectionDescription()}
                     aria-label={getConnectionDescription()}
                 >
-                    {isOnline ? '📶' : '📵'}
+                    {getWifiIcon()}
                 </div>
 
                 <div className="battery-container">
