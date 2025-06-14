@@ -40,10 +40,10 @@
 // ========================================
 
 .system-icon {
+    position: relative;
     @include system-icon-base;
     @include themed-system-icon;
     @include themed-focus-ring;
-    position: relative;
 
     // ホバー効果
     &:hover {
