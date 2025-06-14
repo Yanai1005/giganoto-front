@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import GameScene from './scenes/GameScene';
+import GameScene from './scenes/PuzzleScene.js';
 
 export const initializeGame = (container) => {
     const config = {
@@ -8,16 +8,14 @@ export const initializeGame = (container) => {
         height: 600,
         parent: container,
         backgroundColor: '#2c3e50',
+        scene: [GameScene],
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 300 },
+                gravity: { y: 600 }, // platformer用。shooter/puzzleは0でもOK
                 debug: false
             }
-        },
-        scene: [GameScene]
+        }
     };
-
-    const game = new Phaser.Game(config);
-    return game;
+    return new Phaser.Game(config);
 };
