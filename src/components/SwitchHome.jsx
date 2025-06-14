@@ -81,7 +81,6 @@ const SwitchHome = () => {
     return (
         <div className="switch-home">
             <TopBar
-                userProfile={gamesData.userProfile}
                 onUserClick={handleUserClick}
             />
 

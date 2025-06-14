@@ -72,7 +72,9 @@
     width: $user-avatar-size;
     height: $user-avatar-size;
     border-radius: $border-radius-full;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
     font-size: $font-size-xl;
     cursor: pointer;
     transition: all $transition-fast;
@@ -81,6 +83,7 @@
     &:hover {
         transform: scale(1.1);
         box-shadow: 0 4px 8px var(--shadow-hover);
+        background: var(--surface-hover);
     }
 
     &:active {
@@ -149,11 +152,15 @@
     // 充電インジケーター
     &__charging-indicator {
         position: absolute;
-        right: -12px;
-        top: -2px;
-        font-size: 12px;
-        color: #FFD700;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-primary);
         animation: pulse 1.5s ease-in-out infinite;
+        z-index: 10;
     }
 
     // バッテリーレベル別の色と幅（白黒統一）
