@@ -1,30 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import GameTile from '../components/GameTile';
-import TopBar from '../components/TopBar';
-import SystemMenu from '../components/SystemMenu';
-import SettingsOverlay from '../components/SettingsOverlay';
-import gamesData from '../data/games.json';
+import GameTile from './GameTile';
+import TopBar from './TopBar';
+import SystemMenu from './SystemMenu';
+import SettingsOverlay from './SettingsOverlay';
 
-const Home = () => {
-    const navigate = useNavigate();
+import gamesData from '../../data/games.json';
+
+const SwitchHome = () => {
     const [selectedGame, setSelectedGame] = useState(0);
     const [theme, setTheme] = useState('dark');
     const [showSettings, setShowSettings] = useState(false);
     const [activeSystemIcon, setActiveSystemIcon] = useState('');
     const [loading, setLoading] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         document.body.className = `theme-${theme}`;
     }, [theme]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoaded(true);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, []);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -67,21 +58,8 @@ const Home = () => {
 
         setTimeout(() => {
             setLoading(false);
-            navigate(game.path);
+            console.log(`ゲーム選択: ${game.title}`);
         }, 1000);
-    };
-
-    const handleSystemIconClick = (icon) => {
-        setActiveSystemIcon(icon.id);
-
-        switch (icon.id) {
-            case 'settings':
-                setShowSettings(!showSettings);
-                break;
-            default:
-                console.log(`${icon.title}を起動`);
-                break;
-        }
     };
 
     const handleThemeChange = (newTheme) => {
@@ -98,7 +76,6 @@ const Home = () => {
     };
 
     const notifications = {
-        news: 0
     };
 
     return (
@@ -108,7 +85,7 @@ const Home = () => {
                 onUserClick={handleUserClick}
             />
 
-            <main className={`game-grid ${isLoaded ? 'game-grid--loaded' : ''}`}>
+            <main className="game-grid">
                 {gamesData.games.map((game, index) => (
                     <GameTile
                         key={game.id}
@@ -120,17 +97,6 @@ const Home = () => {
                 ))}
             </main>
 
-            {/* キーボードヒント */}
-            <div className="keyboard-hint">
-                <div className="keyboard-hint__keys">
-                    <span className="keyboard-hint__key">←</span>
-                    <span className="keyboard-hint__key">→</span>
-                    <span>ゲーム選択</span>
-                    <span className="keyboard-hint__key">Enter</span>
-                    <span>決定</span>
-                </div>
-            </div>
-
             <SystemMenu
                 systemIcons={gamesData.systemIcons}
                 activeIcon={activeSystemIcon}
@@ -139,20 +105,20 @@ const Home = () => {
             />
 
             {showSettings && (
-                <>
-                    <SettingsOverlay
-                        currentTheme={theme}
-                        onThemeChange={handleThemeChange}
-                        onClose={handleCloseSettings}
-                    />
-                    <div
-                        className="settings-backdrop"
-                        onClick={handleCloseSettings}
-                    />
-                </>
+                <SettingsOverlay
+                    currentTheme={theme}
+                    onThemeChange={handleThemeChange}
+                    onClose={handleCloseSettings}
+                />
+            )}
+            {showSettings && (
+                <div
+                    className="settings-backdrop"
+                    onClick={handleCloseSettings}
+                />
             )}
         </div>
     );
 };
 
-export default Home;
+export default SwitchHome;

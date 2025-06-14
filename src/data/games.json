@@ -1,0 +1,58 @@
+{
+    "games": [
+        {
+            "id": 1,
+            "title": "Game",
+            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
+            "path": "/game"
+        },
+        {
+            "id": 2,
+            "title": "Game",
+            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
+            "path": "/game"
+        },
+        {
+            "id": 3,
+            "title": "Game",
+            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
+            "path": "/game"
+        },
+        {
+            "id": 4,
+            "title": "Game",
+            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
+            "path": "/game"
+        },
+        {
+            "id": 5,
+            "title": "Game",
+            "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
+            "path": "/game"
+        }
+    ],
+    "systemIcons": [
+        {
+            "id": "news",
+            "icon": "📰",
+            "title": "ニュース",
+            "color": "#FF6B6B"
+        },
+        {
+            "id": "controller",
+            "icon": "🎮",
+            "title": "コントローラー",
+            "color": "#45B7D1"
+        },
+        {
+            "id": "settings",
+            "icon": "⚙️",
+            "title": "設定",
+            "color": "#96CEB4"
+        }
+    ],
+    "userProfile": {
+        "username": "Player",
+        "avatar": "👤"
+    }
+}

@@ -1,0 +1,255 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+@mixin theme-colors($theme: 'dark') {
+    @if $theme =='light' {
+        --bg-primary: #{$light-background};
+        --bg-secondary: #{$light-card-bg};
+        --text-primary: #{$light-text};
+        --text-secondary: #{$light-text-secondary};
+        --border-color: #{$light-border};
+        --shadow-color: #{$light-shadow};
+        --shadow-hover: #{$light-shadow-hover};
+        --overlay-color: #{$light-overlay};
+        --accent-primary: #{$nintendo-red};
+        --accent-secondary: #{$nintendo-blue};
+        --system-menu-bg: rgba(255, 255, 255, 0.95);
+        --glass-bg: rgba(240, 240, 240, 0.9);
+    }
+
+    @else {
+        --bg-primary: #{$dark-background};
+        --bg-secondary: #{$dark-card-bg};
+        --text-primary: #{$dark-text};
+        --text-secondary: #{$dark-text-secondary};
+        --border-color: #{$dark-border};
+        --shadow-color: #{$dark-shadow};
+        --shadow-hover: #{$dark-shadow-hover};
+        --overlay-color: #{$dark-overlay};
+        --accent-primary: #{$nintendo-blue};
+        --accent-secondary: #{$nintendo-red};
+        --system-menu-bg: rgba(45, 45, 45, 0.95);
+        --glass-bg: rgba(45, 45, 45, 0.9);
+    }
+}
+
+.theme-light {
+    @include theme-colors('light');
+}
+
+.theme-dark {
+    @include theme-colors('dark');
+}
+
+@mixin themed-background($opacity: 1) {
+    background-color: rgba(var(--bg-primary-rgb), $opacity);
+}
+
+@mixin themed-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+@mixin themed-text($variant: 'primary') {
+    @if $variant =='primary' {
+        color: var(--text-primary);
+    }
+
+    @else if $variant =='secondary' {
+        color: var(--text-secondary);
+    }
+}
+
+@mixin themed-button($style: 'primary') {
+    @if $style =='primary' {
+        background-color: var(--accent-primary);
+        color: white;
+        border: 2px solid var(--accent-primary);
+
+        &:hover {
+            background-color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+    }
+
+    @else if $style =='secondary' {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+
+        &:hover {
+            background-color: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+    }
+
+    @else if $style =='ghost' {
+        background-color: transparent;
+        color: var(--text-primary);
+        border: 2px solid transparent;
+
+        &:hover {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+    }
+}
+
+@mixin themed-game-tile {
+    background-color: var(--bg-secondary);
+    box-shadow: 0 4px 12px var(--shadow-color);
+
+    &:hover {
+        box-shadow: 0 6px 20px var(--shadow-hover);
+    }
+
+    &--selected {
+        border: 3px solid var(--accent-primary);
+        box-shadow: 0 8px 24px var(--shadow-hover);
+    }
+}
+
+@mixin themed-system-menu {
+    background: var(--system-menu-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-color);
+}
+
+@mixin themed-system-icon {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 2px solid transparent;
+    box-shadow: 0 2px 4px var(--shadow-color);
+
+    &:hover {
+        background-color: var(--accent-primary);
+        color: white;
+        box-shadow: 0 4px 8px var(--shadow-hover);
+    }
+
+    &--active {
+        background-color: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+}
+
+@mixin themed-top-bar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+@mixin themed-settings-overlay {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px var(--shadow-hover);
+}
+
+@mixin themed-battery-icon($level: 85) {
+    border: 1.5px solid var(--text-secondary);
+
+    &::before {
+        background: var(--text-secondary);
+    }
+
+    &::after {
+        @if $level >60 {
+            background: #4CAF50;
+        }
+
+        @else if $level >20 {
+            background: #FF9800;
+        }
+
+        @else {
+            background: #F44336;
+        }
+    }
+}
+
+@mixin themed-wifi-icon {
+
+    &::before,
+    &::after {
+        border-color: var(--text-secondary);
+    }
+}
+
+@mixin themed-switch-icon {
+    border-color: var(--text-secondary);
+
+    &::before,
+    &::after {
+        background: var(--text-secondary);
+    }
+}
+
+@mixin themed-focus-ring {
+    &:focus-visible {
+        outline: 2px solid var(--accent-primary);
+        outline-offset: 2px;
+    }
+}
+
+@mixin themed-notification-badge {
+    background: #FF4444;
+    color: white;
+    @include pulse-animation(2s);
+}
+
+.theme-light {
+    .game-tile__overlay {
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    }
+
+    .user-avatar {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.theme-dark {
+    .game-tile__overlay {
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    }
+
+    .user-avatar {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@media (prefers-contrast: high) {
+
+    .theme-light,
+    .theme-dark {
+        --border-color: currentColor;
+        --accent-primary: #000000;
+        --accent-secondary: #FFFFFF;
+    }
+
+    .theme-light {
+        --text-primary: #000000;
+        --text-secondary: #333333;
+        --bg-primary: #FFFFFF;
+        --bg-secondary: #F5F5F5;
+    }
+
+    .theme-dark {
+        --text-primary: #FFFFFF;
+        --text-secondary: #CCCCCC;
+        --bg-primary: #000000;
+        --bg-secondary: #1A1A1A;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

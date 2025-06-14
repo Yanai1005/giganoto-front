@@ -1,0 +1,337 @@
+// _game-tile.scss - ゲームタイルスタイル
+
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.game-tile {
+    @include game-tile-base;
+    @include themed-game-tile;
+    @include focus-ring;
+
+    // ベースの状態
+    &__container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    // ゲーム画像部分
+    &__image {
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: var(--bg-secondary);
+        @include flex-center;
+        font-size: 3rem;
+        position: relative;
+
+        // 画像読み込み失敗時のフォールバック
+        &::before {
+            content: '';
+            @include absolute-full;
+            background: linear-gradient(135deg,
+                    var(--accent-primary) 0%,
+                    var(--accent-secondary) 100%);
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        // 画像が存在しない場合のアイコン表示
+        &--placeholder {
+            &::before {
+                opacity: 0.2;
+            }
+        }
+    }
+
+    // ゲームタイトル
+    &__title {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: $spacing-5 $spacing-3 $spacing-3;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+        color: white;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        line-height: $line-height-tight;
+        z-index: 3;
+
+        @include text-truncate-lines(2);
+    }
+
+    // カテゴリ表示
+    &__category {
+        position: absolute;
+        top: $spacing-2;
+        right: $spacing-2;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 3;
+    }
+
+    // プレイ時間表示
+    &__playtime {
+        position: absolute;
+        top: $spacing-2;
+        left: $spacing-2;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        @include backdrop-blur(4px);
+        z-index: 3;
+    }
+
+    // 状態修飾子
+    &--selected {
+        transform: scale(1.05);
+        border: 3px solid var(--accent-primary);
+        box-shadow: 0 8px 24px var(--shadow-hover);
+        z-index: 2;
+    }
+
+    &--loading {
+        .game-tile__image {
+            background: var(--bg-secondary);
+
+            &::after {
+                content: '';
+                @include absolute-center;
+                width: 40px;
+                height: 40px;
+                border: 3px solid var(--border-color);
+                border-top: 3px solid var(--accent-primary);
+                border-radius: $border-radius-full;
+                animation: spin 1s linear infinite;
+            }
+        }
+    }
+
+    // ホバー効果
+    &:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px var(--shadow-hover);
+
+        .game-tile__title {
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+        }
+
+        .game-tile__category,
+        .game-tile__playtime {
+            background: rgba(0, 0, 0, 0.8);
+        }
+    }
+
+    // アクティブ状態
+    &:active {
+        transform: scale(0.98);
+    }
+
+    // 新しいゲームバッジ
+    &--new {
+        &::after {
+            content: 'NEW';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: #FF4444;
+            color: white;
+            padding: $spacing-1 $spacing-2;
+            border-radius: $border-radius-sm;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-bold;
+            z-index: 4;
+            @include pulse-animation(2s);
+        }
+    }
+
+    // 最近プレイしたゲームのインジケーター
+    &--recent {
+        .game-tile__title {
+            &::before {
+                content: '●';
+                color: #4CAF50;
+                margin-right: $spacing-1;
+            }
+        }
+    }
+
+    // お気に入りマーク
+    &--favorite {
+        .game-tile__category {
+            &::before {
+                content: '♥';
+                color: #FF4081;
+                margin-right: $spacing-1;
+            }
+        }
+    }
+}
+
+// ========================================
+// ゲームグリッドコンテナ
+// ========================================
+
+.game-grid {
+    display: flex;
+    gap: $game-tile-gap;
+    padding: $top-bar-height + $spacing-5 $spacing-6 $system-menu-height + $spacing-5;
+    overflow-x: auto;
+    align-items: center;
+    height: 100vh;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+
+    @include scrollbar-hidden;
+
+    .game-tile {
+        scroll-snap-align: center;
+        flex-shrink: 0;
+    }
+
+    // レスポンシブ対応
+    @include sm {
+        justify-content: center;
+        flex-wrap: wrap;
+        overflow-x: visible;
+        overflow-y: auto;
+        scroll-snap-type: none;
+
+        .game-tile {
+            scroll-snap-align: none;
+        }
+    }
+}
+
+// ========================================
+// キーボードナビゲーション
+// ========================================
+
+.game-tile {
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        @include themed-focus-ring;
+        z-index: 3;
+    }
+}
+
+// ========================================
+// アニメーション
+// ========================================
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+// ゲームタイルの入場アニメーション
+.game-tile {
+    @for $i from 1 through 10 {
+        &:nth-child(#{$i}) {
+            animation: slideInRight ($duration-smooth + ($i * 50ms)) ease-out;
+            animation-fill-mode: both;
+        }
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+// ========================================
+// ダークモード特有のスタイル
+// ========================================
+
+.theme-dark {
+    .game-tile {
+        &__image {
+            // ダークテーマでは少し明度を下げる
+            filter: brightness(0.9);
+        }
+
+        &--selected {
+            .game-tile__image {
+                filter: brightness(1);
+            }
+        }
+    }
+}
+
+// ========================================
+// ライトモード特有のスタイル
+// ========================================
+
+.theme-light {
+    .game-tile {
+
+        &__category,
+        &__playtime {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-primary);
+            backdrop-filter: blur(8px);
+        }
+
+        &__title {
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
+            color: var(--text-primary);
+        }
+    }
+}
+
+// ========================================
+// ユーティリティクラス
+// ========================================
+
+.game-tile-skeleton {
+    @include game-tile-base;
+    background: var(--bg-secondary);
+
+    &::before {
+        content: '';
+        @include absolute-full;
+        background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent);
+        animation: shimmer 1.5s infinite;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
