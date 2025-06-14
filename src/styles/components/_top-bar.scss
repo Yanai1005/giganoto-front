@@ -1,4 +1,4 @@
-// _top-bar.scss - トップバーのスタイル
+// _top-bar.scss - 改善されたトップバーのスタイル
 
 @use '../globals/variables' as *;
 @use '../globals/mixins' as *;
@@ -42,9 +42,11 @@
     // 時刻表示
     &__time {
         font-variant-numeric: tabular-nums;
-        min-width: 40px;
+        min-width: 50px;
         text-align: center;
         font-weight: $font-weight-medium;
+        font-size: $font-size-base;
+        @include themed-text('primary');
     }
 
     // ステータスアイコン
@@ -95,17 +97,27 @@
 }
 
 // ========================================
+// バッテリー表示コンテナ
+// ========================================
+
+.battery-container {
+    @include flex-center;
+    gap: $spacing-2;
+    position: relative;
+}
+
+// ========================================
 // バッテリーアイコン
 // ========================================
 
 .battery-icon {
-    @include themed-battery-icon;
     position: relative;
-    width: 24px;
-    height: 12px;
+    width: 28px;
+    height: 14px;
+    border: 2px solid var(--text-secondary);
     border-radius: 2px;
     opacity: 0.8;
-    transition: opacity $transition-fast;
+    transition: all $transition-fast;
 
     &:hover {
         opacity: 1;
@@ -115,10 +127,11 @@
     &::before {
         content: '';
         position: absolute;
-        right: -3px;
+        right: -4px;
         top: 3px;
-        width: 2px;
-        height: 6px;
+        width: 3px;
+        height: 8px;
+        background: var(--text-secondary);
         border-radius: 0 1px 1px 0;
     }
 
@@ -126,122 +139,218 @@
     &::after {
         content: '';
         position: absolute;
-        left: 1px;
-        top: 1px;
-        right: 1px;
-        bottom: 1px;
+        left: 2px;
+        top: 2px;
+        bottom: 2px;
         border-radius: 1px;
         transition: all $transition-smooth;
     }
 
-    // バッテリーレベル別の色
+    // 充電インジケーター
+    &__charging-indicator {
+        position: absolute;
+        right: -12px;
+        top: -2px;
+        font-size: 12px;
+        color: #FFD700;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    // バッテリーレベル別の色と幅（白黒統一）
     &--high::after {
-        background: #4CAF50;
-        width: calc(100% - 2px);
+        background: var(--text-primary);
+        width: calc(100% - 4px);
     }
 
     &--medium::after {
-        background: #FF9800;
-        width: calc(60% - 2px);
+        background: var(--text-primary);
+        width: calc(60% - 4px);
     }
 
     &--low::after {
-        background: #F44336;
-        width: calc(20% - 2px);
+        background: var(--text-primary);
+        width: calc(30% - 4px);
     }
 
     &--critical::after {
-        background: #F44336;
-        width: calc(10% - 2px);
-        @include pulse-animation(1s);
+        background: var(--text-primary);
+        width: calc(15% - 4px);
+        animation: pulse 1s ease-in-out infinite;
+    }
+
+    &--charging::after {
+        background: var(--text-primary);
+        width: var(--battery-width, calc(100% - 4px));
+        animation: charging-animation 2s ease-in-out infinite;
     }
 }
 
-// ========================================
-// Wi-Fiアイコン
-// ========================================
+// バッテリーパーセンテージ表示
+.battery-percentage {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    @include themed-text('primary');
+    min-width: 35px;
+    text-align: right;
+}
+
+// Wi-Fiアイコン（Lucide React）用のスタイル
 
 .wifi-icon {
-    @include themed-wifi-icon;
-    position: relative;
-    width: 18px;
-    height: 14px;
+    @include flex-center;
+    transition: all $transition-fast;
     opacity: 0.8;
-    transition: opacity $transition-fast;
 
     &:hover {
         opacity: 1;
     }
 
-    &::before,
-    &::after {
-        content: '';
-        position: absolute;
-        border: 2px solid currentColor;
-        border-radius: 0 0 20px 20px;
-        border-top: none;
+    // SVGアイコン用のスタイル
+    &__svg {
+        transition: all $transition-fast;
     }
 
-    // 外側の電波
-    &::before {
-        width: 18px;
-        height: 14px;
-    }
+    // 接続状態別のスタイル（白黒表示）
+    &--disconnected {
+        opacity: 0.3;
 
-    // 内側の電波
-    &::after {
-        width: 12px;
-        height: 9px;
-        left: 3px;
-        top: 3px;
-    }
-
-    // 電波強度別の表示
-    &--strong {
-
-        &::before,
-        &::after {
-            opacity: 1;
-        }
-    }
-
-    &--medium {
-        &::before {
-            opacity: 0.3;
-        }
-
-        &::after {
-            opacity: 1;
+        .wifi-icon__svg {
+            color: var(--text-secondary);
         }
     }
 
     &--weak {
+        opacity: 0.5;
 
-        &::before,
-        &::after {
-            opacity: 0.3;
+        .wifi-icon__svg {
+            color: var(--text-secondary);
         }
     }
 
-    &--disconnected {
+    &--medium {
+        opacity: 0.7;
 
-        &::before,
-        &::after {
-            opacity: 0.2;
-        }
-
-        // 切断マーク
-        &::before {
-            content: '×';
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: $font-size-sm;
-            width: 18px;
-            height: 14px;
+        .wifi-icon__svg {
+            color: var(--text-secondary);
         }
     }
+
+    &--strong {
+        opacity: 1;
+
+        .wifi-icon__svg {
+            color: var(--text-primary);
+        }
+    }
+}
+
+// ダークモード対応
+.theme-dark {
+    .wifi-icon {
+        &--disconnected .wifi-icon__svg {
+            color: #888888;
+        }
+
+        &--weak .wifi-icon__svg {
+            color: #AAAAAA;
+        }
+
+        &--medium .wifi-icon__svg {
+            color: #CCCCCC;
+        }
+
+        &--strong .wifi-icon__svg {
+            color: #FFFFFF;
+        }
+    }
+}
+
+// ライトモード対応
+.theme-light {
+    .wifi-icon {
+        &--disconnected .wifi-icon__svg {
+            color: #CCCCCC;
+        }
+
+        &--weak .wifi-icon__svg {
+            color: #999999;
+        }
+
+        &--medium .wifi-icon__svg {
+            color: #666666;
+        }
+
+        &--strong .wifi-icon__svg {
+            color: #333333;
+        }
+    }
+}
+
+// アニメーション効果
+.wifi-icon__svg {
+    &:hover {
+        transform: scale(1.1);
+    }
+}
+
+// 高コントラストモード
+@media (prefers-contrast: high) {
+    .wifi-icon {
+        .wifi-icon__svg {
+            color: currentColor !important;
+        }
+    }
+
+    .theme-dark .wifi-icon {
+        .wifi-icon__svg {
+            color: #FFFFFF !important;
+        }
+    }
+
+    .theme-light .wifi-icon {
+        .wifi-icon__svg {
+            color: #000000 !important;
+        }
+    }
+}
+
+// ========================================
+// アニメーション
+// ========================================
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes charging-animation {
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+// ========================================
+// JavaScript用のCSS変数設定
+// ========================================
+
+.battery-icon {
+    // JavaScriptから動的に設定される変数
+    --battery-width: 100%;
 }
 
 // ========================================
@@ -263,12 +372,43 @@
         &__home-indicator {
             font-size: $font-size-base;
         }
+
+        &__time {
+            font-size: $font-size-sm;
+            min-width: 45px;
+        }
     }
 
     .user-avatar {
         width: 36px;
         height: 36px;
         font-size: $font-size-lg;
+    }
+
+    .battery-icon {
+        width: 24px;
+        height: 12px;
+
+        &::before {
+            right: -3px;
+            top: 2px;
+            width: 2px;
+            height: 8px;
+        }
+
+        &__charging-indicator {
+            right: -10px;
+            font-size: 10px;
+        }
+    }
+
+    .battery-percentage {
+        font-size: $font-size-xs;
+        min-width: 30px;
+    }
+
+    .wifi-icon {
+        font-size: $font-size-base;
     }
 }
 
@@ -280,6 +420,18 @@
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
+
+    .battery-icon {
+        border-color: #CCCCCC;
+
+        &::before {
+            background: #CCCCCC;
+        }
+
+        &::after {
+            background: #FFFFFF !important;
+        }
+    }
 }
 
 // ========================================
@@ -289,5 +441,67 @@
 .theme-light {
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .battery-icon {
+        border-color: #666666;
+
+        &::before {
+            background: #666666;
+        }
+
+        &::after {
+            background: #333333 !important;
+        }
+    }
+}
+
+// ========================================
+// アクセシビリティ改善
+// ========================================
+
+@media (prefers-reduced-motion: reduce) {
+    .battery-icon {
+
+        &__charging-indicator,
+        &--critical::after,
+        &--charging::after {
+            animation: none !important;
+        }
+    }
+}
+
+// ========================================
+// 高コントラストモード対応
+// ========================================
+
+@media (prefers-contrast: high) {
+    .battery-icon {
+        border-width: 3px;
+
+        &::before {
+            background: currentColor;
+        }
+
+        &::after {
+            background: currentColor !important;
+        }
+    }
+
+    .battery-percentage,
+    .top-bar__time {
+        font-weight: $font-weight-bold;
+    }
+
+    .theme-dark .battery-icon {
+        &::after {
+            background: #FFFFFF !important;
+        }
+    }
+
+    .theme-light .battery-icon {
+        &::after {
+            background: #000000 !important;
+        }
     }
 }
