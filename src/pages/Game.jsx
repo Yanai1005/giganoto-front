@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import GameRegistry from '../gameManager/GameRegistry';
 
@@ -6,17 +6,23 @@ const Game = () => {
     const gameRef = useRef(null);
     const phaserGameRef = useRef(null);
     const location = useLocation();
+    const [gameControls, setGameControls] = useState('');
 
-    const gameType = location.state?.gameType || 'platformer';
+    const gameType = location.state?.gameType || 'puzzle';
     const gameTitle = location.state?.gameTitle || 'Game';
 
     useEffect(() => {
         const loadGame = async () => {
-            // ゲームレジストリを初期化（まだ初期化されていない場合）
             if (!GameRegistry.isInitialized()) {
-                // gamesDataをインポートして初期化
                 const gamesData = await import('../data/games.json');
                 GameRegistry.initializeFromJson(gamesData.default);
+            }
+
+            const gameTypeConfig = GameRegistry.getGameTypeConfig(gameType);
+            if (gameTypeConfig && gameTypeConfig.controls) {
+                setGameControls(gameTypeConfig.controls);
+            } else {
+                setGameControls('ゲームの操作方法をお楽しみください');
             }
 
             if (gameRef.current && !phaserGameRef.current) {
@@ -28,7 +34,6 @@ const Game = () => {
                 } catch (error) {
                     console.error('Failed to load game:', error);
 
-                    // エラー表示をユーザーに
                     if (gameRef.current) {
                         gameRef.current.innerHTML = `
                             <div style="
@@ -112,19 +117,9 @@ const Game = () => {
                     textAlign: 'center'
                 }}>
                     <h3 style={{ margin: '0 0 10px 0', color: '#ecf0f1' }}>操作方法</h3>
-                    {gameType === 'platformer' ? (
-                        <p style={{ margin: 0, color: '#bdc3c7' }}>
-                            矢印キーまたはWASDキーで移動・ジャンプ
-                        </p>
-                    ) : gameType === 'puzzle' ? (
-                        <p style={{ margin: 0, color: '#bdc3c7' }}>
-                            クリックでタイル選択、隣接タイルとスワップして3つ以上揃えよう
-                        </p>
-                    ) : (
-                        <p style={{ margin: 0, color: '#bdc3c7' }}>
-                            ゲームの操作方法をお楽しみください
-                        </p>
-                    )}
+                    <p style={{ margin: 0, color: '#bdc3c7' }}>
+                        {gameControls}
+                    </p>
                 </div>
             </div>
         </div>

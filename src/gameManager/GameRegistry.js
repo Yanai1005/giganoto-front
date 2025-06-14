@@ -2,20 +2,18 @@ class GameRegistry {
     static games = new Map();
     static currentGameInstance = null;
     static debugMode = true;
+    static gameTypeConfig = null;
 
-    // デバッグログ
     static debugLog(message, data = null) {
         if (this.debugMode) {
             console.log(`[GameRegistry] ${message}`, data || '');
         }
     }
 
-    // エラーログ
     static errorLog(message, error = null) {
         console.error(`[GameRegistry ERROR] ${message}`, error || '');
     }
 
-    // ゲームを登録
     static register(id, gameConfig) {
         this.games.set(id, {
             id,
@@ -27,26 +25,22 @@ class GameRegistry {
         this.debugLog(`Game registered: ${id}`, gameConfig.title);
     }
 
-    // ゲーム情報を取得
     static getGame(id) {
         const game = this.games.get(id);
         this.debugLog(`Getting game: ${id}`, game ? 'Found' : 'Not found');
         return game;
     }
 
-    // 全ゲームを取得
     static getAllGames() {
         const games = Array.from(this.games.values());
         this.debugLog(`Total registered games: ${games.length}`);
         return games;
     }
 
-    // ゲームをロード
     static async loadGame(gameId, container) {
         this.debugLog(`Starting to load game: ${gameId}`);
 
         try {
-            // 前のゲームをクリーンアップ
             this.cleanupCurrentGame();
 
             const gameConfig = this.getGame(gameId);
@@ -58,12 +52,10 @@ class GameRegistry {
 
             this.debugLog(`Game config found for ${gameId}:`, gameConfig);
 
-            // ゲームモジュールをロード
             this.debugLog(`Loading game module for: ${gameId}`);
             const gameModule = await gameConfig.loader();
             this.debugLog(`Game module loaded:`, gameModule);
 
-            // コンテナをクリア
             if (container) {
                 container.innerHTML = '';
                 this.debugLog(`Container cleared for game: ${gameId}`);
@@ -71,7 +63,6 @@ class GameRegistry {
                 this.errorLog('No container provided for game loading');
             }
 
-            // ゲームインスタンスを作成
             this.debugLog(`Creating game instance for: ${gameId}`);
             const gameInstance = gameModule.initializeGame(container);
             this.currentGameInstance = gameInstance;
@@ -84,7 +75,6 @@ class GameRegistry {
         }
     }
 
-    // 現在のゲームをクリーンアップ
     static cleanupCurrentGame() {
         if (this.currentGameInstance) {
             this.debugLog('Cleaning up current game instance');
@@ -98,7 +88,6 @@ class GameRegistry {
         this.currentGameInstance = null;
     }
 
-    // JSONデータからゲームを自動登録
     static initializeFromJson(gamesData) {
         this.debugLog('Initializing games from JSON data');
 
@@ -112,9 +101,11 @@ class GameRegistry {
             return;
         }
 
+        this.gameTypeConfig = gamesData.gameTypes || {};
+        this.debugLog('Game type configuration loaded:', this.gameTypeConfig);
+
         this.debugLog(`Found ${gamesData.games.length} games in JSON data`);
 
-        // gamesDataの各ゲームを登録
         gamesData.games.forEach((gameData, index) => {
             this.debugLog(`Processing game ${index + 1}:`, gameData);
 
@@ -138,36 +129,26 @@ class GameRegistry {
         const registeredGames = this.getAllGames();
         this.debugLog('Games registration complete. Registered games:', registeredGames.map(g => g.id));
     }
-
-    // ゲームタイプに基づいて動的にローダーを生成
-    // ゲームタイプに基づいて動的にローダーを生成
     static getDynamicLoader(gameType) {
         this.debugLog(`Getting dynamic loader for: ${gameType}`);
 
-        const gameMap = {
-            'puzzle': () => import('../games/puzzle/game.js'),
-            'shooter': () => import('../games/shooter/game.js') // ★この行を追加
-        };
-
-        const loader = gameMap[gameType];
-        if (!loader) {
-            this.errorLog(`No loader found for game type: ${gameType}`);
-            this.debugLog('Available game types:', Object.keys(gameMap));
-            throw new Error(`No loader found for game type: ${gameType}`);
+        const gameTypeInfo = this.gameTypeConfig && this.gameTypeConfig[gameType];
+        if (gameTypeInfo && gameTypeInfo.modulePath) {
+            this.debugLog(`Using module path from JSON config: ${gameTypeInfo.modulePath}`);
+            return import(/* @vite-ignore */ gameTypeInfo.modulePath);
         }
 
-        this.debugLog(`Loader found for: ${gameType}`);
-        return loader(); // loader() は Promise を返すので、呼び出し元は await する必要があります
+        this.errorLog(`No configuration found for game type: ${gameType}`);
+        this.debugLog('Available game types from JSON:', Object.keys(this.gameTypeConfig || {}));
+        throw new Error(`Game type "${gameType}" not found in JSON configuration. Please add it to gameTypes in games.json`);
     }
 
-    // 初期化状態をチェック
     static isInitialized() {
         const initialized = this.games.size > 0;
         this.debugLog(`Initialization status: ${initialized ? 'Initialized' : 'Not initialized'}`);
         return initialized;
     }
 
-    // 手動でゲームを追加（開発用）
     static addGame(gameData) {
         this.debugLog('Manually adding game:', gameData);
 
@@ -184,20 +165,44 @@ class GameRegistry {
         }
     }
 
-    // デバッグ情報を表示
+    static addGameType(gameType, config) {
+        this.debugLog(`Adding new game type: ${gameType}`, config);
+
+        if (!this.gameTypeConfig) {
+            this.gameTypeConfig = {};
+        }
+
+        this.gameTypeConfig[gameType] = {
+            name: config.name || gameType,
+            description: config.description || '',
+            controls: config.controls || '',
+            modulePath: config.modulePath || `../games/${gameType}/game.js`
+        };
+
+        this.debugLog(`Game type ${gameType} added successfully`);
+    }
+
     static getDebugInfo() {
         return {
             gamesCount: this.games.size,
             registeredGames: Array.from(this.games.keys()),
             currentGame: this.currentGameInstance ? 'Active' : 'None',
-            initialized: this.isInitialized()
+            initialized: this.isInitialized(),
+            gameTypes: Object.keys(this.gameTypeConfig || {})
         };
     }
 
-    // デバッグモードの切り替え
     static setDebugMode(enabled) {
         this.debugMode = enabled;
         this.debugLog(`Debug mode ${enabled ? 'enabled' : 'disabled'}`);
+    }
+
+    static getGameTypeConfig(gameType) {
+        return this.gameTypeConfig && this.gameTypeConfig[gameType];
+    }
+
+    static getAllGameTypes() {
+        return this.gameTypeConfig || {};
     }
 }
 
