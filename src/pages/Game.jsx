@@ -96,7 +96,9 @@ const Game = () => {
             }}>
                 <div
                     ref={gameRef}
+                    id="game-container"
                     style={{
+                        position: 'relative',
                         border: '2px solid #34495e',
                         borderRadius: '8px',
                         backgroundColor: '#34495e',
