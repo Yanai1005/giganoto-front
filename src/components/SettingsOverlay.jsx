@@ -1,74 +1,45 @@
-import React, { useState } from 'react';
-import {
-    CircleDot,
-    FolderOpen,
-    FileText,
-    ShoppingBag,
-    Monitor,
-    Database,
-    Gamepad2,
-    Tablet,
-    Settings,
-    Power,
-    MonitorSpeaker
-} from 'lucide-react';
+import PropTypes from 'prop-types';
 
-const SystemMenu = () => {
-    const [selectedIcon, setSelectedIcon] = useState(4);
+const SettingsOverlay = ({ currentTheme, onThemeChange, onClose }) => {
+    const handleThemeToggle = () => {
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        onThemeChange(newTheme);
+    };
 
-    const systemIcons = [
-        { id: 'online', icon: CircleDot, title: 'Nintendo Switch Online', bgColor: '#E60012' },
-        { id: 'folder', icon: FolderOpen, title: 'ユーザー', bgColor: '#FF7A00' },
-        { id: 'news', icon: FileText, title: 'ニュース', bgColor: '#00B894' },
-        { id: 'shop', icon: ShoppingBag, title: 'ニンテンドーeショップ', bgColor: '#E84393' },
-        { id: 'mii', icon: Monitor, title: 'Mii', bgColor: '#0984E3' },
-        { id: 'database', icon: Database, title: 'データ管理', bgColor: '#00CEC9' },
-        { id: 'controller', icon: Gamepad2, title: 'コントローラー', bgColor: '#636E72' },
-        { id: 'tablet', icon: Tablet, title: 'アルバム', bgColor: '#636E72' },
-        { id: 'settings', icon: Settings, title: '設定', bgColor: '#636E72' },
-        { id: 'power', icon: Power, title: 'スリープ', bgColor: '#636E72' }
-    ];
-
-    const handleIconClick = (index) => {
-        setSelectedIcon(index);
-        console.log(`${systemIcons[index].title} clicked`);
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
     };
 
     return (
-        <div className="nintendo-system-menu">
-            <div className="nintendo-system-menu__bar">
-                {systemIcons.map((iconData, index) => {
-                    const IconComponent = iconData.icon;
-                    const isSelected = selectedIcon === index;
+        <div
+            className="settings-overlay"
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+            role="dialog"
+            aria-label="設定メニュー"
+        >
+            <div className="settings-overlay__title">設定</div>
 
-                    return (
-                        <div
-                            key={iconData.id}
-                            className={`nintendo-system-menu__icon ${isSelected ? 'nintendo-system-menu__icon--selected' : ''}`}
-                            onClick={() => handleIconClick(index)}
-                        >
-                            <IconComponent
-                                size={22}
-                                color={iconData.bgColor}
-                                strokeWidth={2.2}
-                            />
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div
-                className="nintendo-system-menu__pc-icon"
-                onClick={() => console.log('PC mode clicked')}
-            >
-                <MonitorSpeaker
-                    size={28}
-                    color="rgba(255, 255, 255, 0.8)"
-                    strokeWidth={2}
-                />
+            <div className="settings-overlay__item">
+                <div className="settings-overlay__label">テーマ</div>
+                <button
+                    className={`theme-toggle theme-toggle--${currentTheme}`}
+                    onClick={handleThemeToggle}
+                    aria-label={`現在: ${currentTheme === 'dark' ? 'ダーク' : 'ライト'}テーマ`}
+                >
+                    {currentTheme === 'dark' ? 'ライト' : 'ダーク'}
+                </button>
             </div>
         </div>
     );
 };
 
-export default SystemMenu;
+SettingsOverlay.propTypes = {
+    currentTheme: PropTypes.oneOf(['light', 'dark']).isRequired,
+    onThemeChange: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired
+};
+
+export default SettingsOverlay;
