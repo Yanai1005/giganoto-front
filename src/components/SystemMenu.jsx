@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     CircleDot,
     FolderOpen,
@@ -9,7 +9,8 @@ import {
     Gamepad2,
     Tablet,
     Settings,
-    Power
+    Power,
+    MonitorSpeaker
 } from 'lucide-react';
 
 const SystemMenu = () => {
@@ -37,10 +38,13 @@ const SystemMenu = () => {
     return (
         <div style={{
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'center',
             width: '100%',
-            padding: '20px'
+            padding: '20px',
+            position: 'relative'
         }}>
+            {/* メインシステムメニューバー */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -103,6 +107,40 @@ const SystemMenu = () => {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* PCアイコン - メニューバーの下に独立して配置 */}
+            <div style={{
+                width: '52px',
+                height: '52px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                opacity: 0.7,
+                marginTop: '20px',
+                alignSelf: 'flex-start',
+                marginLeft: '20px'
+            }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.opacity = '0.7';
+                }}
+                onClick={() => console.log('PC mode clicked')}
+            >
+                <MonitorSpeaker
+                    size={28}
+                    color="rgba(255, 255, 255, 0.8)"
+                    strokeWidth={2}
+                    style={{
+                        filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5))'
+                    }}
+                />
             </div>
         </div>
     );
