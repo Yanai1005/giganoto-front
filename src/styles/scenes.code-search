@@ -1,0 +1,18 @@
+# Query: scenes
+# ContextLines: 1
+
+2 Œ‚ÌŒ‹‰Ê - 2 ƒtƒ@ƒCƒ‹
+
+src\games\puzzle\game.js:
+  1  import Phaser from 'phaser';
+  2: import GameScene from './scenes/PuzzleScene.js';
+  3  
+
+src\games\shooter\game.js:
+  2  import Phaser from 'phaser';
+  3: import GameScene from './scenes/GameScene.js';
+  4  
+src\games\escape\game.js:
+  2  import Phaser from 'phaser';
+  3: import GameScene from './scenes/GameScene.js';
+  4  
