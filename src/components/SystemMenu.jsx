@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     CircleDot,
     FolderOpen,
@@ -14,9 +14,8 @@ import {
 } from 'lucide-react';
 
 const SystemMenu = () => {
-    const [selectedIcon, setSelectedIcon] = useState(4); // データ管理を選択状態に
+    const [selectedIcon, setSelectedIcon] = useState(4);
 
-    // 実際のNintendo Switchのシステムアイコン
     const systemIcons = [
         { id: 'online', icon: CircleDot, title: 'Nintendo Switch Online', bgColor: '#E60012' },
         { id: 'folder', icon: FolderOpen, title: 'ユーザー', bgColor: '#FF7A00' },
@@ -36,27 +35,8 @@ const SystemMenu = () => {
     };
 
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-            padding: '20px',
-            position: 'relative'
-        }}>
-            {/* メインシステムメニューバー */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0px',
-                backgroundColor: 'rgba(45, 45, 45, 0.95)',
-                borderRadius: '50px',
-                padding: '12px 20px',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                position: 'relative'
-            }}>
+        <div className="nintendo-system-menu">
+            <div className="nintendo-system-menu__bar">
                 {systemIcons.map((iconData, index) => {
                     const IconComponent = iconData.icon;
                     const isSelected = selectedIcon === index;
@@ -64,82 +44,27 @@ const SystemMenu = () => {
                     return (
                         <div
                             key={iconData.id}
+                            className={`nintendo-system-menu__icon ${isSelected ? 'nintendo-system-menu__icon--selected' : ''}`}
                             onClick={() => handleIconClick(index)}
-                            style={{
-                                position: 'relative',
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '8px',
-                                background: 'transparent',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                                transform: isSelected ? 'scale(1.08)' : 'scale(1)',
-                                margin: '0 2px',
-                                boxShadow: isSelected
-                                    ? `0 4px 16px rgba(255, 255, 255, 0.2)`
-                                    : 'none',
-                                opacity: isSelected ? 1 : 0.7,
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isSelected) {
-                                    e.currentTarget.style.transform = 'scale(1.04)';
-                                    e.currentTarget.style.opacity = '1';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isSelected) {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.opacity = '0.7';
-                                }
-                            }}
                         >
                             <IconComponent
                                 size={22}
                                 color={iconData.bgColor}
                                 strokeWidth={2.2}
-                                style={{
-                                    filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5))'
-                                }}
                             />
                         </div>
                     );
                 })}
             </div>
 
-            {/* PCアイコン - メニューバーの下に独立して配置 */}
-            <div style={{
-                width: '52px',
-                height: '52px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                opacity: 0.7,
-                marginTop: '20px',
-                alignSelf: 'flex-start',
-                marginLeft: '20px'
-            }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.opacity = '0.7';
-                }}
+            <div
+                className="nintendo-system-menu__pc-icon"
                 onClick={() => console.log('PC mode clicked')}
             >
                 <MonitorSpeaker
                     size={28}
                     color="rgba(255, 255, 255, 0.8)"
                     strokeWidth={2}
-                    style={{
-                        filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5))'
-                    }}
                 />
             </div>
         </div>
