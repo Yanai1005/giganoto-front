@@ -1,58 +1,72 @@
 {
-    "games": [
-        {
-            "id": 2,
-            "title": "Gem Matcher",
-            "description": "宝石を組み合わせるマッチ3パズルゲーム",
-            "image": "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop",
-            "path": "/game",
-            "gameType": "puzzle"
-        },
-        {
-            "id": 3,
-            "title": "Space Shooter",
-            "description": "宇宙を舞台にした縦スクロールシューティング",
-            "image": "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop",
-            "path": "/game",
-            "gameType": "shooter"
-        }
-    ],
-    "gameTypes": {
-        "puzzle": {
-            "name": "パズル",
-            "description": "思考力を試すパズルゲーム",
-            "controls": "クリックでタイル選択、隣接タイルとスワップして3つ以上揃えよう",
-            "modulePath": "../games/puzzle/game.js"
-        },
-        "shooter": {
-            "name": "シューティング",
-            "description": "敵を倒すアクションゲーム",
-            "controls": "矢印キーまたはWASDで移動、スペースで射撃",
-            "modulePath": "../games/shooter/game.js"
-        }
+  "games": [
+    {
+      "id": 2,
+      "title": "Gem Matcher",
+      "description": "宝石を組み合わせるマッチ3パズルゲーム",
+      "image": "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "puzzle"
     },
-    "systemIcons": [
-        {
-            "id": "news",
-            "icon": "📰",
-            "title": "ニュース",
-            "color": "#FF6B6B"
-        },
-        {
-            "id": "controller",
-            "icon": "🎮",
-            "title": "コントローラー",
-            "color": "#45B7D1"
-        },
-        {
-            "id": "settings",
-            "icon": "⚙️",
-            "title": "設定",
-            "color": "#96CEB4"
-        }
-    ],
-    "userProfile": {
-        "username": "Player",
-        "avatar": "👤"
+    {
+      "id": 3,
+      "title": "Space Shooter",
+      "description": "宇宙を舞台にした縦スクロールシューティング",
+      "image": "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "shooter"
+    },
+    {
+      "id": 4,
+      "title": "Escape Room",
+      "description": "二人で部屋から部屋から脱出するゲーム",
+      "image": "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "escape"
     }
+  ],
+  "gameTypes": {
+    "puzzle": {
+      "name": "パズル",
+      "description": "思考力を試すパズルゲーム",
+      "controls": "クリックでタイル選択、隣接タイルとスワップして3つ以上揃えよう",
+      "modulePath": "../games/puzzle/game.js"
+    },
+    "shooter": {
+      "name": "シューティング",
+      "description": "敵を倒すアクションゲーム",
+      "controls": "矢印キーまたはWASDで移動、スペースで射撃",
+      "modulePath": "../games/shooter/game.js"
+    },
+    "escape": {
+      "name": "脱出ゲーム",
+      "description": "謎を解いて部屋から脱出するゲーム",
+      "controls": "クリックでアイテムを調べ、二人を同時操作しながら謎を解いて脱出または障害物をうまくよけながら脱出しよう",
+      "modulePath": "../games/escape/game.js"
+    }
+  },
+  "systemIcons": [
+    {
+      "id": "news",
+      "icon": "📰",
+      "title": "ニュース",
+      "color": "#FF6B6B"
+    },
+    {
+      "id": "controller",
+      "icon": "🎮",
+      "title": "コントローラー",
+      "color": "#45B7D1"
+    },
+    {
+      "id": "settings",
+      "icon": "⚙️",
+      "title": "設定",
+      "color": "#96CEB4"
+    }
+  ],
+  "userProfile": {
+    "username": "Player",
+    "avatar": "👤"
+  }
 }
