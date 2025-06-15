@@ -8,8 +8,8 @@ const Game = () => {
     const location = useLocation();
     const [gameControls, setGameControls] = useState('');
 
-    const gameType = location.state?.gameType || 'puzzle';
-    const gameTitle = location.state?.gameTitle || 'Game';
+    const gameType = location.state?.gameType;
+    const gameTitle = location.state?.gameTitle;
 
     useEffect(() => {
         const loadGame = async () => {
