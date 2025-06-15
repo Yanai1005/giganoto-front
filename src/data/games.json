@@ -30,25 +30,5 @@
             "controls": "矢印キーまたはWASDで移動、スペースで射撃",
             "modulePath": "../games/shooter/game.js"
         }
-    },
-    "systemIcons": [
-        {
-            "id": "news",
-            "icon": "📰",
-            "title": "ニュース",
-            "color": "#FF6B6B"
-        },
-        {
-            "id": "controller",
-            "icon": "🎮",
-            "title": "コントローラー",
-            "color": "#45B7D1"
-        },
-        {
-            "id": "settings",
-            "icon": "⚙️",
-            "title": "設定",
-            "color": "#96CEB4"
-        }
-    ]
+    }
 }
