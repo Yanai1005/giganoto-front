@@ -17,14 +17,10 @@ const SystemMenu = () => {
     const [selectedIcon, setSelectedIcon] = useState(4);
 
     const systemIcons = [
-        { id: 'online', icon: CircleDot, title: 'Nintendo Switch Online', bgColor: '#E60012' },
-        { id: 'folder', icon: FolderOpen, title: 'ユーザー', bgColor: '#FF7A00' },
+        { id: 'online', icon: CircleDot, title: 'Giganoto', bgColor: '#E60012' },
         { id: 'news', icon: FileText, title: 'ニュース', bgColor: '#00B894' },
-        { id: 'shop', icon: ShoppingBag, title: 'ニンテンドーeショップ', bgColor: '#E84393' },
-        { id: 'mii', icon: Monitor, title: 'Mii', bgColor: '#0984E3' },
-        { id: 'database', icon: Database, title: 'データ管理', bgColor: '#00CEC9' },
+        { id: 'shop', icon: ShoppingBag, title: 'ショップ', bgColor: '#E84393' },
         { id: 'controller', icon: Gamepad2, title: 'コントローラー', bgColor: '#636E72' },
-        { id: 'tablet', icon: Tablet, title: 'アルバム', bgColor: '#636E72' },
         { id: 'settings', icon: Settings, title: '設定', bgColor: '#636E72' },
         { id: 'power', icon: Power, title: 'スリープ', bgColor: '#636E72' }
     ];
