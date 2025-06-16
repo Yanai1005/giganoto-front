@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import ScenarioGame from './ScenarioGame.js';
 
-const config = {
+const config = 
+{
   type: Phaser.AUTO,
   width: 800,
   height: 600,
