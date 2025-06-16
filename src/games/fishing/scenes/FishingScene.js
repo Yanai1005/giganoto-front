@@ -33,6 +33,14 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // #game-containerにposition: relativeと高さを必ず設定
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      gameContainer.style.position = 'relative';
+      gameContainer.style.height = '600px';
+      gameContainer.style.minHeight = '600px';
+    }
+    
     // Phaser UIの作成（2D要素）
     this.createUI();
     
@@ -48,64 +56,146 @@ class GameScene extends Phaser.Scene {
     // 釣り竿の制御
     this.setupFishingRodControls();
     
-    // スコア表示
+    // スコア表示（PhaserのUIは非表示に）
     this.scoreText = this.add.text(16, 16, 'スコア: 0', { 
       fontSize: '32px', 
       fill: '#fff',
       strokeThickness: 3,
       stroke: '#000' 
     });
-    
+    this.scoreText.setVisible(false);
+
+    // おしゃれなHTMLスコアUI
+    let scoreDiv = document.getElementById('score-ui');
+    if (!scoreDiv) {
+      scoreDiv = document.createElement('div');
+      scoreDiv.id = 'score-ui';
+      scoreDiv.style.position = 'absolute';
+      scoreDiv.style.top = '24px';
+      scoreDiv.style.left = '32px';
+      scoreDiv.style.zIndex = '10001';
+      scoreDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
+      scoreDiv.style.color = '#fff';
+      scoreDiv.style.fontSize = '2.2rem';
+      scoreDiv.style.fontWeight = 'bold';
+      scoreDiv.style.padding = '12px 32px';
+      scoreDiv.style.borderRadius = '16px';
+      scoreDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
+      scoreDiv.style.letterSpacing = '0.05em';
+      scoreDiv.style.textShadow = '0 2px 8px #000a';
+      scoreDiv.style.userSelect = 'none';
+      const gameContainer = document.getElementById('game-container');
+      if (gameContainer) gameContainer.appendChild(scoreDiv);
+    }
+    scoreDiv.textContent = 'スコア：0';
+    this.scoreDiv = scoreDiv;
+
+    // おしゃれなHTMLボタンUI
+    let btnArea = document.getElementById('btn-area');
+    if (!btnArea) {
+      btnArea = document.createElement('div');
+      btnArea.id = 'btn-area';
+      const gameContainer = document.getElementById('game-container');
+      if (gameContainer) gameContainer.appendChild(btnArea);
+    }
+    // CSSを強化
+    btnArea.style.position = 'absolute';
+    btnArea.style.left = '0';
+    btnArea.style.right = '0';
+    btnArea.style.bottom = '24px';
+    btnArea.style.width = '100%';
+    btnArea.style.display = 'flex';
+    btnArea.style.justifyContent = 'center';
+    btnArea.style.gap = '32px';
+    btnArea.style.zIndex = '10001';
+    // ボタン生成
+    const makeBtn = (id, text, bg) => {
+      let btn = document.getElementById(id);
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = id;
+        btn.textContent = text;
+        btn.style.background = bg;
+        btn.style.color = '#fff';
+        btn.style.fontSize = '1.3rem';
+        btn.style.fontWeight = 'bold';
+        btn.style.padding = '12px 36px';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '12px';
+        btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+        btn.style.cursor = 'pointer';
+        btn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
+        btn.onmouseover = () => {
+          btn.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+          btn.style.transform = 'scale(1.07)';
+          btn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
+        };
+        btn.onmouseout = () => {
+          btn.style.background = bg;
+          btn.style.transform = 'scale(1)';
+          btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+        };
+        btnArea.appendChild(btn);
+      }
+      return btn;
+    };
+    const castBtn = makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
+    const reelBtn = makeBtn('reel-btn', 'リール', 'linear-gradient(135deg, #396afc 0%, #2948ff 100%)');
+    // イベント
+    castBtn.onclick = () => this.castLine();
+    reelBtn.onclick = () => this.reelLine();
+
     // アニメーションループ
     this.events.on('update', this.update, this);
+
+    // PhaserのcanvasをThree.jsより前面に
+    this.time.delayedCall(100, () => {
+      const canvases = document.querySelectorAll('canvas');
+      canvases.forEach(c => {
+        if (c !== this.threeRenderer.domElement) {
+          c.style.position = 'absolute';
+          c.style.top = '0';
+          c.style.left = '0';
+          c.style.zIndex = '2'; // 2D UIは上層
+        }
+      });
+    });
   }
   
   initThreeJS() {
-    // Three.jsシーン作成
+    // Three.jsの初期化
     this.threeScene = new THREE.Scene();
-    
-    // カメラ設定
-    this.threeCamera = new THREE.PerspectiveCamera(
-      75, 
-      this.scale.width / this.scale.height, 
-      0.1, 
-      1000
-    );
-    // 真上から見下ろすトップビュー
-    this.threeCamera.position.set(0, 20, 0);
+    this.threeCamera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
+    this.threeCamera.position.set(0, 20, 0); // 真上から見下ろす
     this.threeCamera.lookAt(0, 0, 0);
-    this.threeCamera.up.set(0, 0, -1);
+    this.threeCamera.up.set(0, 0, -1); // Y軸が上方向
     
-    // レンダラー作成とDOM追加
-    const canvas = document.createElement('canvas');
+    // レンダラーの設定
     this.threeRenderer = new THREE.WebGLRenderer({ 
-      canvas: canvas,
-      alpha: true 
+      alpha: true,
+      antialias: true 
     });
-    this.threeRenderer.setSize(
-      this.scale.width, 
-      this.scale.height
-    );
+    this.threeRenderer.setSize(800, 600);
+    this.threeRenderer.setClearColor(0x000000, 0);
+    this.threeRenderer.autoClear = false; // 自動クリアを無効化
     
-    // PhaserのDOMコンテナに追加
+    // レンダラーをDOMに追加
     const gameContainer = document.getElementById('game-container');
     if (gameContainer) {
-      canvas.style.position = 'absolute';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.pointerEvents = 'none'; // Phaserの入力を邪魔しない
-      gameContainer.appendChild(canvas);
-      
-      console.log("Three.js canvas added to DOM");
-    } else {
-      console.error("Game container not found!");
+      gameContainer.appendChild(this.threeRenderer.domElement);
+      this.threeRenderer.domElement.style.position = 'absolute';
+      this.threeRenderer.domElement.style.top = '0';
+      this.threeRenderer.domElement.style.left = '0';
+      this.threeRenderer.domElement.style.zIndex = '1'; // 3Dは下層
+      this.threeRenderer.domElement.style.pointerEvents = 'none';
     }
     
-    // 環境光と指向性ライト
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 1, 1);
+    // ライティング
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.threeScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 20, 10);
     this.threeScene.add(directionalLight);
   }
   
@@ -121,7 +211,7 @@ class GameScene extends Phaser.Scene {
         metalness: 0.2,
         roughness: 0.5,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.5
       });
       textureLoader.load('src/games/fishing/assets/water.jpg', 
         (texture) => {
@@ -129,11 +219,11 @@ class GameScene extends Phaser.Scene {
           pondMaterial.needsUpdate = true;
         },
         undefined,
-        (err) => {
-          console.warn("Failed to load water texture:", err);
+        () => {
+          console.warn("Failed to load water texture");
         }
       );
-    } catch (e) {
+    } catch {
       pondMaterial = new THREE.MeshStandardMaterial({
         color: 0x3399cc,
         wireframe: true
@@ -190,10 +280,12 @@ class GameScene extends Phaser.Scene {
   
   createUI() {
     // ゲームUI（2D）の作成
-    this.add.rectangle(0, this.cameras.main.height - 100, 
-                      this.cameras.main.width, 100, 
-                      0x000000, 0.7)
+    const bottomBar = this.add.rectangle(0, this.cameras.main.height - 100, 
+                          this.cameras.main.width, 100, 
+                          0x000000, 0.7)
       .setOrigin(0);
+    // 非表示にする
+    bottomBar.setVisible(false);
       
     // キャストボタン
     const castButton = this.add.text(100, this.cameras.main.height - 50, 'キャスト', {
@@ -203,6 +295,8 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
     castButton.setInteractive();
     castButton.on('pointerdown', () => this.castLine());
+    // 非表示にする
+    castButton.setVisible(false);
     
     // リールボタン
     const reelButton = this.add.text(300, this.cameras.main.height - 50, 'リール', {
@@ -212,6 +306,8 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
     reelButton.setInteractive();
     reelButton.on('pointerdown', () => this.reelLine());
+    // 非表示にする
+    reelButton.setVisible(false);
   }
   
   setupFishingRodControls() {
@@ -289,7 +385,7 @@ class GameScene extends Phaser.Scene {
         console.log("Cast complete at position:", targetX, targetZ);
         
         // 釣りチャンス開始
-        this.startFishingChance(targetX, targetZ);
+        this.startFishingChance();
       }
     });
   }
@@ -310,7 +406,7 @@ class GameScene extends Phaser.Scene {
     this.fishingLine.geometry.attributes.position.needsUpdate = true;
   }
   
-  startFishingChance(x, z) {
+  startFishingChance() {
     // 魚が近くにいるかチェック
     setTimeout(() => {
       // 魚がかかる判定（ランダム）
@@ -357,7 +453,7 @@ class GameScene extends Phaser.Scene {
         caughtFish.state = 'caught';
         // スコア加算
         this.gameState.score += caughtFish.type.points;
-        this.scoreText.setText(`スコア: ${caughtFish.type.points}ポイント`);
+        this.updateScoreUI();
         this.showMessage(`魚を釣り上げた！ +${caughtFish.type.points}ポイント`);
         // 魚を一時的に非表示（後でリスポーンさせる）
         if (caughtFish.mesh) {
@@ -414,28 +510,57 @@ class GameScene extends Phaser.Scene {
   }
   
   showMessage(text) {
-    // メッセージ表示
-    const message = this.add.text(
-      this.cameras.main.width / 2,
-      this.cameras.main.height / 2,
-      text,
-      {
-        fontSize: '28px',
-        backgroundColor: '#000',
-        padding: { x: 20, y: 10 },
-        fill: '#fff'
+    // メッセージ用divがなければ自動生成
+    let msgDiv = document.getElementById('game-message');
+    if (!msgDiv) {
+      msgDiv = document.createElement('div');
+      msgDiv.id = 'game-message';
+      msgDiv.style.position = 'absolute';
+      msgDiv.style.top = '50%';
+      msgDiv.style.left = '50%';
+      msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+      msgDiv.style.zIndex = '10000';
+      msgDiv.style.pointerEvents = 'none';
+      const gameContainer = document.getElementById('game-container');
+      if (gameContainer) {
+        gameContainer.appendChild(msgDiv);
+      } else {
+        document.body.appendChild(msgDiv);
       }
-    ).setOrigin(0.5);
-    
-    // アニメーション付きで消す
-    this.tweens.add({
-      targets: message,
-      alpha: 0,
-      y: '-=50',
-      ease: 'Power2',
-      duration: 2000,
-      onComplete: () => message.destroy()
-    });
+    }
+    // おしゃれなスタイル
+    msgDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
+    msgDiv.style.color = '#fff';
+    msgDiv.style.fontSize = '2rem';
+    msgDiv.style.fontWeight = 'bold';
+    msgDiv.style.padding = '18px 40px';
+    msgDiv.style.borderRadius = '18px';
+    msgDiv.style.boxShadow = '0 8px 32px rgba(0,0,0,0.35)';
+    msgDiv.style.letterSpacing = '0.05em';
+    msgDiv.style.textAlign = 'center';
+    msgDiv.style.textShadow = '0 2px 8px #000a';
+    msgDiv.style.transition = 'opacity 1.2s, transform 0.5s';
+    msgDiv.style.opacity = '1';
+    msgDiv.style.transform = 'translate(-50%, -50%) scale(1.1)';
+    msgDiv.style.display = 'block';
+
+    msgDiv.textContent = text;
+    // 拡大→通常表示アニメーション
+    msgDiv.style.opacity = '0';
+    msgDiv.style.transform = 'translate(-50%, -50%) scale(1.2)';
+    setTimeout(() => {
+      msgDiv.style.opacity = '1';
+      msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 10);
+
+    // フェードアウトアニメーション
+    setTimeout(() => {
+      msgDiv.style.opacity = '0';
+      msgDiv.style.transform = 'translate(-50%, -50%) scale(0.95)';
+      setTimeout(() => {
+        msgDiv.style.display = 'none';
+      }, 1200);
+    }, 1600);
   }
   update(time) {
     // Three.jsが初期化されているか確認
@@ -459,11 +584,8 @@ class GameScene extends Phaser.Scene {
     // 水面のアニメーション
     if (this.waterVertices && this.waterGeometry) {
       for (let i = 0; i < this.waterVertices.length; i += 3) {
-        const x = this.waterVertices[i];
-        const z = this.waterVertices[i + 2];
-        
         // 波のアニメーション
-        this.waterVertices[i + 1] = Math.sin(time / 1000 + x + z) * 0.2;
+        this.waterVertices[i + 1] = Math.sin(time / 1000 + this.waterVertices[i] + this.waterVertices[i + 2]) * 0.2;
       }
       this.waterGeometry.attributes.position.needsUpdate = true;
     }
@@ -570,6 +692,12 @@ class GameScene extends Phaser.Scene {
       this.threeRenderer.render(this.threeScene, this.threeCamera);
     } catch (e) {
       console.error("Error rendering Three.js scene:", e);
+    }
+  }
+  // スコア更新時にHTMLスコアUIも更新
+  updateScoreUI() {
+    if (this.scoreDiv) {
+      this.scoreDiv.textContent = 'スコア：' + this.gameState.score;
     }
   }
 }
