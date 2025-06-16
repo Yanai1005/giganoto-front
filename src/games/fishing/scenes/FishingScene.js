@@ -71,8 +71,10 @@ class GameScene extends Phaser.Scene {
       0.1, 
       1000
     );
-    this.threeCamera.position.set(0, 5, 10);
+    // 真上から見下ろすトップビュー
+    this.threeCamera.position.set(0, 20, 0);
     this.threeCamera.lookAt(0, 0, 0);
+    this.threeCamera.up.set(0, 0, -1);
     
     // レンダラー作成とDOM追加
     const canvas = document.createElement('canvas');
@@ -108,58 +110,40 @@ class GameScene extends Phaser.Scene {
   }
   
   createWaterSurface() {
-    // 水面のジオメトリとマテリアル
-    const waterGeometry = new THREE.PlaneGeometry(50, 50, 32, 32);
-    
-    // テクスチャがなくても動作するようにする
-    let waterMaterial;
+    // 円形の池を描画
+    const pondRadius = 10;
+    const pondGeometry = new THREE.CircleGeometry(pondRadius, 64);
+    let pondMaterial;
     try {
-      // テクスチャローダー
       const textureLoader = new THREE.TextureLoader();
-      // デモのためのフォールバックカラーを準備
-      waterMaterial = new THREE.MeshStandardMaterial({
-        color: 0x0077be,
-        metalness: 0.1,
-        roughness: 0.4,
+      pondMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3399cc,
+        metalness: 0.2,
+        roughness: 0.5,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.85
       });
-        // テクスチャのロード試行（失敗しても続行）
       textureLoader.load('src/games/fishing/assets/water.jpg', 
-        // 成功時
         (texture) => {
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(5, 5);
-          waterMaterial.map = texture;
-          waterMaterial.needsUpdate = true;
-          console.log("Water texture loaded successfully");
+          pondMaterial.map = texture;
+          pondMaterial.needsUpdate = true;
         },
-        // 進捗時
         undefined,
-        // エラー時
         (err) => {
           console.warn("Failed to load water texture:", err);
         }
       );
     } catch (e) {
-      console.error("Error loading water texture:", e);
-      // フォールバック
-      waterMaterial = new THREE.MeshStandardMaterial({
-        color: 0x0077be,
+      pondMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3399cc,
         wireframe: true
       });
     }
-    
-    const water = new THREE.Mesh(waterGeometry, waterMaterial);
-    water.rotation.x = -Math.PI / 2; // 水平に
-    water.position.y = -1;
-    this.threeScene.add(water);
-    console.log("Added water to scene");
-    
-    // 波アニメーションのための頂点を保存
-    this.waterVertices = waterGeometry.attributes.position.array;
-    this.waterGeometry = waterGeometry;
+    const pond = new THREE.Mesh(pondGeometry, pondMaterial);
+    pond.rotation.x = -Math.PI / 2;
+    pond.position.y = -1;
+    this.threeScene.add(pond);
+    this.pondRadius = pondRadius;
   }
   
   generateFishes() {
@@ -179,10 +163,12 @@ class GameScene extends Phaser.Scene {
       const fishMaterial = new THREE.MeshStandardMaterial({ color: fishType.color });
       const fish = new THREE.Mesh(fishGeometry, fishMaterial);
       
-      // ランダムな位置に配置
-      fish.position.x = Math.random() * 40 - 20;
+      // ランダムな位置に配置（池の中に限定）
+      let angle = Math.random() * Math.PI * 2;
+      let r = Math.random() * (this.pondRadius - 1);
+      fish.position.x = Math.cos(angle) * r;
       fish.position.y = -Math.random() * 3 - 2; // 水中
-      fish.position.z = Math.random() * 40 - 20;
+      fish.position.z = Math.sin(angle) * r;
       
       this.threeScene.add(fish);
       
@@ -195,7 +181,9 @@ class GameScene extends Phaser.Scene {
           0,
           Math.random() - 0.5
         ).normalize(),
-        timeOffset: Math.random() * 1000
+        timeOffset: Math.random() * 1000,
+        state: 'swim', // 'swim', 'approach', 'bite', 'caught', 'escape'
+        biteTimer: 0 // 食いつきタイマー
       });
     }
   }
@@ -237,13 +225,12 @@ class GameScene extends Phaser.Scene {
     // 釣り糸（3Dオブジェクト）
     const lineGeometry = new THREE.BufferGeometry();
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    
-    // 初期位置（更新時に変わる）
+    // 釣り糸の始点（池の上端、中心から見てzマイナス方向）
+    const rodTip = new THREE.Vector3(0, 0, -(this.pondRadius + 1));
     const linePoints = [
-      new THREE.Vector3(0, 0, 0),
+      rodTip,
       new THREE.Vector3(0, -2, 0)
     ];
-    
     lineGeometry.setFromPoints(linePoints);
     this.fishingLine = new THREE.Line(lineGeometry, lineMaterial);
     this.threeScene.add(this.fishingLine);
@@ -267,9 +254,11 @@ class GameScene extends Phaser.Scene {
     this.gameState.casting = true;
     this.showMessage("キャスト！");
     
-    // 投げる方向をランダム化
-    const targetX = (Math.random() - 0.5) * 15;
-    const targetZ = (Math.random() - 0.5) * 15;
+    // 投げる方向をランダム化（池の中に限定）
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * (this.pondRadius - 1);
+    const targetX = Math.cos(angle) * radius;
+    const targetZ = Math.sin(angle) * radius;
     
     // 浮きの確認
     if (!this.float) {
@@ -308,16 +297,15 @@ class GameScene extends Phaser.Scene {
   updateFishingLine() {
     // 釣り糸の位置を更新
     if (!this.fishingLine || !this.float) return;
-    
+    const rodTip = new THREE.Vector3(0, 0, -(this.pondRadius + 1));
     const linePoints = [
-      new THREE.Vector3(0, 0, 0), // 釣り竿の先端（シーン原点との相対位置）
+      rodTip,
       new THREE.Vector3(
         this.float.position.x,
         this.float.position.y,
         this.float.position.z
       )
     ];
-    
     this.fishingLine.geometry.setFromPoints(linePoints);
     this.fishingLine.geometry.attributes.position.needsUpdate = true;
   }
@@ -362,34 +350,27 @@ class GameScene extends Phaser.Scene {
     console.log("Reel button clicked!");
     // 釣り糸を巻き取る
     if (!this.gameState.casting) {
-      if (this.gameState.catchingFish) {
+      if (this.gameState.catchingFish && this.catchingFishObj) {
         // 魚が釣れた！
-        clearTimeout(this.fishingTimeout);
-        
-        // どの魚が釣れたか決定
-        const fishIndex = Math.floor(Math.random() * this.fishes.length);
-        const caughtFish = this.fishes[fishIndex];
-        
-        if (caughtFish) {
-          // スコア加算
-          this.gameState.score += caughtFish.type.points;
-          this.scoreText.setText(`スコア: ${this.gameState.score}`);
-          
-          // 成功メッセージ
-          this.showMessage(`魚を釣り上げた！ +${caughtFish.type.points}ポイント`);
-          
-          // 魚を一時的に非表示（後でリスポーンさせる）
-          if (caughtFish.mesh) {
-            caughtFish.mesh.visible = false;
-            setTimeout(() => {
-              // 魚をリスポーン
-              if (caughtFish.mesh) {
-                caughtFish.mesh.position.x = Math.random() * 40 - 20;
-                caughtFish.mesh.position.z = Math.random() * 40 - 20;
-                caughtFish.mesh.visible = true;
-              }
-            }, 5000);
-          }
+        const caughtFish = this.catchingFishObj;
+        this.gameState.catchingFish = false;
+        caughtFish.state = 'caught';
+        // スコア加算
+        this.gameState.score += caughtFish.type.points;
+        this.scoreText.setText(`スコア: ${caughtFish.type.points}ポイント`);
+        this.showMessage(`魚を釣り上げた！ +${caughtFish.type.points}ポイント`);
+        // 魚を一時的に非表示（後でリスポーンさせる）
+        if (caughtFish.mesh) {
+          caughtFish.mesh.visible = false;
+          setTimeout(() => {
+            // 魚をリスポーン
+            if (caughtFish.mesh) {
+              caughtFish.mesh.position.x = Math.random() * 40 - 20;
+              caughtFish.mesh.position.z = Math.random() * 40 - 20;
+              caughtFish.mesh.visible = true;
+              caughtFish.state = 'swim';
+            }
+          }, 3000);
         }
       }
       
@@ -491,24 +472,80 @@ class GameScene extends Phaser.Scene {
     if (this.fishes && this.fishes.length > 0) {
       this.fishes.forEach(fish => {
         if (fish && fish.mesh && fish.mesh.visible) {
-          // 魚を動かす
-          fish.mesh.position.x += fish.direction.x * fish.type.speed;
-          fish.mesh.position.z += fish.direction.z * fish.type.speed;
-          
-          // 水槽の範囲から出ないように
-          if (Math.abs(fish.mesh.position.x) > 20) {
-            fish.direction.x *= -1;
-            fish.mesh.position.x = Math.sign(fish.mesh.position.x) * 20;
+          // --- AI追加 ---
+          // 浮きが存在し、キャスト中のみAIを有効化
+          if (this.float && this.float.visible && this.gameState.casting) {
+            const floatPos = this.float.position;
+            const fishPos = fish.mesh.position;
+            const dist = floatPos.distanceTo(fishPos);
+            if (fish.state === 'swim' && dist < 8) {
+              // 近くに来たらエサに向かって移動
+              fish.state = 'approach';
+            }
+            if (fish.state === 'approach') {
+              // エサに近づく
+              const dir = new THREE.Vector3().subVectors(floatPos, fishPos).normalize();
+              fish.mesh.position.x += dir.x * fish.type.speed * 1.5;
+              fish.mesh.position.z += dir.z * fish.type.speed * 1.5;
+              // 距離が近いと食いつき
+              if (dist < 1.2) {
+                fish.state = 'bite';
+                fish.biteTimer = time;
+                this.gameState.catchingFish = true;
+                this.catchingFishObj = fish;
+                this.showMessage('魚が食いついた！リールを巻こう！');
+                // 浮きを揺らす
+                this.tweens.add({
+                  targets: { y: this.float.position.y },
+                  y: this.float.position.y + 0.2,
+                  duration: 200,
+                  yoyo: true,
+                  repeat: 2,
+                  onUpdate: (tween, target) => {
+                    this.float.position.y = target.y;
+                    this.updateFishingLine();
+                  }
+                });
+              }
+            }
+            if (fish.state === 'bite') {
+              // 食いつき中は動かない
+              // 一定時間経過で逃げる
+              if (time - fish.biteTimer > 2000) {
+                fish.state = 'escape';
+                this.gameState.catchingFish = false;
+                this.showMessage('魚が逃げてしまった！');
+                // 逃げる動き
+                fish.direction = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+              }
+            }
+            if (fish.state === 'escape') {
+              // 逃げる
+              fish.mesh.position.x += fish.direction.x * fish.type.speed * 2;
+              fish.mesh.position.z += fish.direction.z * fish.type.speed * 2;
+              // 画面外に出たらリセット
+              if (Math.abs(fish.mesh.position.x) > 20 || Math.abs(fish.mesh.position.z) > 20) {
+                fish.mesh.position.x = Math.random() * 40 - 20;
+                fish.mesh.position.z = Math.random() * 40 - 20;
+                fish.state = 'swim';
+              }
+            }
+          } else {
+            // 通常の泳ぎ
+            fish.mesh.position.x += fish.direction.x * fish.type.speed;
+            fish.mesh.position.z += fish.direction.z * fish.type.speed;
+            // 池の外に出ないように制限
+            const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
+            if (distFromCenter > this.pondRadius - 0.5) {
+              // 池の中心方向に戻す
+              const dirToCenter = new THREE.Vector3(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
+              fish.direction = dirToCenter;
+              fish.mesh.position.x = Math.cos(Math.atan2(fish.mesh.position.z, fish.mesh.position.x)) * (this.pondRadius - 0.5);
+              fish.mesh.position.z = Math.sin(Math.atan2(fish.mesh.position.z, fish.mesh.position.x)) * (this.pondRadius - 0.5);
+            }
           }
-          
-          if (Math.abs(fish.mesh.position.z) > 20) {
-            fish.direction.z *= -1;
-            fish.mesh.position.z = Math.sign(fish.mesh.position.z) * 20;
-          }
-          
           // 魚が上下に揺れる
           fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
-          
           // 魚の向き
           fish.mesh.lookAt(
             fish.mesh.position.x + fish.direction.x,
@@ -517,6 +554,16 @@ class GameScene extends Phaser.Scene {
           );
         }
       });
+    }
+    // 浮きも池の外に出ないように制限
+    if (this.float && this.float.visible) {
+      const dist = Math.sqrt(this.float.position.x ** 2 + this.float.position.z ** 2);
+      if (dist > this.pondRadius - 0.5) {
+        const angle = Math.atan2(this.float.position.z, this.float.position.x);
+        this.float.position.x = Math.cos(angle) * (this.pondRadius - 0.5);
+        this.float.position.z = Math.sin(angle) * (this.pondRadius - 0.5);
+        this.updateFishingLine();
+      }
     }
       // Three.jsのレンダリング
     try {
