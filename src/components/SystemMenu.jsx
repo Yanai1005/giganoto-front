@@ -28,14 +28,11 @@ const SystemMenu = ({ onIconClick, activeIcon }) => {
         setSelectedIcon(index);
         const iconData = systemIcons[index];
 
-        // 親コンポーネントに通知（設定アイコンの場合など）
         if (onIconClick) {
             onIconClick(iconData);
         }
 
-        // アイコン別の処理
         if (iconData.id === 'power') {
-            // スリープ処理（ウィンドウを閉じる代わりに確認ダイアログ）
             if (window.confirm('アプリケーションを終了しますか？')) {
                 window.close();
             }
@@ -44,7 +41,6 @@ const SystemMenu = ({ onIconClick, activeIcon }) => {
         } else if (iconData.url) {
             window.open(iconData.url, '_blank', 'noopener,noreferrer');
         } else {
-            // その他のアイコン（コントローラーなど）
             console.log(`${iconData.title} clicked`);
         }
     };
