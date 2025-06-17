@@ -307,7 +307,7 @@ class GameScene extends Phaser.Scene {
   }
   
   createEnvironment() {
-    const rockCount = 15;
+    const rockCount = 40;
     const rockMaterial = new THREE.MeshStandardMaterial({
         color: 0x5a5a5a,
         roughness: 0.8,
@@ -326,7 +326,7 @@ class GameScene extends Phaser.Scene {
         // 池の底に配置
         rock.position.set(
             Math.cos(angle) * r,
-            -1.5 + rockRadius,
+            -2.0 - Math.random() * 1.5, // Y座標を深くして、確実に水面下に沈める
             Math.sin(angle) * r
         );
         rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
@@ -335,7 +335,7 @@ class GameScene extends Phaser.Scene {
   }
   
   createWaterSurface() {
-    const pondRadius = 10;
+    const pondRadius = 20;
 
     // 2Dの円(CircleGeometry)から、厚みのある円柱(CylinderGeometry)に変更
     const pondHeight = 0.5; // 池の厚み
@@ -378,7 +378,7 @@ class GameScene extends Phaser.Scene {
       { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015 },
       { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01 }
     ];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 30; i++) {
       const fishType = fishTypes[Math.floor(Math.random() * fishTypes.length)];
       const size = Math.floor(Math.random() * (fishType.maxSize - fishType.minSize + 1)) + fishType.minSize;
       const minRadius = 0.4;
