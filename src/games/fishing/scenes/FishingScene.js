@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { FishDex } from '../utils/FishDex.js';
+import { UpgradeManager, UPGRADE_CONFIG } from '../utils/UpgradeManager.js';
 
 // ゲームに登場する魚のマスターデータ
 const FISH_TYPES = [
@@ -95,8 +96,9 @@ class GameScene extends Phaser.Scene {
     // Phaserのカメラ背景を透明にし、Three.jsの描画が見えるようにする
     this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
     
-    // 釣果記録を初期化
+    // 釣果記録とアップグレードデータを初期化
     FishDex.initialize(FISH_TYPES);
+    UpgradeManager.initialize();
 
     // Three.jsの初期化（canvasの生成と追加もここで行う）
     this.initThreeJS();
@@ -305,6 +307,7 @@ class GameScene extends Phaser.Scene {
    titleBtn.onclick = () => this.scene.start('TitleScene');
    
    this.createAllMinigameUIs(gameContainer);
+   this.createUpgradeUI(gameContainer);
  }
   
   createAllMinigameUIs(container) {
@@ -361,6 +364,139 @@ class GameScene extends Phaser.Scene {
       }
     `;
     document.head.appendChild(style);
+  }
+  
+  createUpgradeUI(container) {
+    // ボタンをトップUIエリアに追加
+    const topUiArea = document.getElementById('top-ui-area');
+    const upgradeBtn = document.createElement('button');
+    upgradeBtn.id = 'upgrade-btn';
+    upgradeBtn.textContent = '強化';
+    // styleは createHTMLUI の makeBtn を参考に設定
+    upgradeBtn.style.background = 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)';
+    upgradeBtn.style.color = '#fff';
+    upgradeBtn.style.fontSize = '1.3rem';
+    upgradeBtn.style.fontWeight = 'bold';
+    upgradeBtn.style.padding = '12px 36px';
+    upgradeBtn.style.border = 'none';
+    upgradeBtn.style.borderRadius = '12px';
+    upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+    upgradeBtn.style.cursor = 'pointer';
+    upgradeBtn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
+    upgradeBtn.style.whiteSpace = 'nowrap';
+    upgradeBtn.onmouseover = () => {
+        upgradeBtn.style.transform = 'scale(1.07)';
+        upgradeBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
+    };
+    upgradeBtn.onmouseout = () => {
+        upgradeBtn.style.transform = 'scale(1)';
+        upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+    };
+
+    topUiArea?.prepend(upgradeBtn); // 図鑑ボタンの前に追加
+
+    // アップグレードパネル本体
+    const panel = document.createElement('div');
+    panel.id = 'upgrade-panel';
+    panel.classList.add('game-scene-ui');
+    panel.style.cssText = `
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 400px; background: rgba(30,30,30,0.9); border-radius: 16px;
+        z-index: 500; display: none; padding: 20px; color: white;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.1);
+    `;
+    container?.appendChild(panel);
+
+    upgradeBtn.onclick = () => {
+      this.updateUpgradePanel(); // パネルを開く前に内容を最新にする
+      panel.style.display = 'block';
+    };
+
+    // UIの内容を生成する
+    panel.innerHTML = `
+        <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
+            <h2 style="font-size: 1.8rem; margin: 0; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">装備強化</h2>
+            <button id="upgrade-close-btn" style="background: #555; border: none; color: white; border-radius: 50%; width: 30px; height: 30px; font-size: 1rem; cursor: pointer;">×</button>
+        </div>
+        <div id="upgrade-items-container"></div>
+        <div style="text-align: right; margin-top: 20px; font-size: 1.2rem;">
+            所持ポイント: <span id="upgrade-current-points" style="font-weight: bold; color: #ffc107;"></span>
+        </div>
+    `;
+
+    document.getElementById('upgrade-close-btn').onclick = () => {
+      panel.style.display = 'none';
+    };
+
+    this.updateUpgradePanel(); // 初期表示のために呼び出し
+  }
+
+  updateUpgradePanel() {
+      const container = document.getElementById('upgrade-items-container');
+      if (!container) return;
+
+      container.innerHTML = ''; // コンテナをクリア
+
+      ['rod', 'reel'].forEach(type => {
+          const config = UPGRADE_CONFIG[type];
+          const level = UpgradeManager.getLevel(type);
+          const cost = UpgradeManager.getUpgradeCost(type);
+          const canAfford = UpgradeManager.canUpgrade(type, this.gameState.score);
+
+          const itemDiv = document.createElement('div');
+          itemDiv.style.cssText = `
+              display: flex; justify-content: space-between; align-items: center;
+              padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;
+          `;
+
+          itemDiv.innerHTML = `
+              <div style="flex: 1; margin-right: 15px;">
+                  <h3 style="margin: 0 0 5px 0;">${config.name} <span style="font-size: 0.9rem; color: #ccc;">Lv. ${level}</span></h3>
+                  <p style="margin: 0; font-size: 0.8rem; color: #aaa;">${config.description}</p>
+              </div>
+              <div>
+                  <button class="upgrade-buy-btn" data-type="${type}" ${cost === null || !canAfford ? 'disabled' : ''}>
+                      ${cost !== null ? `${cost}P` : 'MAX'}
+                  </button>
+              </div>
+          `;
+          container.appendChild(itemDiv);
+      });
+      
+      // ボタンのスタイルとイベントリスナー
+      document.querySelectorAll('.upgrade-buy-btn').forEach(btn => {
+          btn.style.cssText = `
+              background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
+              border: none; color: #333; font-weight: bold; padding: 8px 16px;
+              border-radius: 6px; cursor: pointer; transition: transform 0.1s;
+          `;
+          if (btn.disabled) {
+              btn.style.background = '#555';
+              btn.style.cursor = 'not-allowed';
+              btn.style.color = '#999';
+          }
+          btn.onclick = (e) => {
+            const type = e.target.dataset.type;
+            const cost = UpgradeManager.attemptUpgrade(type, this.gameState.score);
+            if (cost > 0) {
+              this.gameState.score -= cost;
+              this.updateScoreUI();
+              this.updateUpgradePanel(); // 表示を更新
+              this.showMessage(`${UPGRADE_CONFIG[type].name}を強化した！`, 1500, false);
+              
+              // 釣り竿を強化したら、魚を再生成してレベルを即時反映
+              if (type === 'rod') {
+                  this.generateFishes();
+              }
+            } else {
+              this.showMessage('ポイントが足りません！', 1500, false);
+            }
+          };
+      });
+
+      const pointsSpan = document.getElementById('upgrade-current-points');
+      if (pointsSpan) pointsSpan.textContent = this.gameState.score;
   }
   
   createEnvironment() {
@@ -436,63 +572,123 @@ class GameScene extends Phaser.Scene {
   }
   
   generateFishes() {
-    for (let i = 0; i < 30; i++) { // 10から増量
+    // 既存の魚を一旦すべてクリア
+    this.fishes.forEach(fish => this.threeScene.remove(fish.mesh));
+    this.fishes = [];
+
+    const rodLevel = UpgradeManager.getLevel('rod');
+    const maxRodLevel = UPGRADE_CONFIG.rod.maxLevel;
+    // 竿レベルに応じて、大きい魚が出やすくなるように調整 (0.0 - 1.0)
+    const levelFactor = rodLevel > 1 ? (rodLevel - 1) / (maxRodLevel - 1) : 0;
+    // 指数が1に近いほど一様分布に、0に近いほど最大値に偏る (今回は1から0.2の範囲)
+    const sizeBiasExponent = 1 - (levelFactor * 0.8);
+
+    for (let i = 0; i < 30; i++) {
       const fishType = FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
-      const size = Math.floor(Math.random() * (fishType.maxSize - fishType.minSize + 1)) + fishType.minSize;
+      
+      const randomFactor = Math.pow(Math.random(), sizeBiasExponent);
+      const sizeRange = fishType.maxSize - fishType.minSize;
+      const size = Math.floor(fishType.minSize + sizeRange * randomFactor);
+
       const minRadius = 0.4;
       const maxRadius = 1.2;
       const fishRadius = minRadius + (maxRadius - minRadius) * ((size - fishType.minSize) / (fishType.maxSize - fishType.minSize));
 
       const fishGroup = new THREE.Group();
 
-      // Body (elongated sphere)
       const bodyMaterial = new THREE.MeshStandardMaterial({
           color: fishType.color,
           metalness: 0.3,
-          roughness: 0.4
+          roughness: 0.4,
       });
-      const bodyGeometry = new THREE.SphereGeometry(fishRadius, 16, 16);
+
+      // 1. 胴体 (Body) - 少し平たく、流線型に
+      const bodyGeometry = new THREE.SphereGeometry(fishRadius, 20, 20);
       const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.scale.z = 1.8; // Make it longer along the Z-axis (the direction of movement)
-      body.scale.x = 0.8;
+      body.scale.set(0.7, 0.9, 1.8); // X(幅), Y(高さ), Z(長さ)
       fishGroup.add(body);
 
-      // Tail fin
-      const tailGeometry = new THREE.ConeGeometry(fishRadius * 0.9, fishRadius, 4);
+      const extrudeSettings = {
+        steps: 1,
+        depth: fishRadius * 0.08, // ヒレの厚み
+        bevelEnabled: false,
+      };
+
+      // 2. 尾びれ (Tail Fin)
+      const tailShape = new THREE.Shape();
+      const tailSize = fishRadius * 1.6;
+      tailShape.moveTo(0, 0);
+      tailShape.lineTo(tailSize * 0.8, tailSize * 0.5);
+      tailShape.lineTo(tailSize * 0.6, 0);
+      tailShape.lineTo(tailSize * 0.8, -tailSize * 0.5);
+      tailShape.lineTo(0, 0);
+      
+      const tailGeometry = new THREE.ExtrudeGeometry(tailShape, extrudeSettings);
       const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
-      tail.position.z = -fishRadius * 1.5; // Attach to the back
-      tail.rotation.x = Math.PI / 2; // Rotate to be vertical-ish
-      tail.scale.y = 0.1; // Flatten it
+      tail.position.z = -fishRadius * 1.5;
+      tail.rotation.z = Math.PI / 2;
       fishGroup.add(tail);
 
-      // Eyes
-      const eyeGeometry = new THREE.SphereGeometry(fishRadius * 0.15, 8, 8);
+      // 3. 背びれ (Dorsal Fin)
+      const dorsalShape = new THREE.Shape();
+      const dorsalHeight = fishRadius * 0.8;
+      const dorsalLength = fishRadius;
+      dorsalShape.moveTo(0, -dorsalHeight / 2);
+      dorsalShape.quadraticCurveTo(dorsalLength * 0.8, 0, 0, dorsalHeight / 2);
+      dorsalShape.lineTo(0, -dorsalHeight / 2);
+
+      const dorsalGeometry = new THREE.ExtrudeGeometry(dorsalShape, extrudeSettings);
+      const dorsalFin = new THREE.Mesh(dorsalGeometry, bodyMaterial);
+      dorsalFin.rotation.y = Math.PI / 2;
+      dorsalFin.position.set(0, fishRadius * 0.6, -fishRadius * 0.2);
+      fishGroup.add(dorsalFin);
+
+      // 4. 胸びれ (Pectoral Fins)
+      const pectoralShape = new THREE.Shape();
+      const pectoralSize = fishRadius * 0.6;
+      pectoralShape.moveTo(0, 0);
+      pectoralShape.lineTo(pectoralSize, pectoralSize * 0.3);
+      pectoralShape.lineTo(pectoralSize, -pectoralSize * 0.3);
+      pectoralShape.lineTo(0, 0);
+      const pectoralGeometry = new THREE.ExtrudeGeometry(pectoralShape, { steps: 1, depth: fishRadius * 0.04, bevelEnabled: false });
+      
+      const leftPectoralFin = new THREE.Mesh(pectoralGeometry, bodyMaterial);
+      leftPectoralFin.position.set(-fishRadius * 0.6, 0, fishRadius * 0.4);
+      leftPectoralFin.rotation.y = Math.PI / 6;
+      fishGroup.add(leftPectoralFin);
+
+      const rightPectoralFin = leftPectoralFin.clone();
+      rightPectoralFin.position.x *= -1;
+      rightPectoralFin.rotation.y *= -1;
+      fishGroup.add(rightPectoralFin);
+
+      // 5. 目 (Eyes)
+      const eyeGeometry = new THREE.SphereGeometry(fishRadius * 0.12, 8, 8);
       const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
       const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      leftEye.position.set(-fishRadius * 0.3, fishRadius * 0.2, fishRadius * 0.8);
+      leftEye.position.set(-fishRadius * 0.4, fishRadius * 0.25, fishRadius * 0.8);
       fishGroup.add(leftEye);
 
       const rightEye = leftEye.clone();
-      rightEye.position.x = fishRadius * 0.3;
+      rightEye.position.x *= -1;
       fishGroup.add(rightEye);
-
+      
       let angle = Math.random() * Math.PI * 2;
       let r = Math.random() * (this.pondRadius - 1);
-      fishGroup.position.x = Math.cos(angle) * r;
-      fishGroup.position.y = -1.2 - Math.random() * 0.3;
-      fishGroup.position.z = Math.sin(angle) * r;
+      fishGroup.position.set(Math.cos(angle) * r, -1.2 - Math.random() * 0.3, Math.sin(angle) * r);
       this.threeScene.add(fishGroup);
+
       this.fishes.push({
         mesh: fishGroup,
         type: fishType,
         size: size,
         direction: new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize(),
         timeOffset: Math.random() * 1000,
-        state: 'swim', // 'swim', 'approach', 'bite', 'hooked', 'escape'
+        state: 'swim',
         biteTimer: 0,
         speed: fishType.speed,
-        interestCooldownUntil: 0, // 魚が次に興味を持つまでのクールダウン
-        radius: fishRadius, // 衝突判定用の半径
+        interestCooldownUntil: 0,
+        radius: fishRadius,
         timingDifficulty: fishType.timingDifficulty
       });
     }
@@ -904,6 +1100,10 @@ class GameScene extends Phaser.Scene {
 
     if (this.minigame.type === 'tension') {
         // テンションゲームの初期化
+        const reelLevel = UpgradeManager.getLevel('reel');
+        const basePullStrength = 1.5;
+        this.minigame.tension.pullStrength = basePullStrength + (reelLevel - 1) * 0.1;
+
         this.minigame.tension.value = 50;
         this.minigame.tension.fishAction = 'normal';
         this.minigame.tension.actionTimer = this.time.now + 2000 + Math.random() * 2000;
