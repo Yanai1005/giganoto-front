@@ -5,16 +5,16 @@ import { FishDex } from '../utils/FishDex.js';
 
 // ゲームに登場する魚のマスターデータ
 const FISH_TYPES = [
-  { name: 'ブルーギル', minSize: 10, maxSize: 25, color: 0x66ccff, points: 10, speed: 0.02, description: '北アメリカ原産の淡水魚。繁殖力が非常に強い。' },
-  { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012, description: '古くから親しまれている魚。口のひげが特徴的。' },
-  { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018, description: '大きな口で小魚を捕食する、人気のゲームフィッシュ。' },
-  { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015, description: 'コイに似ているが、口にひげがなく、体高が高い。' },
-  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' },
-  { name: 'ニジマス', minSize: 20, maxSize: 50, color: 0xffa07a, points: 25, speed: 0.022, description: '体に散らばる黒点と、虹色の模様が美しい渓流の女王。' },
-  { name: 'アユ', minSize: 15, maxSize: 30, color: 0x90ee90, points: 18, speed: 0.025, description: '独特の香りが特徴で「香魚」とも呼ばれる。縄張り意識が強い。' },
-  { name: 'ウナギ', minSize: 40, maxSize: 90, color: 0x4B0082, points: 40, speed: 0.016, description: 'にょろにょろと泳ぐ、細長い体の魚。夜行性で、滋養が高い。' },
-  { name: 'オオサンショウウオ', minSize: 50, maxSize: 120, color: 0x556b2f, points: 100, speed: 0.008, description: '生きた化石と呼ばれる世界最大級の両生類。特別天然記念物。' },
-  { name: 'ドクターフィッシュ', minSize: 5, maxSize: 10, color: 0x808080, points: 5, speed: 0.03, description: '人の古い角質を食べる習性を持つ小さな魚。実はコイの仲間。' }
+  { name: 'ブルーギル', minSize: 10, maxSize: 25, color: 0x66ccff, points: 10, speed: 0.02, timingDifficulty: 1.0, description: '北アメリカ原産の淡水魚。繁殖力が非常に強い。' },
+  { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012, timingDifficulty: 1.3, description: '古くから親しまれている魚。口のひげが特徴的。' },
+  { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018, timingDifficulty: 1.4, description: '大きな口で小魚を捕食する、人気のゲームフィッシュ。' },
+  { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015, timingDifficulty: 1.2, description: 'コイに似ているが、口にひげがなく、体高が高い。' },
+  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, timingDifficulty: 1.8, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' },
+  { name: 'ニジマス', minSize: 20, maxSize: 50, color: 0xffa07a, points: 25, speed: 0.022, timingDifficulty: 1.5, description: '体に散らばる黒点と、虹色の模様が美しい渓流の女王。' },
+  { name: 'アユ', minSize: 15, maxSize: 30, color: 0x90ee90, points: 18, speed: 0.025, timingDifficulty: 1.6, description: '独特の香りが特徴で「香魚」とも呼ばれる。縄張り意識が強い。' },
+  { name: 'ウナギ', minSize: 40, maxSize: 90, color: 0x4B0082, points: 40, speed: 0.016, timingDifficulty: 1.7, description: 'にょろにょろと泳ぐ、細長い体の魚。夜行性で、滋養が高い。' },
+  { name: 'オオサンショウウオ', minSize: 50, maxSize: 120, color: 0x556b2f, points: 100, speed: 0.008, timingDifficulty: 2.0, description: '生きた化石と呼ばれる世界最大級の両生類。特別天然記念物。' },
+  { name: 'ドクターフィッシュ', minSize: 5, maxSize: 10, color: 0x808080, points: 5, speed: 0.03, timingDifficulty: 0.8, description: '人の古い角質を食べる習性を持つ小さな魚。実はコイの仲間。' }
 ];
 
 class GameScene extends Phaser.Scene {
@@ -55,7 +55,8 @@ class GameScene extends Phaser.Scene {
         progress: 0,
         markerPosition: 0,
         markerSpeed: 1.5,
-        safeZone: { start: 60, width: 20 }
+        safeZone: { start: 60, width: 28 },
+        misses: 0
       },
       
       // 共通
@@ -329,7 +330,10 @@ class GameScene extends Phaser.Scene {
     timingContainer.style.display = 'none'; // 最初は非表示
     container?.appendChild(timingContainer);
     timingContainer.innerHTML = `
-        <div style="text-align: center; color: white; font-size: 0.9rem; margin-bottom: 8px;">タイミングを合わせてリールを引け！</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="text-align: left; color: white; font-size: 0.9rem; white-space: nowrap;">タイミングで止めろ！</div>
+            <div id="timing-miss-count" style="text-align: right; color: #ffc107; font-size: 0.9rem; font-weight: bold; white-space: nowrap;"></div>
+        </div>
         <div id="timing-track" style="width: 100%; height: 25px; background: #333; border-radius: 5px; position: relative; overflow: hidden;">
             <div id="timing-safe-zone" style="position: absolute; height: 100%; background: rgba(20, 200, 20, 0.5);"></div>
             <div id="timing-marker" style="position: absolute; width: 4px; height: 100%; background: #ffc107;"></div>
@@ -488,7 +492,8 @@ class GameScene extends Phaser.Scene {
         biteTimer: 0,
         speed: fishType.speed,
         interestCooldownUntil: 0, // 魚が次に興味を持つまでのクールダウン
-        radius: fishRadius // 衝突判定用の半径
+        radius: fishRadius, // 衝突判定用の半径
+        timingDifficulty: fishType.timingDifficulty
       });
     }
   }
@@ -515,7 +520,12 @@ class GameScene extends Phaser.Scene {
   }
   
   castLine() {
-    if (this.gameState.casting || this.gameState.reeling) return;
+    if (this.gameState.casting || this.gameState.reeling || this.gameState.catchingFish) return;
+
+    // キャスト時に釣り糸とウキを再表示
+    if (this.line) this.line.visible = true;
+    if (this.float) this.float.visible = true;
+
     this.gameState.casting = true;
     this.showMessage("キャスト！");
     
@@ -881,7 +891,7 @@ class GameScene extends Phaser.Scene {
     fish.state = 'hooked';
     this.minigame.active = true;
     this.gameState.catchingFish = true;
-    this.minigame.overallProgress = 10;
+    this.minigame.overallProgress = 30; // 初期プログレスを増加
 
     // ランダムにミニゲームを選択
     this.minigame.type = Math.random() < 0.5 ? 'tension' : 'timing';
@@ -901,8 +911,14 @@ class GameScene extends Phaser.Scene {
         document.getElementById('minigame-ui-tension').style.display = 'block';
     } else {
         // タイミングゲームの初期化
+        this.minigame.timing.misses = 0; // ミスカウントをリセット
+        document.getElementById('timing-miss-count').textContent = `ミス: 0 / 3`;
+
+        const fishDifficulty = this.catchingFishObj.type.timingDifficulty || 1.0;
+        const baseSpeed = 1.2; // 基本速度
         this.minigame.timing.markerPosition = 0;
-        this.minigame.timing.markerSpeed = (1.2 + Math.random() * 0.8) * (Math.random() < 0.5 ? 1 : -1); // 速度と方向をランダムに
+        this.minigame.timing.markerSpeed = (baseSpeed * fishDifficulty) * (Math.random() < 0.5 ? 1 : -1);
+
         const safeZone = this.minigame.timing.safeZone;
         safeZone.start = Math.random() * (100 - safeZone.width);
         const safeZoneEl = document.getElementById('timing-safe-zone');
@@ -1155,9 +1171,23 @@ class GameScene extends Phaser.Scene {
       if (markerPosition > safeZone.start && markerPosition < safeZone.start + safeZone.width) {
         this.minigame.overallProgress += 15; // 成功
         this.showMessage("NICE!", 500, false);
+
+        // 加速処理
+        const currentSpeed = Math.abs(this.minigame.timing.markerSpeed);
+        const newSpeed = currentSpeed + 0.15; // 加速を緩和
+        this.minigame.timing.markerSpeed = newSpeed * Math.sign(this.minigame.timing.markerSpeed);
+
       } else {
-        this.minigame.overallProgress -= 10; // 失敗
-        this.showMessage("MISS...", 500, false);
+        this.minigame.timing.misses++;
+        document.getElementById('timing-miss-count').textContent = `ミス: ${this.minigame.timing.misses} / 3`;
+
+        if (this.minigame.timing.misses >= 3) {
+            this.showMessage("3回ミス！逃げられた...", 1500);
+            this.endMinigame(false);
+        } else {
+            this.minigame.overallProgress -= 10; 
+            this.showMessage("MISS...", 500, false);
+        }
       }
     }
   }
