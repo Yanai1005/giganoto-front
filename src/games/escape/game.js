@@ -1,26 +1,30 @@
 import Phaser from "phaser";
-import EscapeScene from "./scenes/EscapeScene.js";
+import Stage1 from "./scenes/Stage1.js";
+import Stage2 from "./scenes/Stage2.js";
+import Stage3 from "./scenes/Stage3.js";
+import WinScene from "./scenes/WinScene.js";
 
+// DOM要素（ゲームを描画する場所）を渡してゲームを初期化する
 export const initializeGame = (container) => {
   const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    parent: container,
-    backgroundColor: "#2c3e50",
+    parent: container, // コンテナ要素を指定
+    backgroundColor: "#2d2d2d",
+    // 全てのシーンをリストアップする。配列の最初のシーンが開始される。
+    scene: [Stage1, Stage2, Stage3, WinScene],
     physics: {
       default: "arcade",
       arcade: {
-        gravity: { y: 0 }, // gravityは0でOK
-        debug: true, // デバッグモードをオン
+        gravity: { y: 0 }, // プレイヤーに重力を適用
+        debug: true, // trueにすると当たり判定などが可視化されデバッグに便利
       },
     },
-    scene: [EscapeScene], // EscapeSceneを配列に追加
   };
 
+  // Phaserゲームインスタンスを生成して返す
   return new Phaser.Game(config);
 };
 
-const config = {
-  scene: [EscapeScene], // 配列に追加
-};
+// 問題の行 `initializeGame("game-container");` を削除しました。
