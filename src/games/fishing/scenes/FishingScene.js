@@ -18,6 +18,18 @@ class GameScene extends Phaser.Scene {
       score: 0
     };
     
+    // ミニゲームの状態
+    this.minigame = {
+      active: false,
+      tension: 50, // 0-100
+      successProgress: 0, // 0-100
+      safeZone: { start: 40, end: 70 },
+      tensionSpeed: 0.3, // テンションの自然下降速度
+      struggleAmount: 2.5, // 魚の暴れによるテンション変化量
+      pullStrength: 1.5, // プレイヤーの引きの強さ
+    };
+    this.isPlayerPulling = false;
+    
     // 魚のデータ
     this.fishes = [];
 
@@ -196,10 +208,88 @@ class GameScene extends Phaser.Scene {
    const reelBtn = makeBtn('reel-btn', 'リール', 'linear-gradient(135deg, #396afc 0%, #2948ff 100%)');
    const viewBtn = makeBtn('view-btn', '視点切替', 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)');
 
+   reelBtn.style.userSelect = 'none'; // テキスト選択を防ぐ
+   reelBtn.onmousedown = () => { if (this.minigame.active) this.isPlayerPulling = true; };
+   reelBtn.onmouseup = () => { if (this.minigame.active) this.isPlayerPulling = false; };
+   reelBtn.onmouseleave = () => { if (this.minigame.active) this.isPlayerPulling = false; }; // カーソルがボタンから外れた場合
+   // ミニゲーム中以外は通常のreelLineを呼ぶ
+   reelBtn.onclick = () => { if (!this.minigame.active) this.reelLine(); };
+
    castBtn.onclick = () => this.castLine();
-   reelBtn.onclick = () => this.reelLine();
    viewBtn.onclick = () => this.switchCameraPerspective();
+   
+   this.createMinigameUI(gameContainer);
  }
+  
+  createMinigameUI(container) {
+    let minigameDiv = document.getElementById('minigame-ui');
+    if (!minigameDiv) {
+      minigameDiv = document.createElement('div');
+      minigameDiv.id = 'minigame-ui';
+      container?.appendChild(minigameDiv);
+    }
+    minigameDiv.style.position = 'absolute';
+    minigameDiv.style.bottom = '120px';
+    minigameDiv.style.left = '50%';
+    minigameDiv.style.transform = 'translateX(-50%)';
+    minigameDiv.style.width = '300px';
+    minigameDiv.style.zIndex = '200';
+    minigameDiv.style.display = 'none'; // 最初は非表示
+    minigameDiv.style.background = 'rgba(0,0,0,0.5)';
+    minigameDiv.style.borderRadius = '8px';
+    minigameDiv.style.padding = '10px';
+    minigameDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+
+    // テンションゲージのコンテナ
+    const tensionGauge = document.createElement('div');
+    tensionGauge.style.width = '100%';
+    tensionGauge.style.height = '20px';
+    tensionGauge.style.background = '#333';
+    tensionGauge.style.borderRadius = '5px';
+    tensionGauge.style.position = 'relative';
+    tensionGauge.style.overflow = 'hidden';
+    minigameDiv.appendChild(tensionGauge);
+
+    // テンションゲージのセーフゾーン
+    const safeZone = document.createElement('div');
+    safeZone.id = 'tension-safe-zone';
+    safeZone.style.position = 'absolute';
+    safeZone.style.left = `${this.minigame.safeZone.start}%`;
+    safeZone.style.width = `${this.minigame.safeZone.end - this.minigame.safeZone.start}%`;
+    safeZone.style.height = '100%';
+    safeZone.style.background = 'rgba(20, 200, 20, 0.4)';
+    tensionGauge.appendChild(safeZone);
+
+    // テンションバー本体
+    const tensionBar = document.createElement('div');
+    tensionBar.id = 'tension-bar';
+    tensionBar.style.width = '0%';
+    tensionBar.style.height = '100%';
+    tensionBar.style.background = 'linear-gradient(90deg, #fceabb 0%, #f8b500 100%)';
+    tensionBar.style.borderRadius = '5px';
+    tensionBar.style.transition = 'width 0.1s linear';
+    tensionGauge.appendChild(tensionBar);
+    
+    // 成功プログレスバー
+    const successProgress = document.createElement('div');
+    successProgress.style.width = '100%';
+    successProgress.style.height = '8px';
+    successProgress.style.background = '#333';
+    successProgress.style.borderRadius = '4px';
+    successProgress.style.marginTop = '8px';
+    minigameDiv.appendChild(successProgress);
+
+    const successProgressBar = document.createElement('div');
+    successProgressBar.id = 'success-progress-bar';
+    successProgressBar.style.width = '0%';
+    successProgressBar.style.height = '100%';
+    successProgressBar.style.background = 'linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%)';
+    successProgressBar.style.borderRadius = '4px';
+    successProgressBar.style.transition = 'width 0.2s linear';
+    successProgress.appendChild(successProgressBar);
+
+    this.minigameUI = minigameDiv;
+  }
   
   createWaterSurface() {
     const pondRadius = 10;
@@ -374,54 +464,34 @@ class GameScene extends Phaser.Scene {
   }
   
   reelLine() {
-    if (!this.gameState.casting) {
-      if (this.gameState.catchingFish && this.catchingFishObj) {
-        const caughtFish = this.catchingFishObj;
-        this.gameState.catchingFish = false;
-        caughtFish.state = 'caught';
-        this.gameState.score += caughtFish.type.points;
-        this.updateScoreUI();
-        this.showMessage(`${caughtFish.size}cmの${caughtFish.type.name}を釣った！ +${caughtFish.type.points}ポイント`);
-        if (caughtFish.mesh) {
-          caughtFish.mesh.visible = false;
-          setTimeout(() => {
-            if (caughtFish.mesh) {
-              const angle = Math.random() * Math.PI * 2;
-              const r = Math.random() * (this.pondRadius - 1);
-              caughtFish.mesh.position.set(Math.cos(angle) * r, -1.2 - Math.random() * 0.3, Math.sin(angle) * r);
-              caughtFish.mesh.visible = true;
-              caughtFish.state = 'swim';
-            }
-          }, 3000);
-        }
-      }
-      
+    // ミニゲーム中は実行しない
+    if (this.minigame.active || this.gameState.reeling) return;
+
+    if (this.float) {
       this.gameState.reeling = true;
-      
-      if (this.float) {
-        this.tweens.add({
-          targets: { x: this.float.position.x, y: this.float.position.y, z: this.float.position.z },
-          x: 0,
-          y: 0,
-          z: 0,
-          ease: 'Quad.in',
-          duration: 1000,
-          onUpdate: (tween, target) => {
-            if (this.float) {
-              this.float.position.set(target.x, target.y, target.z);
-              this.updateFishingLine();
-            }
-          },
-          onComplete: () => {
-            if (this.float) this.float.visible = false;
-            this.gameState.reeling = false;
-            this.gameState.catchingFish = false;
+      this.tweens.add({
+        targets: { x: this.float.position.x, y: this.float.position.y, z: this.float.position.z },
+        x: 0,
+        y: 0,
+        z: 0,
+        ease: 'Quad.in',
+        duration: 1000,
+        onUpdate: (tween, target) => {
+          if (this.float) {
+            this.float.position.set(target.x, target.y, target.z);
+            this.updateFishingLine();
           }
-        });
-      } else {
-        this.gameState.reeling = false;
-        this.gameState.catchingFish = false;
-      }
+        },
+        onComplete: () => {
+          if (this.float) this.float.visible = false;
+          this.gameState.reeling = false;
+          // catchingFishフラグもリセット
+          this.gameState.catchingFish = false;
+        }
+      });
+    } else {
+      this.gameState.reeling = false;
+      this.gameState.catchingFish = false;
     }
   }
   
@@ -543,68 +613,99 @@ class GameScene extends Phaser.Scene {
       this.waterGeometry.attributes.position.needsUpdate = true;
     }
     
-    this.fishes.forEach(fish => {
-      if (fish?.mesh?.visible) {
-        if (this.float?.visible && this.gameState.casting) {
-          const floatPos = this.float.position;
-          const fishPos = fish.mesh.position;
-          const dist = floatPos.distanceTo(fishPos);
-          if (fish.state === 'swim' && dist < 8) {
-            fish.state = 'approach';
-          }
-          if (fish.state === 'approach') {
-            const dir = new THREE.Vector3().subVectors(floatPos, fishPos).normalize();
-            fish.mesh.position.x += dir.x * fish.speed * 1.5;
-            fish.mesh.position.z += dir.z * fish.speed * 1.5;
-            if (dist < 1.2) {
-              fish.state = 'bite';
-              fish.biteTimer = time;
-              this.gameState.catchingFish = true;
-              this.catchingFishObj = fish;
-              this.showMessage('魚が食いついた！リールを巻こう！');
-              this.tweens.add({
-                targets: { y: this.float.position.y },
-                y: this.float.position.y + 0.2,
-                duration: 200,
-                yoyo: true,
-                repeat: 2,
-                onUpdate: (tween, target) => { this.float.position.y = target.y; this.updateFishingLine(); }
-              });
-            }
-          }
-          if (fish.state === 'bite') {
-            if (time - fish.biteTimer > 2000) {
-              fish.state = 'escape';
-              this.gameState.catchingFish = false;
-              this.showMessage('魚が逃げてしまった！');
-              fish.direction = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
-            }
-          }
-          if (fish.state === 'escape') {
-            fish.mesh.position.x += fish.direction.x * fish.speed * 2;
-            fish.mesh.position.z += fish.direction.z * fish.speed * 2;
-            const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
-            if (distFromCenter > this.pondRadius) {
-                fish.state = 'swim';
-            }
-          }
-        } else {
-          fish.mesh.position.x += fish.direction.x * fish.speed;
-          fish.mesh.position.z += fish.direction.z * fish.speed;
-          const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
-          if (distFromCenter > this.pondRadius - 0.5) {
-            const dirToCenter = new THREE.Vector3(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
-            fish.direction = dirToCenter;
-          }
-        }
-        fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
-        fish.mesh.lookAt(
-          fish.mesh.position.x + fish.direction.x,
-          fish.mesh.position.y,
-          fish.mesh.position.z + fish.direction.z
-        );
+    if (this.minigame.active) {
+      // --- ミニゲーム中のロジック ---
+      // 1. テンションの変動
+      // プレイヤーが引いているか
+      if (this.isPlayerPulling) {
+        this.minigame.tension += this.minigame.pullStrength;
+      } else {
+        this.minigame.tension -= this.minigame.tensionSpeed;
       }
-    });
+      // 魚の暴れ
+      this.minigame.tension += (Math.random() - 0.5) * this.minigame.struggleAmount;
+      // テンションを0-100の範囲に収める
+      this.minigame.tension = Math.max(0, Math.min(100, this.minigame.tension));
+
+      // 2. 成功/失敗の判定とプログレス更新
+      const { tension, safeZone } = this.minigame;
+      if (tension > safeZone.start && tension < safeZone.end) {
+        this.minigame.successProgress += 0.4; // 成功ゾーンにいればプログレス増加
+      } else {
+        this.minigame.successProgress -= 0.2; // ゾーン外では減少
+      }
+      this.minigame.successProgress = Math.max(0, this.minigame.successProgress);
+
+      // 3. UIの更新
+      const tensionBar = document.getElementById('tension-bar');
+      if (tensionBar) tensionBar.style.width = `${this.minigame.tension}%`;
+      const successBar = document.getElementById('success-progress-bar');
+      if (successBar) successBar.style.width = `${this.minigame.successProgress}%`;
+      
+      // 4. ゲーム終了判定
+      if (this.minigame.successProgress >= 100) {
+        this.endMinigame(true); // 成功
+      } else if (this.minigame.successProgress <= 0 || this.minigame.tension >= 100) {
+        this.endMinigame(false); // 失敗
+      }
+      
+    } else {
+      // --- 通常時のロジック ---
+      this.fishes.forEach(fish => {
+        if (fish?.mesh?.visible && fish.state !== 'caught') {
+          // catchingFishはミニゲームが始まるかどうかのトリガーにのみ使う
+          if (this.float?.visible && !this.gameState.catchingFish) {
+            const floatPos = this.float.position;
+            const fishPos = fish.mesh.position;
+            const dist = floatPos.distanceTo(fishPos);
+            
+            // 魚がウキに興味を持つ
+            if (fish.state === 'swim' && dist < 4) {
+              fish.state = 'approach';
+            }
+            
+            // ウキに近づく
+            if (fish.state === 'approach') {
+              const dir = new THREE.Vector3().subVectors(floatPos, fishPos).normalize();
+              fish.mesh.position.x += dir.x * fish.speed * 1.5;
+              fish.mesh.position.z += dir.z * fish.speed * 1.5;
+              
+              // ウキに食いつく -> ミニゲーム開始
+              if (dist < 1.0) {
+                this.startMinigame(fish);
+              }
+            }
+          } 
+          
+          if (fish.state === 'escape') {
+              // 逃げる処理
+              fish.mesh.position.x += fish.direction.x * fish.speed * 3; // 3倍速で逃げる
+              fish.mesh.position.z += fish.direction.z * fish.speed * 3;
+              const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
+              if (distFromCenter > this.pondRadius + 2) { // 池の外に出たら
+                  fish.state = 'swim'; // 通常状態に戻る
+              }
+          } else if (fish.state === 'swim') {
+            // 通常時の遊泳
+            fish.mesh.position.x += fish.direction.x * fish.speed;
+            fish.mesh.position.z += fish.direction.z * fish.speed;
+            const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
+            if (distFromCenter > this.pondRadius - 0.5) {
+              const dirToCenter = new THREE.Vector3(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
+              fish.direction = dirToCenter;
+            }
+          }
+          
+          // 共通の動き
+          fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
+          fish.mesh.lookAt(
+            fish.mesh.position.x + fish.direction.x,
+            fish.mesh.position.y,
+            fish.mesh.position.z + fish.direction.z
+          );
+        }
+      });
+    }
 
     if (this.float?.visible) {
       const dist = Math.sqrt(this.float.position.x ** 2 + this.float.position.z ** 2);
@@ -623,6 +724,74 @@ class GameScene extends Phaser.Scene {
     if (this.scoreDiv) {
       this.scoreDiv.textContent = 'スコア：' + this.gameState.score;
     }
+  }
+
+  startMinigame(fish) {
+    if (this.minigame.active) return;
+    
+    this.catchingFishObj = fish;
+    this.minigame.active = true;
+    this.gameState.catchingFish = true; // catchingFishを流用
+    this.minigame.tension = 50;
+    this.minigame.successProgress = 10; // 少し初期値を与えておく
+
+    if(this.minigameUI) this.minigameUI.style.display = 'block';
+
+    // ボタンのテキストを変更
+    const reelBtn = document.getElementById('reel-btn');
+    if (reelBtn) reelBtn.textContent = 'PULL!';
+    const castBtn = document.getElementById('cast-btn');
+    if (castBtn) castBtn.style.display = 'none'; // キャストボタンを隠す
+    
+    this.showMessage("魚が食いついた！ゲージを操作して釣り上げろ！");
+  }
+
+  endMinigame(success) {
+    if (!this.minigame.active) return;
+    
+    this.minigame.active = false;
+    this.isPlayerPulling = false;
+    if(this.minigameUI) this.minigameUI.style.display = 'none';
+    
+    // ボタンの状態を元に戻す
+    const reelBtn = document.getElementById('reel-btn');
+    if (reelBtn) reelBtn.textContent = 'リール';
+    const castBtn = document.getElementById('cast-btn');
+    if (castBtn) castBtn.style.display = 'inline-block';
+
+    const caughtFish = this.catchingFishObj;
+    this.catchingFishObj = null; // 参照をクリア
+
+    if (success) {
+      // 釣り成功
+      this.gameState.score += caughtFish.type.points;
+      this.updateScoreUI();
+      this.showMessage(`${caughtFish.size}cmの${caughtFish.type.name}を釣った！ +${caughtFish.type.points}ポイント`);
+      if (caughtFish.mesh) {
+        caughtFish.mesh.visible = false;
+      }
+      // 釣った後のリール巻き上げ処理
+      this.reelLine();
+      // 魚の再配置
+      setTimeout(() => {
+        if (caughtFish.mesh) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = Math.random() * (this.pondRadius - 1);
+          caughtFish.mesh.position.set(Math.cos(angle) * r, -1.2 - Math.random() * 0.3, Math.sin(angle) * r);
+          caughtFish.mesh.visible = true;
+          caughtFish.state = 'swim';
+        }
+      }, 3000);
+    } else {
+      // 釣り失敗
+      this.showMessage("魚に逃げられてしまった...");
+      caughtFish.state = 'escape'; // 逃げる状態に
+      caughtFish.direction = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+      // 失敗した場合もリールは巻き取る
+      this.reelLine();
+    }
+    
+    this.gameState.catchingFish = false;
   }
 }
 
