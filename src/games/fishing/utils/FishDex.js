@@ -5,20 +5,23 @@ const DEX_STORAGE_KEY = 'fishingGame_fishDex';
  * @param {Array} allFishTypes - An array of all fish type objects from the game.
  */
 function initialize(allFishTypes) {
-    if (localStorage.getItem(DEX_STORAGE_KEY)) {
-        // 必要なら、新しい魚が追加された場合のデータ更新処理をここに追加できる
-        return;
-    }
+    const existingData = getDexData();
+    let updated = false;
 
-    const initialData = {};
     allFishTypes.forEach(fishType => {
-        initialData[fishType.name] = {
-            caught: false,
-            maxSize: 0,
-        };
+        // 新しい魚がゲームに追加された場合、既存のセーブデータにも追加する
+        if (!existingData[fishType.name]) {
+            existingData[fishType.name] = {
+                caught: false,
+                maxSize: 0,
+            };
+            updated = true;
+        }
     });
 
-    localStorage.setItem(DEX_STORAGE_KEY, JSON.stringify(initialData));
+    if (updated) {
+        localStorage.setItem(DEX_STORAGE_KEY, JSON.stringify(existingData));
+    }
 }
 
 /**

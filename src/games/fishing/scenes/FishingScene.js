@@ -9,7 +9,12 @@ const FISH_TYPES = [
   { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012, description: '古くから親しまれている魚。口のひげが特徴的。' },
   { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018, description: '大きな口で小魚を捕食する、人気のゲームフィッシュ。' },
   { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015, description: 'コイに似ているが、口にひげがなく、体高が高い。' },
-  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' }
+  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' },
+  { name: 'ニジマス', minSize: 20, maxSize: 50, color: 0xffa07a, points: 25, speed: 0.022, description: '体に散らばる黒点と、虹色の模様が美しい渓流の女王。' },
+  { name: 'アユ', minSize: 15, maxSize: 30, color: 0x90ee90, points: 18, speed: 0.025, description: '独特の香りが特徴で「香魚」とも呼ばれる。縄張り意識が強い。' },
+  { name: 'ウナギ', minSize: 40, maxSize: 90, color: 0x4B0082, points: 40, speed: 0.016, description: 'にょろにょろと泳ぐ、細長い体の魚。夜行性で、滋養が高い。' },
+  { name: 'オオサンショウウオ', minSize: 50, maxSize: 120, color: 0x556b2f, points: 100, speed: 0.008, description: '生きた化石と呼ばれる世界最大級の両生類。特別天然記念物。' },
+  { name: 'ドクターフィッシュ', minSize: 5, maxSize: 10, color: 0x808080, points: 5, speed: 0.03, description: '人の古い角質を食べる習性を持つ小さな魚。実はコイの仲間。' }
 ];
 
 class GameScene extends Phaser.Scene {
@@ -36,8 +41,12 @@ class GameScene extends Phaser.Scene {
       successProgress: 0, // 0-100
       safeZone: { start: 40, end: 70 },
       tensionSpeed: 0.3, // テンションの自然下降速度
-      struggleAmount: 2.5, // 魚の暴れによるテンション変化量
       pullStrength: 1.5, // プレイヤーの引きの強さ
+      
+      // 新しいミニゲーム用のプロパティ
+      fishAction: 'normal', // 'normal', 'struggle', 'rush', 'dive'
+      actionTimer: 0,
+      nextActionPreview: false,
     };
     this.isPlayerPulling = false;
     
@@ -92,6 +101,10 @@ class GameScene extends Phaser.Scene {
     // Scene破棄時にイベントリスナーを削除
     this.events.on('shutdown', () => {
       window.removeEventListener('resize', this.onResize.bind(this));
+      this.cleanupHTML();
+      if (this.threeRenderer) {
+          this.threeRenderer.domElement.remove();
+      }
     });
   }
 
@@ -167,6 +180,7 @@ class GameScene extends Phaser.Scene {
    if (!scoreDiv) {
      scoreDiv = document.createElement('div');
      scoreDiv.id = 'score-ui';
+     scoreDiv.classList.add('game-scene-ui');
      gameContainer?.appendChild(scoreDiv);
    }
    scoreDiv.style.position = 'absolute';
@@ -190,6 +204,7 @@ class GameScene extends Phaser.Scene {
    if (!btnArea) {
      btnArea = document.createElement('div');
      btnArea.id = 'btn-area';
+     btnArea.classList.add('game-scene-ui');
      gameContainer?.appendChild(btnArea);
    }
    btnArea.style.position = 'absolute';
@@ -235,22 +250,24 @@ class GameScene extends Phaser.Scene {
    const castBtn = makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
    const reelBtn = makeBtn('reel-btn', 'リール', 'linear-gradient(135deg, #396afc 0%, #2948ff 100%)');
    const viewBtn = makeBtn('view-btn', '視点切替', 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)');
-   // ボタンをコンテナに追加
    btnArea.replaceChildren(castBtn, reelBtn, viewBtn);
 
    const dexBtn = makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
+   const titleBtn = makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #6c757d 0%, #343a40 100%)');
    
-   // 図鑑ボタンは別の場所に配置
    const topUiArea = document.getElementById('top-ui-area') || document.createElement('div');
    topUiArea.id = 'top-ui-area';
+   topUiArea.classList.add('game-scene-ui');
    if (!document.getElementById('top-ui-area')) {
      topUiArea.style.position = 'absolute';
      topUiArea.style.top = '24px';
      topUiArea.style.right = '32px';
      topUiArea.style.zIndex = '100';
+     topUiArea.style.display = 'flex';
+     topUiArea.style.gap = '16px';
      gameContainer?.appendChild(topUiArea);
    }
-   topUiArea.replaceChildren(dexBtn);
+   topUiArea.replaceChildren(dexBtn, titleBtn);
    
    // 既存のボタンエリアの位置調整
    btnArea.style.left = '50%';
@@ -267,6 +284,7 @@ class GameScene extends Phaser.Scene {
    castBtn.onclick = () => this.castLine();
    viewBtn.onclick = () => this.switchCameraPerspective();
    dexBtn.onclick = () => this.showDex(true);
+   titleBtn.onclick = () => this.scene.start('TitleScene');
    
    this.createMinigameUI(gameContainer);
  }
@@ -276,6 +294,7 @@ class GameScene extends Phaser.Scene {
     if (!minigameDiv) {
       minigameDiv = document.createElement('div');
       minigameDiv.id = 'minigame-ui';
+      minigameDiv.classList.add('game-scene-ui');
       container?.appendChild(minigameDiv);
     }
     minigameDiv.style.position = 'absolute';
@@ -337,6 +356,19 @@ class GameScene extends Phaser.Scene {
     successProgressBar.style.borderRadius = '4px';
     successProgressBar.style.transition = 'width 0.2s linear';
     successProgress.appendChild(successProgressBar);
+
+    // 予告アクションアイコン
+    const actionIcon = document.createElement('img');
+    actionIcon.id = 'minigame-action-icon';
+    actionIcon.style.position = 'absolute';
+    actionIcon.style.top = '-50px';
+    actionIcon.style.left = '50%';
+    actionIcon.style.transform = 'translateX(-50%)';
+    actionIcon.style.width = '40px';
+    actionIcon.style.height = '40px';
+    actionIcon.style.opacity = '0';
+    actionIcon.style.transition = 'opacity 0.2s';
+    minigameDiv.appendChild(actionIcon);
 
     this.minigameUI = minigameDiv;
   }
@@ -577,6 +609,7 @@ class GameScene extends Phaser.Scene {
     if (!msgDiv) {
       msgDiv = document.createElement('div');
       msgDiv.id = 'game-message';
+      msgDiv.classList.add('game-scene-ui');
       document.getElementById('game-container')?.appendChild(msgDiv);
 
       // 初期スタイル設定（一度だけ行えば良いもの）
@@ -697,40 +730,81 @@ class GameScene extends Phaser.Scene {
     
     if (this.minigame.active) {
       // --- ミニゲーム中のロジック ---
-      // 1. テンションの変動
-      // プレイヤーが引いているか
+      let tensionChange = 0;
+      
+      // 1. プレイヤーの操作によるテンション変化
       if (this.isPlayerPulling) {
-        this.minigame.tension += this.minigame.pullStrength;
+        tensionChange += this.minigame.pullStrength;
       } else {
-        this.minigame.tension -= this.minigame.tensionSpeed;
+        tensionChange -= this.minigame.tensionSpeed;
       }
-      // 魚の暴れ
-      this.minigame.tension += (Math.random() - 0.5) * this.minigame.struggleAmount;
-      // テンションを0-100の範囲に収める
+
+      // 2. 魚の行動パターンによるテンション変化
+      switch (this.minigame.fishAction) {
+        case 'struggle': // 激しく暴れる
+          tensionChange += (Math.random() - 0.5) * 5.0;
+          break;
+        case 'rush': // 突進 (急上昇)
+          tensionChange += 1.8; 
+          break;
+        case 'dive': // 潜る (急降下)
+          tensionChange -= 1.5;
+          break;
+        case 'normal':
+        default: // 通常
+          tensionChange += (Math.random() - 0.5) * 2.5;
+          break;
+      }
+      this.minigame.tension += tensionChange;
       this.minigame.tension = Math.max(0, Math.min(100, this.minigame.tension));
 
-      // 2. 成功/失敗の判定とプログレス更新
+      // 3. アクションの更新と予告
+      const actionIcon = document.getElementById('minigame-action-icon');
+      if (time > this.minigame.actionTimer - 1000 && !this.minigame.nextActionPreview) {
+        // 1秒前に予告表示
+        this.minigame.nextActionPreview = true;
+        const nextAction = ['struggle', 'rush', 'dive'][Math.floor(Math.random() * 3)];
+        if (actionIcon) {
+          actionIcon.src = `/assets/icons/icon_${nextAction}.svg`;
+          actionIcon.style.opacity = '1';
+        }
+        this.minigame.actionTimer_nextAction = nextAction;
+      }
+      
+      if (time > this.minigame.actionTimer) {
+        // アクション切り替え
+        this.minigame.fishAction = this.minigame.actionTimer_nextAction || 'normal';
+        this.minigame.actionTimer = time + 2000 + Math.random() * 2000;
+        this.minigame.nextActionPreview = false;
+        if (actionIcon) {
+          actionIcon.style.opacity = '0';
+        }
+      }
+
+      // 4. 成功/失敗の判定とプログレス更新
       const { tension, safeZone } = this.minigame;
       if (tension > safeZone.start && tension < safeZone.end) {
-        this.minigame.successProgress += 0.4; // 成功ゾーンにいればプログレス増加
+        this.minigame.successProgress += 0.4;
       } else {
-        this.minigame.successProgress -= 0.2; // ゾーン外では減少
+        this.minigame.successProgress -= 0.2;
       }
       this.minigame.successProgress = Math.max(0, this.minigame.successProgress);
 
-      // 3. UIの更新
+      // 5. UIの更新
       const tensionBar = document.getElementById('tension-bar');
       if (tensionBar) tensionBar.style.width = `${this.minigame.tension}%`;
       const successBar = document.getElementById('success-progress-bar');
       if (successBar) successBar.style.width = `${this.minigame.successProgress}%`;
       
-      // 4. ゲーム終了判定
+      // 6. ゲーム終了判定
       if (this.minigame.successProgress >= 100) {
         this.endMinigame(true); // 成功
-      } else if (this.minigame.successProgress <= 0 || this.minigame.tension >= 100) {
-        this.endMinigame(false); // 失敗
+      } else if (this.minigame.tension <= 0 || this.minigame.tension >= 100) {
+        // 失敗条件を緩和 (プログレスが0になった時のみ)
+        if(this.minigame.successProgress <= 0) {
+            this.endMinigame(false);
+        }
       }
-      
     } else {
       // --- 通常時の魚AIロジック ---
       this.fishes.forEach(fish => {
@@ -848,9 +922,12 @@ class GameScene extends Phaser.Scene {
     this.catchingFishObj = fish;
     fish.state = 'hooked'; // ミニゲーム中は'hooked'状態に
     this.minigame.active = true;
-    this.gameState.catchingFish = true; // catchingFishを流用
+    this.gameState.catchingFish = true;
     this.minigame.tension = 50;
-    this.minigame.successProgress = 10; // 少し初期値を与えておく
+    this.minigame.successProgress = 10;
+    this.minigame.fishAction = 'normal';
+    this.minigame.actionTimer = this.time.now + 2000 + Math.random() * 2000;
+    this.minigame.nextActionPreview = false;
 
     if(this.minigameUI) this.minigameUI.style.display = 'block';
 
@@ -941,6 +1018,7 @@ class GameScene extends Phaser.Scene {
     if (!dexContainer) {
         dexContainer = document.createElement('div');
         dexContainer.id = 'dex-container';
+        dexContainer.classList.add('game-scene-ui');
         document.getElementById('game-container')?.appendChild(dexContainer);
         dexContainer.style.position = 'absolute';
         dexContainer.style.top = '0';
@@ -1031,6 +1109,10 @@ class GameScene extends Phaser.Scene {
         fishGrid.appendChild(card);
       });
     }
+  }
+
+  cleanupHTML() {
+    document.querySelectorAll('.game-scene-ui').forEach(el => el.remove());
   }
 }
 
