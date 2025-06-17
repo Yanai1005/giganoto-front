@@ -17,8 +17,8 @@ export const initializeGame = (container) => {
     physics: {
       default: "arcade",
       arcade: {
-        gravity: { y: 0 }, // プレイヤーに重力を適用
-        debug: true, // trueにすると当たり判定などが可視化されデバッグに便利
+        gravity: { y: 0 },
+        debug: false, // デバッグ用の枠線を非表示
       },
     },
   };
@@ -26,5 +26,3 @@ export const initializeGame = (container) => {
   // Phaserゲームインスタンスを生成して返す
   return new Phaser.Game(config);
 };
-
-// 問題の行 `initializeGame("game-container");` を削除しました。

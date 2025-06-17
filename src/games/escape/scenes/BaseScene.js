@@ -59,7 +59,7 @@ export default class BaseScene extends Phaser.Scene {
 
     const speed = 200;
 
-    // まず、全方向の速度をリセット
+    // 全方向の速度をリセット
     this.player1.setVelocity(0);
     this.player2.setVelocity(0);
 
