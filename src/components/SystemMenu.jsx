@@ -28,7 +28,10 @@ const SystemMenu = () => {
     const handleIconClick = (index) => {
         setSelectedIcon(index);
         const iconData = systemIcons[index];
-        if (iconData.url) {
+
+        if (iconData.id === 'power') {
+            window.close();
+        } else if (iconData.url) {
             window.open(iconData.url, '_blank', 'noopener,noreferrer');
         } else {
             console.log(`${iconData.title} clicked`);
