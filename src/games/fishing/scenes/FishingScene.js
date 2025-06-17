@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import * as THREE from 'three';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -67,6 +68,7 @@ class GameScene extends Phaser.Scene {
     // 3Dオブジェクトの作成
     this.createWaterSurface();
     this.generateFishes();
+    this.createEnvironment();
     this.setupFishingRodControls();
     
     // HTMLベースのUIを作成
@@ -97,9 +99,10 @@ class GameScene extends Phaser.Scene {
 
     this.threeScene = new THREE.Scene();
 
-    // 最終手段：カメラの回転を直接指定し、強制的に真上からの視点にする
     this.threeCamera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1000);
     
+    this.createFishingRod(); // カメラに釣竿を追加
+
     // 定義した初期視点を設定
     this.setCameraPerspective(this.currentPerspectiveIndex);
 
@@ -127,6 +130,18 @@ class GameScene extends Phaser.Scene {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 20, 10);
     this.threeScene.add(directionalLight);
+
+    // 背景を設定
+    new RGBELoader()
+      .setPath('src/games/fishing/assets/') // アセットへのパス
+      .load('sky.hdr', (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        this.threeScene.background = texture;
+        this.threeScene.environment = texture;
+      },
+      undefined,
+      () => console.error("Failed to load background texture")
+      );
   }
 
   createHTMLUI() {
@@ -291,6 +306,34 @@ class GameScene extends Phaser.Scene {
     this.minigameUI = minigameDiv;
   }
   
+  createEnvironment() {
+    const rockCount = 15;
+    const rockMaterial = new THREE.MeshStandardMaterial({
+        color: 0x5a5a5a,
+        roughness: 0.8,
+        metalness: 0.1
+    });
+
+    for (let i = 0; i < rockCount; i++) {
+        const rockRadius = Math.random() * 0.5 + 0.2;
+        // 0 detail for a low-poly look
+        const rockGeometry = new THREE.IcosahedronGeometry(rockRadius, 0);
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * (this.pondRadius * 0.9);
+        
+        // 池の底に配置
+        rock.position.set(
+            Math.cos(angle) * r,
+            -1.5 + rockRadius,
+            Math.sin(angle) * r
+        );
+        rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        this.threeScene.add(rock);
+    }
+  }
+  
   createWaterSurface() {
     const pondRadius = 10;
 
@@ -341,37 +384,70 @@ class GameScene extends Phaser.Scene {
       const minRadius = 0.4;
       const maxRadius = 1.2;
       const fishRadius = minRadius + (maxRadius - minRadius) * ((size - fishType.minSize) / (fishType.maxSize - fishType.minSize));
-      const fishGeometry = new THREE.SphereGeometry(fishRadius, 16, 16);
-      const fishMaterial = new THREE.MeshStandardMaterial({
-        color: fishType.color,
-        transparent: false,
-        opacity: 1
+
+      const fishGroup = new THREE.Group();
+
+      // Body (elongated sphere)
+      const bodyMaterial = new THREE.MeshStandardMaterial({
+          color: fishType.color,
+          metalness: 0.3,
+          roughness: 0.4
       });
-      const fish = new THREE.Mesh(fishGeometry, fishMaterial);
+      const bodyGeometry = new THREE.SphereGeometry(fishRadius, 16, 16);
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.scale.z = 1.8; // Make it longer along the Z-axis (the direction of movement)
+      body.scale.x = 0.8;
+      fishGroup.add(body);
+
+      // Tail fin
+      const tailGeometry = new THREE.ConeGeometry(fishRadius * 0.9, fishRadius, 4);
+      const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+      tail.position.z = -fishRadius * 1.5; // Attach to the back
+      tail.rotation.x = Math.PI / 2; // Rotate to be vertical-ish
+      tail.scale.y = 0.1; // Flatten it
+      fishGroup.add(tail);
+
+      // Eyes
+      const eyeGeometry = new THREE.SphereGeometry(fishRadius * 0.15, 8, 8);
+      const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      leftEye.position.set(-fishRadius * 0.3, fishRadius * 0.2, fishRadius * 0.8);
+      fishGroup.add(leftEye);
+
+      const rightEye = leftEye.clone();
+      rightEye.position.x = fishRadius * 0.3;
+      fishGroup.add(rightEye);
+
       let angle = Math.random() * Math.PI * 2;
       let r = Math.random() * (this.pondRadius - 1);
-      fish.position.x = Math.cos(angle) * r;
-      fish.position.y = -1.2 - Math.random() * 0.3;
-      fish.position.z = Math.sin(angle) * r;
-      this.threeScene.add(fish);
+      fishGroup.position.x = Math.cos(angle) * r;
+      fishGroup.position.y = -1.2 - Math.random() * 0.3;
+      fishGroup.position.z = Math.sin(angle) * r;
+      this.threeScene.add(fishGroup);
       this.fishes.push({
-        mesh: fish,
+        mesh: fishGroup,
         type: fishType,
         size: size,
         direction: new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize(),
         timeOffset: Math.random() * 1000,
-        state: 'swim',
+        state: 'swim', // 'swim', 'approach', 'biting', 'hooked', 'escape'
         biteTimer: 0,
-        speed: fishType.speed
+        speed: fishType.speed,
+        interestCooldownUntil: 0, // 魚が次に興味を持つまでのクールダウン
+        radius: fishRadius // 衝突判定用の半径
       });
     }
   }
   
   setupFishingRodControls() {
     const lineGeometry = new THREE.BufferGeometry();
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    const rodTip = new THREE.Vector3(0, 0, -(this.pondRadius + 1));
-    const linePoints = [rodTip, new THREE.Vector3(0, -2, 0)];
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+
+    const rodTipPosition = new THREE.Vector3();
+    this.rodTip.getWorldPosition(rodTipPosition);
+    
+    // 釣り糸の始点と終点を竿の先端に設定
+    const linePoints = [rodTipPosition, rodTipPosition.clone()];
     lineGeometry.setFromPoints(linePoints);
     this.fishingLine = new THREE.Line(lineGeometry, lineMaterial);
     this.threeScene.add(this.fishingLine);
@@ -379,7 +455,7 @@ class GameScene extends Phaser.Scene {
     const floatGeometry = new THREE.SphereGeometry(0.2, 16, 16);
     const floatMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
     this.float = new THREE.Mesh(floatGeometry, floatMaterial);
-    this.float.position.set(0, -1, 0);
+    this.float.position.copy(rodTipPosition); // 浮きも最初は竿の先端に
     this.float.visible = false;
     this.threeScene.add(this.float);
   }
@@ -393,25 +469,28 @@ class GameScene extends Phaser.Scene {
     const radius = Math.random() * (this.pondRadius - 1);
     const targetX = Math.cos(angle) * radius;
     const targetZ = Math.sin(angle) * radius;
+    const targetY = -1; // 水面の高さ
     
     if (!this.float) {
       this.gameState.casting = false;
       return;
     }
+    
+    // 浮きを竿の先端からスタートさせる
+    const rodTipPosition = new THREE.Vector3();
+    this.rodTip.getWorldPosition(rodTipPosition);
+    this.float.position.copy(rodTipPosition);
     this.float.visible = true;
     
     this.tweens.add({
-      targets: { x: 0, y: 0, z: 0 },
+      targets: this.float.position, // 浮きのpositionを直接アニメーションさせる
       x: targetX,
+      y: targetY,
       z: targetZ,
       ease: 'Quad.out',
-      duration: 1000,
-      onUpdate: (tween, target) => {
-        if (this.float) {
-          this.float.position.x = target.x;
-          this.float.position.z = target.z;
-          this.updateFishingLine();
-        }
+      duration: 800,
+      onUpdate: () => {
+        this.updateFishingLine(); // 飛んでいる間も釣り糸を更新
       },
       onComplete: () => {
         this.gameState.casting = false;
@@ -421,10 +500,13 @@ class GameScene extends Phaser.Scene {
   
   updateFishingLine() {
     if (!this.fishingLine || !this.float) return;
-    const rodTip = new THREE.Vector3(0, 0, -(this.pondRadius + 1));
+
+    const rodTipPosition = new THREE.Vector3();
+    this.rodTip.getWorldPosition(rodTipPosition); // 毎フレーム竿の先端のグローバル座標を取得
+
     const linePoints = [
-      rodTip,
-      new THREE.Vector3(this.float.position.x, this.float.position.y, this.float.position.z)
+      rodTipPosition,
+      this.float.position // 浮きの現在の位置
     ];
     this.fishingLine.geometry.setFromPoints(linePoints);
     this.fishingLine.geometry.attributes.position.needsUpdate = true;
@@ -436,23 +518,23 @@ class GameScene extends Phaser.Scene {
 
     if (this.float) {
       this.gameState.reeling = true;
+
+      const rodTipPosition = new THREE.Vector3();
+      this.rodTip.getWorldPosition(rodTipPosition);
+
       this.tweens.add({
-        targets: { x: this.float.position.x, y: this.float.position.y, z: this.float.position.z },
-        x: 0,
-        y: 0,
-        z: 0,
+        targets: this.float.position, // 浮きのpositionを直接アニメーション
+        x: rodTipPosition.x,
+        y: rodTipPosition.y,
+        z: rodTipPosition.z,
         ease: 'Quad.in',
         duration: 1000,
-        onUpdate: (tween, target) => {
-          if (this.float) {
-            this.float.position.set(target.x, target.y, target.z);
+        onUpdate: () => {
             this.updateFishingLine();
-          }
         },
         onComplete: () => {
           if (this.float) this.float.visible = false;
           this.gameState.reeling = false;
-          // catchingFishフラグもリセット
           this.gameState.catchingFish = false;
         }
       });
@@ -545,6 +627,11 @@ class GameScene extends Phaser.Scene {
     if (perspective.lookAt) {
         this.threeCamera.lookAt(new THREE.Vector3(perspective.lookAt.x, perspective.lookAt.y, perspective.lookAt.z));
     }
+    
+    // 釣竿の表示・非表示を切り替え
+    if (this.fishingRod) {
+        this.fishingRod.visible = (index === 0); // 0: 斜め視点, 1: 真上視点
+    }
   }
 
   onResize() {
@@ -617,59 +704,93 @@ class GameScene extends Phaser.Scene {
       }
       
     } else {
-      // --- 通常時のロジック ---
+      // --- 通常時の魚AIロジック ---
       this.fishes.forEach(fish => {
-        if (fish?.mesh?.visible && fish.state !== 'caught') {
-          // catchingFishはミニゲームが始まるかどうかのトリガーにのみ使う
-          if (this.float?.visible && !this.gameState.catchingFish) {
-            const floatPos = this.float.position;
-            const fishPos = fish.mesh.position;
-            const dist = floatPos.distanceTo(fishPos);
-            
-            // 魚がウキに興味を持つ
-            if (fish.state === 'swim' && dist < 4) {
-              fish.state = 'approach';
-            }
-            
-            // ウキに近づく
-            if (fish.state === 'approach') {
-              const dir = new THREE.Vector3().subVectors(floatPos, fishPos).normalize();
-              fish.mesh.position.x += dir.x * fish.speed * 1.5;
-              fish.mesh.position.z += dir.z * fish.speed * 1.5;
-              
-              // ウキに食いつく -> ミニゲーム開始
-              if (dist < 1.0) {
-                this.startMinigame(fish);
-              }
-            }
-          } 
-          
-          if (fish.state === 'escape') {
-              // 逃げる処理
-              fish.mesh.position.x += fish.direction.x * fish.speed * 3; // 3倍速で逃げる
-              fish.mesh.position.z += fish.direction.z * fish.speed * 3;
-              const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
-              if (distFromCenter > this.pondRadius + 2) { // 池の外に出たら
-                  fish.state = 'swim'; // 通常状態に戻る
-              }
-          } else if (fish.state === 'swim') {
-            // 通常時の遊泳
-            fish.mesh.position.x += fish.direction.x * fish.speed;
-            fish.mesh.position.z += fish.direction.z * fish.speed;
-            const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
+        if (!fish?.mesh?.visible || fish.state === 'caught' || fish.state === 'hooked') {
+          return; // スキップ
+        }
+
+        const isFloatInWater = this.float?.visible && !this.gameState.casting && !this.gameState.reeling;
+        let currentSpeed = fish.speed;
+
+        // --- 1. AIの状態に基づいて、基本的な進行方向と速度を決定 ---
+        switch (fish.state) {
+          case 'swim': {
+            const distFromCenter = fish.mesh.position.length();
             if (distFromCenter > this.pondRadius - 0.5) {
-              const dirToCenter = new THREE.Vector3(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
-              fish.direction = dirToCenter;
+              fish.direction.set(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
             }
+            if (isFloatInWater && time > fish.interestCooldownUntil) {
+              const distToFloat = fish.mesh.position.distanceTo(this.float.position);
+              if (distToFloat < 5 && Math.random() < 0.1) {
+                fish.state = 'approach';
+              }
+              fish.interestCooldownUntil = time + 3000;
+            }
+            break;
           }
-          
-          // 共通の動き
-          fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
-          fish.mesh.lookAt(
-            fish.mesh.position.x + fish.direction.x,
-            fish.mesh.position.y,
-            fish.mesh.position.z + fish.direction.z
-          );
+          case 'approach': {
+            if (!isFloatInWater) { fish.state = 'swim'; break; }
+            const distToFloat = fish.mesh.position.distanceTo(this.float.position);
+            if (distToFloat < 1.2) {
+              fish.state = 'biting';
+              fish.biteTimer = time + 500 + Math.random() * 1000;
+            } else {
+              fish.direction.copy(new THREE.Vector3().subVectors(this.float.position, fish.mesh.position).normalize());
+              currentSpeed *= 1.5;
+            }
+            break;
+          }
+          case 'biting':
+            currentSpeed = 0; // その場で待機
+            if (!isFloatInWater) { fish.state = 'swim'; break; }
+            if (time > fish.biteTimer) {
+              this.startMinigame(fish);
+            }
+            break;
+
+          case 'escape':
+            currentSpeed *= 3; // 高速で逃走
+            if (fish.mesh.position.length() > this.pondRadius + 2) {
+              fish.state = 'swim';
+            }
+            break;
+        }
+        
+        // --- 2. 魚同士の衝突回避 ---
+        if (fish.state === 'swim' || fish.state === 'approach') {
+          const repulsion = new THREE.Vector3();
+          let collisionCount = 0;
+          this.fishes.forEach(otherFish => {
+              if (fish === otherFish || !otherFish.mesh.visible || !otherFish.radius) return;
+
+              const distance = fish.mesh.position.distanceTo(otherFish.mesh.position);
+              // 半径の合計に少しバッファを持たせる
+              const minDistance = fish.radius + otherFish.radius + 0.5;
+
+              if (distance < minDistance) {
+                  const awayVector = new THREE.Vector3().subVectors(fish.mesh.position, otherFish.mesh.position).normalize();
+                  repulsion.add(awayVector);
+                  collisionCount++;
+              }
+          });
+
+          if (collisionCount > 0) {
+              repulsion.divideScalar(collisionCount); // 平均の反発ベクトル
+              // lerpで現在の進行方向と反発方向を滑らかに合成
+              fish.direction.lerp(repulsion, 0.1).normalize();
+          }
+        }
+        
+        // --- 3. 最終的な速度で移動 ---
+        if (currentSpeed > 0) {
+          fish.mesh.position.add(fish.direction.clone().multiplyScalar(currentSpeed));
+        }
+
+        // --- 4. 全状態共通の更新処理 (上下動と向き) ---
+        fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
+        if (fish.direction.lengthSq() > 0) {
+          fish.mesh.lookAt(fish.mesh.position.clone().add(fish.direction));
         }
       });
     }
@@ -697,6 +818,7 @@ class GameScene extends Phaser.Scene {
     if (this.minigame.active) return;
     
     this.catchingFishObj = fish;
+    fish.state = 'hooked'; // ミニゲーム中は'hooked'状態に
     this.minigame.active = true;
     this.gameState.catchingFish = true; // catchingFishを流用
     this.minigame.tension = 50;
@@ -759,6 +881,30 @@ class GameScene extends Phaser.Scene {
     }
     
     this.gameState.catchingFish = false;
+  }
+
+  createFishingRod() {
+    const rodMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8B4513, // SaddleBrown
+        roughness: 0.7,
+        metalness: 0.1,
+    });
+    // 長くて細い円柱で竿を作成
+    const rodGeometry = new THREE.CylinderGeometry(0.05, 0.15, 15, 8);
+    rodGeometry.translate(0, 7.5, 0); // ピボット（回転軸）を竿の根元に移動
+    this.fishingRod = new THREE.Mesh(rodGeometry, rodMaterial);
+
+    // カメラに対する竿の位置と角度を調整
+    this.fishingRod.position.set(3, -4, -10);
+    this.fishingRod.rotation.set(0, -0.3, 0.8);
+
+    // 竿の先端を示す空のオブジェクトを作成
+    this.rodTip = new THREE.Object3D();
+    this.rodTip.position.y = 15; // 円柱の先端に配置
+    this.fishingRod.add(this.rodTip);
+
+    // 竿をカメラの子にして、常に一緒に動くようにする
+    this.threeCamera.add(this.fishingRod);
   }
 }
 
