@@ -37,18 +37,31 @@ class GameScene extends Phaser.Scene {
     // ミニゲームの状態
     this.minigame = {
       active: false,
-      tension: 50, // 0-100
-      successProgress: 0, // 0-100
-      safeZone: { start: 40, end: 70 },
-      tensionSpeed: 0.3, // テンションの自然下降速度
-      pullStrength: 1.5, // プレイヤーの引きの強さ
+      type: null, // 'tension' or 'timing'
       
-      // 新しいミニゲーム用のプロパティ
-      fishAction: 'normal', // 'normal', 'struggle', 'rush', 'dive'
-      actionTimer: 0,
-      nextActionPreview: false,
+      // テンションゲーム用
+      tension: {
+        value: 50,
+        safeZone: { start: 40, end: 70 },
+        speed: 0.3,
+        pullStrength: 1.5,
+        fishAction: 'normal',
+        actionTimer: 0,
+        nextActionPreview: false
+      },
+
+      // タイミングゲーム用
+      timing: {
+        progress: 0,
+        markerPosition: 0,
+        markerSpeed: 1.5,
+        safeZone: { start: 60, width: 20 }
+      },
+      
+      // 共通
+      overallProgress: 0,
     };
-    this.isPlayerPulling = false;
+    this.isPlayerPulling = false; // テンションゲームの長押し判定用
     
     // 魚のデータ
     this.fishes = [];
@@ -236,157 +249,129 @@ class GameScene extends Phaser.Scene {
        btn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
        btn.style.whiteSpace = 'nowrap'; // テキストの折り返しを禁止
        btn.onmouseover = () => {
-         btn.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
-         btn.style.transform = 'scale(1.07)';
-         btn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
+         if (!btn.disabled) {
+           const hoverBg = btn.id === 'reel-btn' ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' : 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+           btn.style.background = hoverBg;
+           btn.style.transform = 'scale(1.07)';
+           btn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
+         }
        };
        btn.onmouseout = () => {
-         btn.style.background = bg;
-         btn.style.transform = 'scale(1)';
-         btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+         if (!btn.disabled) {
+           btn.style.background = bg;
+           btn.style.transform = 'scale(1)';
+           btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+         }
        };
        return btn;
    };
    const castBtn = makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
-   const reelBtn = makeBtn('reel-btn', 'リール', 'linear-gradient(135deg, #396afc 0%, #2948ff 100%)');
-   const viewBtn = makeBtn('view-btn', '視点切替', 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)');
-   btnArea.replaceChildren(castBtn, reelBtn, viewBtn);
+   castBtn.onclick = () => this.castLine();
+
+   const reelBtn = makeBtn('reel-btn', 'リールを巻く', 'linear-gradient(135deg, #2980b9 0%, #2c3e50 100%)');
+   reelBtn.onmousedown = this.onReelBtnMouseDown.bind(this);
+   reelBtn.onmouseup = this.onReelBtnMouseUp.bind(this);
+   reelBtn.onmouseleave = () => { this.isPlayerPulling = false; }; // カーソルがボタンから外れた場合も考慮
+
+   const switchCamBtn = makeBtn('switch-cam-btn', '視点切替', 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)');
+   switchCamBtn.onclick = () => this.switchCameraPerspective();
+   
+   btnArea.appendChild(castBtn);
+   btnArea.appendChild(reelBtn);
+   btnArea.appendChild(switchCamBtn);
+   
+   let topUiArea = document.getElementById('top-ui-area');
+   if(!topUiArea) {
+       topUiArea = document.createElement('div');
+       topUiArea.id = 'top-ui-area';
+       topUiArea.classList.add('game-scene-ui');
+       gameContainer?.appendChild(topUiArea);
+   }
+   topUiArea.style.position = 'absolute';
+   topUiArea.style.top = '24px';
+   topUiArea.style.right = '32px';
+   topUiArea.style.zIndex = '100';
+   topUiArea.style.display = 'flex';
+   topUiArea.style.gap = '16px';
 
    const dexBtn = makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
-   const titleBtn = makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #6c757d 0%, #343a40 100%)');
+   const titleBtn = makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #868f96 0%, #596164 100%)');
    
-   const topUiArea = document.getElementById('top-ui-area') || document.createElement('div');
-   topUiArea.id = 'top-ui-area';
-   topUiArea.classList.add('game-scene-ui');
-   if (!document.getElementById('top-ui-area')) {
-     topUiArea.style.position = 'absolute';
-     topUiArea.style.top = '24px';
-     topUiArea.style.right = '32px';
-     topUiArea.style.zIndex = '100';
-     topUiArea.style.display = 'flex';
-     topUiArea.style.gap = '16px';
-     gameContainer?.appendChild(topUiArea);
-   }
-   topUiArea.replaceChildren(dexBtn, titleBtn);
+   topUiArea.appendChild(dexBtn);
+   topUiArea.appendChild(titleBtn);
    
-   // 既存のボタンエリアの位置調整
-   btnArea.style.left = '50%';
-   btnArea.style.transform = 'translateX(-50%)';
-   btnArea.style.width = 'auto'; // 幅を自動調整
-
-   reelBtn.style.userSelect = 'none'; // テキスト選択を防ぐ
-   reelBtn.onmousedown = () => { if (this.minigame.active) this.isPlayerPulling = true; };
-   reelBtn.onmouseup = () => { if (this.minigame.active) this.isPlayerPulling = false; };
-   reelBtn.onmouseleave = () => { if (this.minigame.active) this.isPlayerPulling = false; }; // カーソルがボタンから外れた場合
-   // ミニゲーム中以外は通常のreelLineを呼ぶ
-   reelBtn.onclick = () => { if (!this.minigame.active) this.reelLine(); };
-
-   castBtn.onclick = () => this.castLine();
-   viewBtn.onclick = () => this.switchCameraPerspective();
    dexBtn.onclick = () => this.showDex(true);
    titleBtn.onclick = () => this.scene.start('TitleScene');
    
-   this.createMinigameUI(gameContainer);
+   this.createAllMinigameUIs(gameContainer);
  }
   
-  createMinigameUI(container) {
-    let minigameDiv = document.getElementById('minigame-ui');
-    if (!minigameDiv) {
-      minigameDiv = document.createElement('div');
-      minigameDiv.id = 'minigame-ui';
-      minigameDiv.classList.add('game-scene-ui');
-      container?.appendChild(minigameDiv);
-    }
-    minigameDiv.style.position = 'absolute';
-    minigameDiv.style.bottom = '120px';
-    minigameDiv.style.left = '50%';
-    minigameDiv.style.transform = 'translateX(-50%)';
-    minigameDiv.style.width = '300px';
-    minigameDiv.style.zIndex = '200';
-    minigameDiv.style.display = 'none'; // 最初は非表示
-    minigameDiv.style.background = 'rgba(0,0,0,0.5)';
-    minigameDiv.style.borderRadius = '8px';
-    minigameDiv.style.padding = '10px';
-    minigameDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-
-    // テンションゲージのコンテナ
-    const tensionGauge = document.createElement('div');
-    tensionGauge.style.width = '100%';
-    tensionGauge.style.height = '20px';
-    tensionGauge.style.background = '#333';
-    tensionGauge.style.borderRadius = '5px';
-    tensionGauge.style.position = 'relative';
-    tensionGauge.style.overflow = 'hidden';
-    minigameDiv.appendChild(tensionGauge);
-
-    // テンションゲージのセーフゾーン
-    const safeZone = document.createElement('div');
-    safeZone.id = 'tension-safe-zone';
-    safeZone.style.position = 'absolute';
-    safeZone.style.left = `${this.minigame.safeZone.start}%`;
-    safeZone.style.width = `${this.minigame.safeZone.end - this.minigame.safeZone.start}%`;
-    safeZone.style.height = '100%';
-    safeZone.style.background = 'rgba(20, 200, 20, 0.4)';
-    tensionGauge.appendChild(safeZone);
-
-    // テンションバー本体
-    const tensionBar = document.createElement('div');
-    tensionBar.id = 'tension-bar';
-    tensionBar.style.width = '0%';
-    tensionBar.style.height = '100%';
-    tensionBar.style.background = 'linear-gradient(90deg, #fceabb 0%, #f8b500 100%)';
-    tensionBar.style.borderRadius = '5px';
-    tensionBar.style.transition = 'width 0.1s linear';
-    tensionGauge.appendChild(tensionBar);
+  createAllMinigameUIs(container) {
+    // --- テンションゲームUI ---
+    const tensionContainer = document.createElement('div');
+    tensionContainer.id = 'minigame-ui-tension';
+    tensionContainer.classList.add('minigame-container', 'game-scene-ui');
+    tensionContainer.style.display = 'none'; // 最初は非表示
+    container?.appendChild(tensionContainer);
+    tensionContainer.innerHTML = `
+      <img id="minigame-action-icon" style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; opacity: 0; transition: opacity 0.2s;">
+      <div style="width: 100%; height: 20px; background: #333; border-radius: 5px; position: relative; overflow: hidden;">
+        <div id="tension-safe-zone" style="position: absolute; left: ${this.minigame.tension.safeZone.start}%; width: ${this.minigame.tension.safeZone.end - this.minigame.tension.safeZone.start}%; height: 100%; background: rgba(20, 200, 20, 0.4);"></div>
+        <div id="tension-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #fceabb 0%, #f8b500 100%); border-radius: 5px; transition: width 0.1s linear;"></div>
+      </div>
+      <div class="progress-bar-bg"><div id="tension-progress-bar" class="progress-bar-fill"></div></div>
+    `;
     
-    // 成功プログレスバー
-    const successProgress = document.createElement('div');
-    successProgress.style.width = '100%';
-    successProgress.style.height = '8px';
-    successProgress.style.background = '#333';
-    successProgress.style.borderRadius = '4px';
-    successProgress.style.marginTop = '8px';
-    minigameDiv.appendChild(successProgress);
-
-    const successProgressBar = document.createElement('div');
-    successProgressBar.id = 'success-progress-bar';
-    successProgressBar.style.width = '0%';
-    successProgressBar.style.height = '100%';
-    successProgressBar.style.background = 'linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%)';
-    successProgressBar.style.borderRadius = '4px';
-    successProgressBar.style.transition = 'width 0.2s linear';
-    successProgress.appendChild(successProgressBar);
-
-    // 予告アクションアイコン
-    const actionIcon = document.createElement('img');
-    actionIcon.id = 'minigame-action-icon';
-    actionIcon.style.position = 'absolute';
-    actionIcon.style.top = '-50px';
-    actionIcon.style.left = '50%';
-    actionIcon.style.transform = 'translateX(-50%)';
-    actionIcon.style.width = '40px';
-    actionIcon.style.height = '40px';
-    actionIcon.style.opacity = '0';
-    actionIcon.style.transition = 'opacity 0.2s';
-    minigameDiv.appendChild(actionIcon);
-
-    this.minigameUI = minigameDiv;
+    // --- タイミングゲームUI ---
+    const timingContainer = document.createElement('div');
+    timingContainer.id = 'minigame-ui-timing';
+    timingContainer.classList.add('minigame-container', 'game-scene-ui');
+    timingContainer.style.display = 'none'; // 最初は非表示
+    container?.appendChild(timingContainer);
+    timingContainer.innerHTML = `
+        <div style="text-align: center; color: white; font-size: 0.9rem; margin-bottom: 8px;">タイミングを合わせてリールを引け！</div>
+        <div id="timing-track" style="width: 100%; height: 25px; background: #333; border-radius: 5px; position: relative; overflow: hidden;">
+            <div id="timing-safe-zone" style="position: absolute; height: 100%; background: rgba(20, 200, 20, 0.5);"></div>
+            <div id="timing-marker" style="position: absolute; width: 4px; height: 100%; background: #ffc107;"></div>
+        </div>
+        <div class="progress-bar-bg"><div id="timing-progress-bar" class="progress-bar-fill"></div></div>
+    `;
+ 
+    // 共通スタイルをCSSで定義 (可読性のため)
+    const style = document.createElement('style');
+    style.textContent = `
+      .minigame-container {
+        position: absolute; bottom: 120px; left: 50%;
+        transform: translateX(-50%); width: 300px; z-index: 200;
+        background: rgba(0,0,0,0.5); border-radius: 8px;
+        padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      }
+      .progress-bar-bg {
+        width: 100%; height: 8px; background: #333;
+        border-radius: 4px; margin-top: 8px;
+      }
+      .progress-bar-fill {
+        width: 0%; height: 100%;
+        background: linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%);
+        border-radius: 4px; transition: width 0.2s linear;
+      }
+    `;
+    document.head.appendChild(style);
   }
   
   createEnvironment() {
-    const rockCount = 40;
+    this.rocks = [];
+    const rockGeometry = new THREE.DodecahedronGeometry(1, 0); // サイズ1、詳細度0
     const rockMaterial = new THREE.MeshStandardMaterial({
         color: 0x5a5a5a,
-        roughness: 0.8,
-        metalness: 0.1
+        roughness: 0.8
     });
 
-    for (let i = 0; i < rockCount; i++) {
-        const rockRadius = Math.random() * 0.5 + 0.2;
-        // 0 detail for a low-poly look
-        const rockGeometry = new THREE.IcosahedronGeometry(rockRadius, 0);
+    for (let i = 0; i < 40; i++) {
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-
+        const rockRadius = Math.random() * 0.5 + 0.2;
+        rock.scale.set(rockRadius, rockRadius, rockRadius);
+        
         const angle = Math.random() * Math.PI * 2;
         const r = Math.random() * (this.pondRadius * 0.9);
         
@@ -398,6 +383,15 @@ class GameScene extends Phaser.Scene {
         );
         rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
         this.threeScene.add(rock);
+    }
+
+    if (this.gameState.catchingFish) {
+      // タイミングゲーム以外では長押しを検出
+      if (this.minigame.type !== 'timing') {
+        this.isPlayerPulling = true;
+      }
+    } else {
+      this.reelLine();
     }
   }
   
@@ -490,7 +484,7 @@ class GameScene extends Phaser.Scene {
         size: size,
         direction: new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize(),
         timeOffset: Math.random() * 1000,
-        state: 'swim', // 'swim', 'approach', 'biting', 'hooked', 'escape'
+        state: 'swim', // 'swim', 'approach', 'bite', 'hooked', 'escape'
         biteTimer: 0,
         speed: fishType.speed,
         interestCooldownUntil: 0, // 魚が次に興味を持つまでのクールダウン
@@ -509,8 +503,8 @@ class GameScene extends Phaser.Scene {
     // 釣り糸の始点と終点を竿の先端に設定
     const linePoints = [rodTipPosition, rodTipPosition.clone()];
     lineGeometry.setFromPoints(linePoints);
-    this.fishingLine = new THREE.Line(lineGeometry, lineMaterial);
-    this.threeScene.add(this.fishingLine);
+    this.line = new THREE.Line(lineGeometry, lineMaterial);
+    this.threeScene.add(this.line);
     
     const floatGeometry = new THREE.SphereGeometry(0.2, 16, 16);
     const floatMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
@@ -559,7 +553,7 @@ class GameScene extends Phaser.Scene {
   }
   
   updateFishingLine() {
-    if (!this.fishingLine || !this.float) return;
+    if (!this.line || !this.float) return;
 
     const rodTipPosition = new THREE.Vector3();
     this.rodTip.getWorldPosition(rodTipPosition); // 毎フレーム竿の先端のグローバル座標を取得
@@ -568,8 +562,8 @@ class GameScene extends Phaser.Scene {
       rodTipPosition,
       this.float.position // 浮きの現在の位置
     ];
-    this.fishingLine.geometry.setFromPoints(linePoints);
-    this.fishingLine.geometry.attributes.position.needsUpdate = true;
+    this.line.geometry.setFromPoints(linePoints);
+    this.line.geometry.attributes.position.needsUpdate = true;
   }
   
   reelLine() {
@@ -604,64 +598,57 @@ class GameScene extends Phaser.Scene {
     }
   }
   
-  showMessage(text) {
-    let msgDiv = document.getElementById('game-message');
+  showMessage(text, duration = 2000, isMajor = true) {
+    let msgDiv = document.getElementById('message-ui');
     if (!msgDiv) {
       msgDiv = document.createElement('div');
-      msgDiv.id = 'game-message';
+      msgDiv.id = 'message-ui';
       msgDiv.classList.add('game-scene-ui');
-      document.getElementById('game-container')?.appendChild(msgDiv);
-
-      // 初期スタイル設定（一度だけ行えば良いもの）
+      const gameContainer = document.getElementById('game-container');
+      if (gameContainer) {
+          gameContainer.appendChild(msgDiv);
+      }
       msgDiv.style.position = 'absolute';
       msgDiv.style.top = '50%';
       msgDiv.style.left = '50%';
-      msgDiv.style.zIndex = '10000';
+      msgDiv.style.transform = 'translate(-50%, -50%)';
+      msgDiv.style.zIndex = '300';
+      msgDiv.style.background = 'rgba(0,0,0,0.7)';
+      msgDiv.style.color = 'white';
+      msgDiv.style.padding = '20px 40px';
+      msgDiv.style.borderRadius = '12px';
+      msgDiv.style.textAlign = 'center';
+      msgDiv.style.transition = 'opacity 0.4s ease-in-out';
+      msgDiv.style.opacity = '0';
       msgDiv.style.pointerEvents = 'none';
-      msgDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-      msgDiv.style.color = '#fff';
+      msgDiv.style.boxShadow = '0 5px 25px rgba(0,0,0,0.3)';
+      msgDiv.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+    }
+
+    msgDiv.textContent = text;
+    
+    if (isMajor) {
       msgDiv.style.fontSize = '2rem';
       msgDiv.style.fontWeight = 'bold';
-      msgDiv.style.padding = '18px 40px';
-      msgDiv.style.borderRadius = '18px';
-      msgDiv.style.boxShadow = '0 8px 32px rgba(0,0,0,0.35)';
-      msgDiv.style.letterSpacing = '0.05em';
-      msgDiv.style.textAlign = 'center';
-      msgDiv.style.textShadow = '0 2px 8px #000a';
-      // アニメーション用のタイマーを保存するプロパティ
-      msgDiv.hideTimeout = null;
+    } else {
+      msgDiv.style.fontSize = '1.4rem';
+      msgDiv.style.fontWeight = 'normal';
     }
 
-    // 既存のアニメーションをキャンセル
-    if (msgDiv.hideTimeout) {
-        clearTimeout(msgDiv.hideTimeout);
-    }
-    
-    // より自然なアニメーションに変更
-    msgDiv.style.transition = 'opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    if (msgDiv.hideTimeout) clearTimeout(msgDiv.hideTimeout);
+    if (msgDiv.showTimeout) clearTimeout(msgDiv.showTimeout);
+
     msgDiv.style.display = 'block';
-    msgDiv.textContent = text;
-
-    // 表示アニメーション（少し遅延させて、スタイル変更を確実に検知させる）
-    // 1. まずは非表示・縮小状態に
-    msgDiv.style.opacity = '0';
-    msgDiv.style.transform = 'translate(-50%, -50%) scale(0.8)';
-    
-    // 2. 次のフレームで表示・通常サイズへ（これでアニメーションが開始される）
-    requestAnimationFrame(() => {
+    msgDiv.showTimeout = setTimeout(() => {
         msgDiv.style.opacity = '1';
-        msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
-    });
+    }, 50);
 
-    // 非表示アニメーション
     msgDiv.hideTimeout = setTimeout(() => {
       msgDiv.style.opacity = '0';
-      msgDiv.style.transform = 'translate(-50%, -50%) scale(0.8)';
-      // アニメーション完了後に要素を非表示にする
       msgDiv.hideTimeout = setTimeout(() => {
         msgDiv.style.display = 'none';
-      }, 400); // transitionの期間と合わせる
-    }, 2000); // 2秒間表示
+      }, 400); 
+    }, duration);
   }
 
   switchCameraPerspective() {
@@ -715,186 +702,30 @@ class GameScene extends Phaser.Scene {
       return;
     }
     
-    if (this.waterVertices && this.waterGeometry) {
-      // 円柱の上面の頂点（前半部分）だけを揺らして波を表現
-      const topVerticesCount = this.pondTopVerticesCount;
-      const pondHeight = 0.5;
-      for (let i = 0; i < topVerticesCount * 3; i += 3) {
-        const x = this.waterVertices[i];
-        const z = this.waterVertices[i + 2];
-        // 元のY座標（円柱の上面）を基準に波を計算
-        this.waterVertices[i + 1] = (pondHeight / 2) + Math.sin(time / 400 + x * 0.3 + z * 0.3) * 0.1;
-      }
-      this.waterGeometry.attributes.position.needsUpdate = true;
-    }
+    this.updateWater(time);
     
     if (this.minigame.active) {
-      // --- ミニゲーム中のロジック ---
-      let tensionChange = 0;
+      // --- ミニゲーム共通のプログレス更新 ---
+      this.minigame.overallProgress = Math.max(0, this.minigame.overallProgress);
       
-      // 1. プレイヤーの操作によるテンション変化
-      if (this.isPlayerPulling) {
-        tensionChange += this.minigame.pullStrength;
-      } else {
-        tensionChange -= this.minigame.tensionSpeed;
+      // --- ミニゲームの種類に応じたロジック ---
+      switch (this.minigame.type) {
+          case 'tension':
+              this.updateTensionMinigame(time);
+              break;
+          case 'timing':
+              this.updateTimingMinigame();
+              break;
       }
 
-      // 2. 魚の行動パターンによるテンション変化
-      switch (this.minigame.fishAction) {
-        case 'struggle': // 激しく暴れる
-          tensionChange += (Math.random() - 0.5) * 5.0;
-          break;
-        case 'rush': // 突進 (急上昇)
-          tensionChange += 1.8; 
-          break;
-        case 'dive': // 潜る (急降下)
-          tensionChange -= 1.5;
-          break;
-        case 'normal':
-        default: // 通常
-          tensionChange += (Math.random() - 0.5) * 2.5;
-          break;
-      }
-      this.minigame.tension += tensionChange;
-      this.minigame.tension = Math.max(0, Math.min(100, this.minigame.tension));
-
-      // 3. アクションの更新と予告
-      const actionIcon = document.getElementById('minigame-action-icon');
-      if (time > this.minigame.actionTimer - 1000 && !this.minigame.nextActionPreview) {
-        // 1秒前に予告表示
-        this.minigame.nextActionPreview = true;
-        const nextAction = ['struggle', 'rush', 'dive'][Math.floor(Math.random() * 3)];
-        if (actionIcon) {
-          actionIcon.src = `/assets/icons/icon_${nextAction}.svg`;
-          actionIcon.style.opacity = '1';
-        }
-        this.minigame.actionTimer_nextAction = nextAction;
-      }
-      
-      if (time > this.minigame.actionTimer) {
-        // アクション切り替え
-        this.minigame.fishAction = this.minigame.actionTimer_nextAction || 'normal';
-        this.minigame.actionTimer = time + 2000 + Math.random() * 2000;
-        this.minigame.nextActionPreview = false;
-        if (actionIcon) {
-          actionIcon.style.opacity = '0';
-        }
-      }
-
-      // 4. 成功/失敗の判定とプログレス更新
-      const { tension, safeZone } = this.minigame;
-      if (tension > safeZone.start && tension < safeZone.end) {
-        this.minigame.successProgress += 0.4;
-      } else {
-        this.minigame.successProgress -= 0.2;
-      }
-      this.minigame.successProgress = Math.max(0, this.minigame.successProgress);
-
-      // 5. UIの更新
-      const tensionBar = document.getElementById('tension-bar');
-      if (tensionBar) tensionBar.style.width = `${this.minigame.tension}%`;
-      const successBar = document.getElementById('success-progress-bar');
-      if (successBar) successBar.style.width = `${this.minigame.successProgress}%`;
-      
-      // 6. ゲーム終了判定
-      if (this.minigame.successProgress >= 100) {
-        this.endMinigame(true); // 成功
-      } else if (this.minigame.tension <= 0 || this.minigame.tension >= 100) {
-        // 失敗条件を緩和 (プログレスが0になった時のみ)
-        if(this.minigame.successProgress <= 0) {
-            this.endMinigame(false);
-        }
+      // --- 終了判定 ---
+      if (this.minigame.overallProgress >= 100) {
+          this.endMinigame(true);
+      } else if (this.minigame.overallProgress <= 0) {
+          this.endMinigame(false);
       }
     } else {
-      // --- 通常時の魚AIロジック ---
-      this.fishes.forEach(fish => {
-        if (!fish?.mesh?.visible || fish.state === 'caught' || fish.state === 'hooked') {
-          return; // スキップ
-        }
-
-        const isFloatInWater = this.float?.visible && !this.gameState.casting && !this.gameState.reeling;
-        let currentSpeed = fish.speed;
-
-        // --- 1. AIの状態に基づいて、基本的な進行方向と速度を決定 ---
-        switch (fish.state) {
-          case 'swim': {
-            const distFromCenter = fish.mesh.position.length();
-            if (distFromCenter > this.pondRadius - 0.5) {
-              fish.direction.set(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
-            }
-            if (isFloatInWater && time > fish.interestCooldownUntil) {
-              const distToFloat = fish.mesh.position.distanceTo(this.float.position);
-              if (distToFloat < 5 && Math.random() < 0.1) {
-                fish.state = 'approach';
-              }
-              fish.interestCooldownUntil = time + 3000;
-            }
-            break;
-          }
-          case 'approach': {
-            if (!isFloatInWater) { fish.state = 'swim'; break; }
-            const distToFloat = fish.mesh.position.distanceTo(this.float.position);
-            if (distToFloat < 1.2) {
-              fish.state = 'biting';
-              fish.biteTimer = time + 500 + Math.random() * 1000;
-            } else {
-              fish.direction.copy(new THREE.Vector3().subVectors(this.float.position, fish.mesh.position).normalize());
-              currentSpeed *= 1.5;
-            }
-            break;
-          }
-          case 'biting':
-            currentSpeed = 0; // その場で待機
-            if (!isFloatInWater) { fish.state = 'swim'; break; }
-            if (time > fish.biteTimer) {
-              this.startMinigame(fish);
-            }
-            break;
-
-          case 'escape':
-            currentSpeed *= 3; // 高速で逃走
-            if (fish.mesh.position.length() > this.pondRadius + 2) {
-              fish.state = 'swim';
-            }
-            break;
-        }
-        
-        // --- 2. 魚同士の衝突回避 ---
-        if (fish.state === 'swim' || fish.state === 'approach') {
-          const repulsion = new THREE.Vector3();
-          let collisionCount = 0;
-          this.fishes.forEach(otherFish => {
-              if (fish === otherFish || !otherFish.mesh.visible || !otherFish.radius) return;
-
-              const distance = fish.mesh.position.distanceTo(otherFish.mesh.position);
-              // 半径の合計に少しバッファを持たせる
-              const minDistance = fish.radius + otherFish.radius + 0.5;
-
-              if (distance < minDistance) {
-                  const awayVector = new THREE.Vector3().subVectors(fish.mesh.position, otherFish.mesh.position).normalize();
-                  repulsion.add(awayVector);
-                  collisionCount++;
-              }
-          });
-
-          if (collisionCount > 0) {
-              repulsion.divideScalar(collisionCount); // 平均の反発ベクトル
-              // lerpで現在の進行方向と反発方向を滑らかに合成
-              fish.direction.lerp(repulsion, 0.1).normalize();
-          }
-        }
-        
-        // --- 3. 最終的な速度で移動 ---
-        if (currentSpeed > 0) {
-          fish.mesh.position.add(fish.direction.clone().multiplyScalar(currentSpeed));
-        }
-
-        // --- 4. 全状態共通の更新処理 (上下動と向き) ---
-        fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
-        if (fish.direction.lengthSq() > 0) {
-          fish.mesh.lookAt(fish.mesh.position.clone().add(fish.direction));
-        }
-      });
+      this.updateFishAI(time);
     }
 
     if (this.float?.visible) {
@@ -910,34 +741,178 @@ class GameScene extends Phaser.Scene {
     this.threeRenderer.render(this.threeScene, this.threeCamera);
   }
 
-  updateScoreUI() {
-    if (this.scoreDiv) {
-      this.scoreDiv.textContent = 'スコア：' + this.gameState.score;
+  updateWater(time) {
+    if (this.waterVertices && this.waterGeometry) {
+      // 円柱の上面の頂点（前半部分）だけを揺らして波を表現
+      const topVerticesCount = this.pondTopVerticesCount;
+      const pondHeight = 0.5;
+      for (let i = 0; i < topVerticesCount * 3; i += 3) {
+        const x = this.waterVertices[i];
+        const z = this.waterVertices[i + 2];
+        // 元のY座標（円柱の上面）を基準に波を計算
+        this.waterVertices[i + 1] = (pondHeight / 2) + Math.sin(time / 400 + x * 0.3 + z * 0.3) * 0.1;
+      }
+      this.waterGeometry.attributes.position.needsUpdate = true;
     }
   }
 
-  startMinigame(fish) {
+  updateFishAI(time) {
+    // --- 通常時の魚AIロジック ---
+    this.fishes.forEach(fish => {
+      if (!fish?.mesh?.visible || fish.state === 'caught' || fish.state === 'hooked') {
+        return; // スキップ
+      }
+
+      const isFloatInWater = this.float?.visible && !this.gameState.casting && !this.gameState.reeling;
+      let currentSpeed = fish.speed;
+
+      // --- 1. AIの状態に基づいて、基本的な進行方向と速度を決定 ---
+      switch (fish.state) {
+        case 'swim': {
+          // まずは池の境界からはみ出ないようにする
+          const distFromCenter = fish.mesh.position.length();
+          if (distFromCenter > this.pondRadius - 0.5) {
+            fish.direction.set(-fish.mesh.position.x, 0, -fish.mesh.position.z).normalize();
+          }
+
+          // ウキが水中にあり、魚がクールダウン中でなければ、興味を持つか判定
+          if (isFloatInWater && time > fish.interestCooldownUntil) {
+            const distToFloat = fish.mesh.position.distanceTo(this.float.position);
+            
+            const interestRadius = 6; // 興味を持つ範囲
+            if (distToFloat < interestRadius) {
+              // 範囲内にいれば、40%の確率でアプローチを開始
+              if (Math.random() < 0.4) {
+                fish.state = 'approach';
+                // アプローチする魚は、次の行動まで長めのクールダウン
+                fish.interestCooldownUntil = time + 5000 + Math.random() * 3000;
+              } else {
+                // アプローチしなかった魚も、少しの間は様子を見る
+                fish.interestCooldownUntil = time + 1000 + Math.random() * 1000;
+              }
+            }
+          }
+          break;
+        }
+        case 'approach': {
+          if (!isFloatInWater) { fish.state = 'swim'; break; }
+          const distToFloat = fish.mesh.position.distanceTo(this.float.position);
+          if (distToFloat < 1.2) {
+            fish.state = 'bite';
+            fish.biteTimer = time + 500 + Math.random() * 1000;
+          } else {
+            fish.direction.copy(new THREE.Vector3().subVectors(this.float.position, fish.mesh.position).normalize());
+            currentSpeed *= 1.5;
+          }
+          break;
+        }
+        case 'bite':
+          currentSpeed = 0; // その場で待機
+          if (!isFloatInWater) { fish.state = 'swim'; break; }
+          if (time > fish.biteTimer) {
+            this.startRandomMinigame(fish);
+          }
+          break;
+
+        case 'escape':
+          currentSpeed *= 3; // 高速で逃走
+          if (fish.mesh.position.length() > this.pondRadius + 2) {
+            fish.state = 'swim';
+          }
+          break;
+      }
+      
+      // --- 2. 魚同士の衝突回避 ---
+      if (fish.state === 'swim' || fish.state === 'approach') {
+        const repulsion = new THREE.Vector3();
+        let collisionCount = 0;
+        this.fishes.forEach(otherFish => {
+            if (fish === otherFish || !otherFish.mesh.visible || !otherFish.radius) return;
+
+            const distance = fish.mesh.position.distanceTo(otherFish.mesh.position);
+            // 半径の合計に少しバッファを持たせる
+            const minDistance = fish.radius + otherFish.radius + 0.5;
+
+            if (distance < minDistance) {
+                const awayVector = new THREE.Vector3().subVectors(fish.mesh.position, otherFish.mesh.position).normalize();
+                repulsion.add(awayVector);
+                collisionCount++;
+            }
+        });
+
+        if (collisionCount > 0) {
+            repulsion.divideScalar(collisionCount); // 平均の反発ベクトル
+            // lerpで現在の進行方向と反発方向を滑らかに合成
+            fish.direction.lerp(repulsion, 0.1).normalize();
+        }
+      }
+      
+      // --- 3. 最終的な速度で移動 ---
+      if (currentSpeed > 0) {
+        fish.mesh.position.add(fish.direction.clone().multiplyScalar(currentSpeed));
+      }
+
+      // --- 4. 全状態共通の更新処理 (上下動と向き) ---
+      fish.mesh.position.y = -2 - Math.sin(time / 1000 + fish.timeOffset) * 0.5;
+      if (fish.direction.lengthSq() > 0) {
+        fish.mesh.lookAt(fish.mesh.position.clone().add(fish.direction));
+      }
+
+      // --- 5. 最終的な位置の境界チェック ---
+      const distFromCenter = Math.sqrt(fish.mesh.position.x ** 2 + fish.mesh.position.z ** 2);
+      if (distFromCenter > this.pondRadius - 0.5) {
+          const angle = Math.atan2(fish.mesh.position.z, fish.mesh.position.x);
+          fish.mesh.position.x = Math.cos(angle) * (this.pondRadius - 0.5);
+          fish.mesh.position.z = Math.sin(angle) * (this.pondRadius - 0.5);
+      }
+    });
+  }
+
+  updateScoreUI() {
+    if (this.scoreDiv) {
+      this.scoreDiv.textContent = `SCORE: ${this.gameState.score}`;
+    }
+  }
+
+  startRandomMinigame(fish) {
     if (this.minigame.active) return;
     
     this.catchingFishObj = fish;
-    fish.state = 'hooked'; // ミニゲーム中は'hooked'状態に
+    fish.state = 'hooked';
     this.minigame.active = true;
     this.gameState.catchingFish = true;
-    this.minigame.tension = 50;
-    this.minigame.successProgress = 10;
-    this.minigame.fishAction = 'normal';
-    this.minigame.actionTimer = this.time.now + 2000 + Math.random() * 2000;
-    this.minigame.nextActionPreview = false;
+    this.minigame.overallProgress = 10;
 
-    if(this.minigameUI) this.minigameUI.style.display = 'block';
+    // ランダムにミニゲームを選択
+    this.minigame.type = Math.random() < 0.5 ? 'tension' : 'timing';
 
     // ボタンのテキストを変更
     const reelBtn = document.getElementById('reel-btn');
-    if (reelBtn) reelBtn.textContent = 'PULL!';
+    if (reelBtn) reelBtn.textContent = this.minigame.type === 'tension' ? 'PULL!' : 'HIT!';
     const castBtn = document.getElementById('cast-btn');
-    if (castBtn) castBtn.style.display = 'none'; // キャストボタンを隠す
+    if (castBtn) castBtn.style.display = 'none';
+
+    if (this.minigame.type === 'tension') {
+        // テンションゲームの初期化
+        this.minigame.tension.value = 50;
+        this.minigame.tension.fishAction = 'normal';
+        this.minigame.tension.actionTimer = this.time.now + 2000 + Math.random() * 2000;
+        this.minigame.tension.nextActionPreview = false;
+        document.getElementById('minigame-ui-tension').style.display = 'block';
+    } else {
+        // タイミングゲームの初期化
+        this.minigame.timing.markerPosition = 0;
+        this.minigame.timing.markerSpeed = (1.2 + Math.random() * 0.8) * (Math.random() < 0.5 ? 1 : -1); // 速度と方向をランダムに
+        const safeZone = this.minigame.timing.safeZone;
+        safeZone.start = Math.random() * (100 - safeZone.width);
+        const safeZoneEl = document.getElementById('timing-safe-zone');
+        safeZoneEl.style.left = `${safeZone.start}%`;
+        safeZoneEl.style.width = `${safeZone.width}%`;
+        document.getElementById('timing-marker').style.left = `0%`; // マーカーを初期位置に
+        document.getElementById('minigame-ui-timing').style.display = 'block';
+    }
     
-    this.showMessage("魚が食いついた！ゲージを操作して釣り上げろ！");
+    this.showMessage("HIT! 魚とのファイト開始！");
   }
 
   endMinigame(success) {
@@ -945,13 +920,6 @@ class GameScene extends Phaser.Scene {
     
     this.minigame.active = false;
     this.isPlayerPulling = false;
-    if(this.minigameUI) this.minigameUI.style.display = 'none';
-    
-    // ボタンの状態を元に戻す
-    const reelBtn = document.getElementById('reel-btn');
-    if (reelBtn) reelBtn.textContent = 'リール';
-    const castBtn = document.getElementById('cast-btn');
-    if (castBtn) castBtn.style.display = 'inline-block';
 
     const caughtFish = this.catchingFishObj;
     this.catchingFishObj = null; // 参照をクリア
@@ -961,32 +929,27 @@ class GameScene extends Phaser.Scene {
       FishDex.recordCatch(caughtFish.type.name, caughtFish.size); // 釣果を記録
       this.gameState.score += caughtFish.type.points;
       this.updateScoreUI();
-      this.showMessage(`${caughtFish.size}cmの${caughtFish.type.name}を釣った！ +${caughtFish.type.points}ポイント`);
-      if (caughtFish.mesh) {
-        caughtFish.mesh.visible = false;
-      }
-      // 釣った後のリール巻き上げ処理
-      this.reelLine();
-      // 魚の再配置
-      setTimeout(() => {
-        if (caughtFish.mesh) {
-          const angle = Math.random() * Math.PI * 2;
-          const r = Math.random() * (this.pondRadius - 1);
-          caughtFish.mesh.position.set(Math.cos(angle) * r, -1.2 - Math.random() * 0.3, Math.sin(angle) * r);
-          caughtFish.mesh.visible = true;
-          caughtFish.state = 'swim';
-        }
-      }, 3000);
+      this.showMessage(`やった！${caughtFish.size}cmの${caughtFish.type.name}を釣り上げた！`, 3000);
     } else {
       // 釣り失敗
-      this.showMessage("魚に逃げられてしまった...");
-      caughtFish.state = 'escape'; // 逃げる状態に
-      caughtFish.direction = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
-      // 失敗した場合もリールは巻き取る
-      this.reelLine();
+      this.showMessage('逃げられてしまった...', 3000);
+      caughtFish.state = 'swim';
     }
     
     this.gameState.catchingFish = false;
+
+    // 釣り糸とウキを非表示にして、キャスト前の状態に戻す
+    if (this.float) this.float.visible = false;
+    if (this.line) this.line.visible = false;
+
+    // UIを元に戻す
+    const reelBtn = document.getElementById('reel-btn');
+    if (reelBtn) reelBtn.textContent = 'リールを巻く';
+    const castBtn = document.getElementById('cast-btn');
+    if (castBtn) castBtn.style.display = 'inline-block';
+    
+    document.getElementById('minigame-ui-tension').style.display = 'none';
+    document.getElementById('minigame-ui-timing').style.display = 'none';
   }
 
   createFishingRod() {
@@ -1011,13 +974,67 @@ class GameScene extends Phaser.Scene {
 
     // 竿をカメラの子にして、常に一緒に動くようにする
     this.threeCamera.add(this.fishingRod);
+    this.fishingRod.visible = true;
+  }
+
+  updateTensionMinigame(time) {
+    let tensionChange = 0;
+    if (this.isPlayerPulling) tensionChange += this.minigame.tension.pullStrength;
+    else tensionChange -= this.minigame.tension.speed;
+
+    switch (this.minigame.tension.fishAction) {
+      case 'struggle': tensionChange += (Math.random() - 0.5) * 5.0; break;
+      case 'rush': tensionChange += 1.8; break;
+      case 'dive': tensionChange -= 1.5; break;
+      default: tensionChange += (Math.random() - 0.5) * 2.5; break;
+    }
+    this.minigame.tension.value += tensionChange;
+    this.minigame.tension.value = Math.max(0, Math.min(100, this.minigame.tension.value));
+
+    const actionIcon = document.getElementById('minigame-action-icon');
+    if (time > this.minigame.tension.actionTimer - 1000 && !this.minigame.tension.nextActionPreview) {
+      this.minigame.tension.nextActionPreview = true;
+      const nextAction = ['struggle', 'rush', 'dive'][Math.floor(Math.random() * 3)];
+      if (actionIcon) {
+        actionIcon.src = `/assets/icons/icon_${nextAction}.svg`;
+        actionIcon.style.opacity = '1';
+      }
+      this.minigame.tension.actionTimer_nextAction = nextAction;
+    }
+    
+    if (time > this.minigame.tension.actionTimer) {
+      this.minigame.tension.fishAction = this.minigame.tension.actionTimer_nextAction || 'normal';
+      this.minigame.tension.actionTimer = time + 2000 + Math.random() * 2000;
+      this.minigame.tension.nextActionPreview = false;
+      if (actionIcon) actionIcon.style.opacity = '0';
+    }
+
+    const { value, safeZone } = this.minigame.tension;
+    if (value > safeZone.start && value < safeZone.end) this.minigame.overallProgress += 0.4;
+    else this.minigame.overallProgress -= 0.2;
+
+    document.getElementById('tension-bar').style.width = `${this.minigame.tension.value}%`;
+    document.getElementById('tension-progress-bar').style.width = `${this.minigame.overallProgress}%`;
+
+    if(this.minigame.tension.value <=0 || this.minigame.tension.value >= 100) this.minigame.overallProgress -= 0.8;
+  }
+
+  updateTimingMinigame() {
+    const { timing } = this.minigame;
+    timing.markerPosition += timing.markerSpeed;
+    if (timing.markerPosition > 100 || timing.markerPosition < 0) {
+        timing.markerSpeed *= -1; // 壁で跳ね返る
+        timing.markerPosition = Math.max(0, Math.min(100, timing.markerPosition));
+    }
+    document.getElementById('timing-marker').style.left = `${timing.markerPosition}%`;
+    document.getElementById('timing-progress-bar').style.width = `${this.minigame.overallProgress}%`;
   }
 
   showDex(visible) {
-    let dexContainer = document.getElementById('dex-container');
+    let dexContainer = document.getElementById('fish-dex-container');
     if (!dexContainer) {
         dexContainer = document.createElement('div');
-        dexContainer.id = 'dex-container';
+        dexContainer.id = 'fish-dex-container';
         dexContainer.classList.add('game-scene-ui');
         document.getElementById('game-container')?.appendChild(dexContainer);
         dexContainer.style.position = 'absolute';
@@ -1113,6 +1130,36 @@ class GameScene extends Phaser.Scene {
 
   cleanupHTML() {
     document.querySelectorAll('.game-scene-ui').forEach(el => el.remove());
+  }
+
+  onReelBtnMouseDown() {
+    if (this.gameState.catchingFish) {
+      // テンションゲームでは長押しを検出
+      if (this.minigame.type === 'tension') {
+        this.isPlayerPulling = true;
+      }
+    } else {
+      this.reelLine();
+    }
+  }
+
+  onReelBtnMouseUp() {
+    // テンションゲームでは長押し終了
+    if (this.minigame.active && this.minigame.type === 'tension') {
+      this.isPlayerPulling = false;
+    }
+    
+    // タイミングゲームの場合はここでヒット判定
+    if (this.minigame.active && this.minigame.type === 'timing') {
+      const { markerPosition, safeZone } = this.minigame.timing;
+      if (markerPosition > safeZone.start && markerPosition < safeZone.start + safeZone.width) {
+        this.minigame.overallProgress += 15; // 成功
+        this.showMessage("NICE!", 500, false);
+      } else {
+        this.minigame.overallProgress -= 10; // 失敗
+        this.showMessage("MISS...", 500, false);
+      }
+    }
   }
 }
 
