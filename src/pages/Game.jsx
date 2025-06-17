@@ -96,12 +96,14 @@ const Game = () => {
             }}>
                 <div
                     ref={gameRef}
+                    id="game-container"
                     style={{
+                        position: 'relative',
                         border: '2px solid #34495e',
                         borderRadius: '8px',
                         backgroundColor: '#34495e',
-                        minHeight: '400px',
-                        minWidth: '600px',
+                        minHeight: '600px',
+                        minWidth: '800px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -114,7 +116,7 @@ const Game = () => {
                     backgroundColor: '#34495e',
                     padding: '15px',
                     borderRadius: '8px',
-                    maxWidth: '600px',
+                    maxWidth: '800px',
                     textAlign: 'center'
                 }}>
                     <h3 style={{ margin: '0 0 10px 0', color: '#ecf0f1' }}>操作方法</h3>
