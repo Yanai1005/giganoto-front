@@ -1,0 +1,336 @@
+@use 'sass:color';
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.settings-page {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: $font-family-primary;
+    display: flex;
+    flex-direction: column;
+    transition: all $transition-smooth;
+
+    &__header {
+        @include flex-center;
+        padding: $spacing-4 $spacing-6;
+        background: var(--glass-bg);
+        @include backdrop-blur(10px);
+        border-bottom: 1px solid var(--border-color);
+        justify-content: flex-start;
+
+        .settings-back-button {
+            @include button-reset;
+            @include flex-center;
+            @include themed-focus-ring;
+            width: 40px;
+            height: 40px;
+            border-radius: $border-radius-base;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            text-decoration: none;
+            margin-right: $spacing-4;
+            transition: all $transition-fast;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        .settings-header-content {
+            @include flex-center;
+            gap: $spacing-3;
+
+            .settings-header-icon {
+                color: var(--text-primary);
+            }
+
+            .settings-title {
+                font-size: $font-size-xl;
+                font-weight: $font-weight-normal;
+                margin: 0;
+                @include themed-text('primary');
+            }
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex: 1;
+        min-height: calc(100vh - 70px);
+    }
+
+    &__sidebar {
+        width: 350px;
+        background: var(--bg-secondary);
+        padding: 0;
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto;
+    }
+
+    &__main {
+        flex: 1;
+        background: var(--bg-primary);
+        padding: 0;
+        overflow-y: auto;
+    }
+}
+
+// 設定オプション項目
+
+.settings-option {
+    display: block;
+    padding: $spacing-4 $spacing-6;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    border-left: 3px solid transparent;
+    transition: all $transition-fast;
+    position: relative;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    &--selected {
+        background: rgba(var(--accent-primary-rgb, 0, 150, 255), 0.1);
+        border-left-color: var(--accent-primary);
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent-primary);
+        }
+    }
+
+    &__title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-normal;
+        @include themed-text('primary');
+        margin: 0;
+    }
+}
+
+
+// インターネット設定
+
+
+.internet-settings {
+    padding: $spacing-8;
+    max-width: none;
+    width: 100%;
+
+    &__header {
+        margin-bottom: $spacing-8;
+        border-bottom: none;
+        padding-bottom: 0;
+
+        h2 {
+            font-size: $font-size-2xl;
+            font-weight: $font-weight-normal;
+            margin: 0;
+            @include themed-text('primary');
+        }
+    }
+
+    &__content {
+        .connection-status {
+            @include themed-card;
+            border-radius: $border-radius-lg;
+            padding: $spacing-8;
+            margin-bottom: $spacing-8;
+
+            .status-item {
+                @include flex-between;
+                padding: $spacing-4 0;
+                border-bottom: 1px solid var(--border-color);
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                .status-label {
+                    font-size: $font-size-base;
+                    @include themed-text('secondary');
+                    font-weight: $font-weight-normal;
+                }
+
+                .status-value {
+                    font-size: $font-size-base;
+                    font-weight: $font-weight-normal;
+                    @include themed-text('primary');
+
+                    &--disconnected {
+                        @include themed-text('primary');
+                    }
+                }
+            }
+        }
+
+        .internet-actions {
+            @include flex-column;
+            gap: $spacing-3;
+
+            .internet-action-button {
+                @include button-reset;
+                @include flex-center;
+                @include themed-focus-ring;
+                gap: $spacing-4;
+                padding: $spacing-4 $spacing-6;
+                @include themed-card;
+                border-radius: $border-radius-base;
+                @include themed-text('primary');
+                font-size: $font-size-base;
+                font-weight: $font-weight-normal;
+                cursor: pointer;
+                transition: all $transition-fast;
+                justify-content: flex-start;
+
+                &:hover {
+                    box-shadow: 0 6px 20px var(--shadow-hover);
+                    transform: translateY(-1px);
+                }
+
+                &:focus {
+                    outline: 2px solid var(--accent-primary);
+                    outline-offset: 1px;
+                }
+            }
+        }
+    }
+}
+
+// テーマ設定オーバーレイ
+.theme-settings-overlay {
+    @include flex-center;
+    height: 100%;
+    padding: $spacing-10;
+
+    .settings-overlay {
+        position: relative;
+        @include themed-settings-overlay;
+        border-radius: $border-radius-lg;
+        padding: $spacing-8;
+        min-width: 400px;
+        max-width: 500px;
+
+        &__title {
+            font-size: $font-size-xl;
+            font-weight: $font-weight-normal;
+            margin-bottom: $spacing-6;
+            text-align: center;
+            @include themed-text('primary');
+        }
+
+        &__item {
+            @include flex-between;
+            padding: $spacing-4 0;
+
+            .settings-overlay__label {
+                font-size: $font-size-base;
+                @include themed-text('primary');
+                font-weight: $font-weight-normal;
+            }
+
+            .theme-toggle {
+                @include button-reset;
+                @include themed-focus-ring;
+                padding: $spacing-2 $spacing-4;
+                border-radius: $border-radius-base;
+                border: 1px solid var(--border-color);
+                font-size: $font-size-sm;
+                font-weight: $font-weight-normal;
+                cursor: pointer;
+                transition: all $transition-fast;
+                min-width: 80px;
+                background: var(--bg-secondary);
+                @include themed-text('primary');
+
+                &--dark {
+                    background: var(--accent-primary);
+                    color: white;
+                    border-color: var(--accent-primary);
+                }
+
+                &--light {
+                    background: var(--accent-secondary);
+                    color: white;
+                    border-color: var(--accent-secondary);
+                }
+
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px var(--shadow-hover);
+                }
+            }
+        }
+    }
+}
+
+// 右下のコントローラーヒント
+
+.settings-keyboard-hint {
+    position: fixed;
+    bottom: $spacing-6;
+    right: $spacing-6;
+    @include flex-center;
+    gap: $spacing-6;
+
+    .controller-hint {
+        @include flex-center;
+        gap: $spacing-2;
+        @include themed-text('secondary');
+        font-size: $font-size-sm;
+
+        .controller-button {
+            @include flex-center;
+            width: 28px;
+            height: 28px;
+            border-radius: $border-radius-full;
+            border: 1px solid var(--border-color);
+            @include themed-text('secondary');
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            background: var(--bg-secondary);
+        }
+    }
+}
+
+// レスポンシブ対応
+
+@include sm {
+    .settings-page {
+        &__content {
+            flex-direction: column;
+        }
+
+        &__sidebar {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+    }
+
+    .internet-settings {
+        padding: $spacing-4;
+    }
+
+    .settings-keyboard-hint {
+        display: none;
+    }
+}
+
+// アクセシビリティ
+
+@media (prefers-reduced-motion: reduce) {
+
+    .settings-option,
+    .internet-action-button,
+    .theme-toggle {
+        transition: none !important;
+    }
+}
