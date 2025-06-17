@@ -1,15 +1,16 @@
 import Phaser from 'phaser';
 import * as THREE from 'three';
 import GameScene from './scenes/FishingScene.js';
+import TitleScene from './scenes/TitleScene.js';
 
-export const initializeGame = (container) => {
+export const initializeGame = () => {
   const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
     parent: 'game-container',
     backgroundColor: '#1a85ff',
-    scene: [GameScene],
+    scene: [TitleScene, GameScene],
     physics: {
       default: 'arcade',
       arcade: {
