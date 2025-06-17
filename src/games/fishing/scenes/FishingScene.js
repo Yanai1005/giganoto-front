@@ -59,10 +59,23 @@ class GameScene extends Phaser.Scene {
     
     // HTMLベースのUIを作成
     this.createHTMLUI();
+
+    // ウィンドウリサイズイベントに対応
+    window.addEventListener('resize', this.onResize.bind(this));
+    // Scene破棄時にイベントリスナーを削除
+    this.events.on('shutdown', () => {
+      window.removeEventListener('resize', this.onResize.bind(this));
+    });
   }
 
   initThreeJS() {
     const gameContainer = document.getElementById('game-container');
+    if (!gameContainer) {
+        console.error("game-container not found!");
+        return;
+    }
+    const width = gameContainer.clientWidth;
+    const height = gameContainer.clientHeight;
     
     // 既存のThree.js canvasがあれば削除
     const oldCanvas = gameContainer?.querySelector('canvas.three-canvas');
@@ -73,7 +86,7 @@ class GameScene extends Phaser.Scene {
     this.threeScene = new THREE.Scene();
 
     // 最終手段：カメラの回転を直接指定し、強制的に真上からの視点にする
-    this.threeCamera = new THREE.PerspectiveCamera(65, 800 / 600, 0.1, 1000);
+    this.threeCamera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1000);
     
     // 定義した初期視点を設定
     this.setCameraPerspective(this.currentPerspectiveIndex);
@@ -82,7 +95,7 @@ class GameScene extends Phaser.Scene {
       alpha: true,
       antialias: true 
     });
-    this.threeRenderer.setSize(800, 600);
+    this.threeRenderer.setSize(width, height);
     this.threeRenderer.setClearColor(0x000000, 0); // 背景を透明に
     this.threeRenderer.domElement.classList.add('three-canvas');
 
@@ -418,45 +431,57 @@ class GameScene extends Phaser.Scene {
       msgDiv = document.createElement('div');
       msgDiv.id = 'game-message';
       document.getElementById('game-container')?.appendChild(msgDiv);
+
+      // 初期スタイル設定（一度だけ行えば良いもの）
+      msgDiv.style.position = 'absolute';
+      msgDiv.style.top = '50%';
+      msgDiv.style.left = '50%';
+      msgDiv.style.zIndex = '10000';
+      msgDiv.style.pointerEvents = 'none';
+      msgDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
+      msgDiv.style.color = '#fff';
+      msgDiv.style.fontSize = '2rem';
+      msgDiv.style.fontWeight = 'bold';
+      msgDiv.style.padding = '18px 40px';
+      msgDiv.style.borderRadius = '18px';
+      msgDiv.style.boxShadow = '0 8px 32px rgba(0,0,0,0.35)';
+      msgDiv.style.letterSpacing = '0.05em';
+      msgDiv.style.textAlign = 'center';
+      msgDiv.style.textShadow = '0 2px 8px #000a';
+      // アニメーション用のタイマーを保存するプロパティ
+      msgDiv.hideTimeout = null;
     }
-    msgDiv.style.position = 'absolute';
-    msgDiv.style.top = '50%';
-    msgDiv.style.left = '50%';
-    msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
-    msgDiv.style.zIndex = '10000';
-    msgDiv.style.pointerEvents = 'none';
-    msgDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-    msgDiv.style.color = '#fff';
-    msgDiv.style.fontSize = '2rem';
-    msgDiv.style.fontWeight = 'bold';
-    msgDiv.style.padding = '18px 40px';
-    msgDiv.style.borderRadius = '18px';
-    msgDiv.style.boxShadow = '0 8px 32px rgba(0,0,0,0.35)';
-    msgDiv.style.letterSpacing = '0.05em';
-    msgDiv.style.textAlign = 'center';
-    msgDiv.style.textShadow = '0 2px 8px #000a';
-    msgDiv.style.transition = 'opacity 1.2s, transform 0.5s';
-    msgDiv.style.opacity = '1';
-    msgDiv.style.transform = 'translate(-50%, -50%) scale(1.1)';
+
+    // 既存のアニメーションをキャンセル
+    if (msgDiv.hideTimeout) {
+        clearTimeout(msgDiv.hideTimeout);
+    }
+    
+    // より自然なアニメーションに変更
+    msgDiv.style.transition = 'opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     msgDiv.style.display = 'block';
-
     msgDiv.textContent = text;
-    setTimeout(() => {
-      msgDiv.style.opacity = '0';
-      msgDiv.style.transform = 'translate(-50%, -50%) scale(1.2)';
-    }, 10);
-    setTimeout(() => {
-      msgDiv.style.opacity = '1';
-      msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
-    }, 10);
 
-    setTimeout(() => {
+    // 表示アニメーション（少し遅延させて、スタイル変更を確実に検知させる）
+    // 1. まずは非表示・縮小状態に
+    msgDiv.style.opacity = '0';
+    msgDiv.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    
+    // 2. 次のフレームで表示・通常サイズへ（これでアニメーションが開始される）
+    requestAnimationFrame(() => {
+        msgDiv.style.opacity = '1';
+        msgDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+
+    // 非表示アニメーション
+    msgDiv.hideTimeout = setTimeout(() => {
       msgDiv.style.opacity = '0';
-      msgDiv.style.transform = 'translate(-50%, -50%) scale(0.95)';
-      setTimeout(() => {
+      msgDiv.style.transform = 'translate(-50%, -50%) scale(0.8)';
+      // アニメーション完了後に要素を非表示にする
+      msgDiv.hideTimeout = setTimeout(() => {
         msgDiv.style.display = 'none';
-      }, 1200);
-    }, 1600);
+      }, 400); // transitionの期間と合わせる
+    }, 2000); // 2秒間表示
   }
 
   switchCameraPerspective() {
@@ -483,6 +508,21 @@ class GameScene extends Phaser.Scene {
     if (perspective.lookAt) {
         this.threeCamera.lookAt(new THREE.Vector3(perspective.lookAt.x, perspective.lookAt.y, perspective.lookAt.z));
     }
+  }
+
+  onResize() {
+    const gameContainer = document.getElementById('game-container');
+    if (!gameContainer || !this.threeCamera || !this.threeRenderer) return;
+
+    const width = gameContainer.clientWidth;
+    const height = gameContainer.clientHeight;
+
+    // カメラのアスペクト比を更新
+    this.threeCamera.aspect = width / height;
+    this.threeCamera.updateProjectionMatrix();
+
+    // レンダラーのサイズを更新
+    this.threeRenderer.setSize(width, height);
   }
 
   update(time) {
