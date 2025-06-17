@@ -1,6 +1,16 @@
 import Phaser from 'phaser';
 import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { FishDex } from '../utils/FishDex.js';
+
+// ゲームに登場する魚のマスターデータ
+const FISH_TYPES = [
+  { name: 'ブルーギル', minSize: 10, maxSize: 25, color: 0x66ccff, points: 10, speed: 0.02, description: '北アメリカ原産の淡水魚。繁殖力が非常に強い。' },
+  { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012, description: '古くから親しまれている魚。口のひげが特徴的。' },
+  { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018, description: '大きな口で小魚を捕食する、人気のゲームフィッシュ。' },
+  { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015, description: 'コイに似ているが、口にひげがなく、体高が高い。' },
+  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' }
+];
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -62,6 +72,9 @@ class GameScene extends Phaser.Scene {
     // Phaserのカメラ背景を透明にし、Three.jsの描画が見えるようにする
     this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
     
+    // 釣果記録を初期化
+    FishDex.initialize(FISH_TYPES);
+
     // Three.jsの初期化（canvasの生成と追加もここで行う）
     this.initThreeJS();
     
@@ -180,10 +193,10 @@ class GameScene extends Phaser.Scene {
      gameContainer?.appendChild(btnArea);
    }
    btnArea.style.position = 'absolute';
-   btnArea.style.left = '0';
-   btnArea.style.right = '0';
+   btnArea.style.left = '50%';
+   btnArea.style.transform = 'translateX(-50%)';
+   btnArea.style.width = 'auto'; // 幅を自動調整
    btnArea.style.bottom = '24px';
-   btnArea.style.width = '100%';
    btnArea.style.display = 'flex';
    btnArea.style.justifyContent = 'center';
    btnArea.style.gap = '32px';
@@ -194,9 +207,8 @@ class GameScene extends Phaser.Scene {
        if (!btn) {
            btn = document.createElement('button');
            btn.id = id;
-           btn.textContent = text;
-           btnArea.appendChild(btn);
        }
+       btn.textContent = text;
        btn.style.background = bg;
        btn.style.color = '#fff';
        btn.style.fontSize = '1.3rem';
@@ -207,6 +219,7 @@ class GameScene extends Phaser.Scene {
        btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
        btn.style.cursor = 'pointer';
        btn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
+       btn.style.whiteSpace = 'nowrap'; // テキストの折り返しを禁止
        btn.onmouseover = () => {
          btn.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
          btn.style.transform = 'scale(1.07)';
@@ -222,6 +235,27 @@ class GameScene extends Phaser.Scene {
    const castBtn = makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
    const reelBtn = makeBtn('reel-btn', 'リール', 'linear-gradient(135deg, #396afc 0%, #2948ff 100%)');
    const viewBtn = makeBtn('view-btn', '視点切替', 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)');
+   // ボタンをコンテナに追加
+   btnArea.replaceChildren(castBtn, reelBtn, viewBtn);
+
+   const dexBtn = makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
+   
+   // 図鑑ボタンは別の場所に配置
+   const topUiArea = document.getElementById('top-ui-area') || document.createElement('div');
+   topUiArea.id = 'top-ui-area';
+   if (!document.getElementById('top-ui-area')) {
+     topUiArea.style.position = 'absolute';
+     topUiArea.style.top = '24px';
+     topUiArea.style.right = '32px';
+     topUiArea.style.zIndex = '100';
+     gameContainer?.appendChild(topUiArea);
+   }
+   topUiArea.replaceChildren(dexBtn);
+   
+   // 既存のボタンエリアの位置調整
+   btnArea.style.left = '50%';
+   btnArea.style.transform = 'translateX(-50%)';
+   btnArea.style.width = 'auto'; // 幅を自動調整
 
    reelBtn.style.userSelect = 'none'; // テキスト選択を防ぐ
    reelBtn.onmousedown = () => { if (this.minigame.active) this.isPlayerPulling = true; };
@@ -232,6 +266,7 @@ class GameScene extends Phaser.Scene {
 
    castBtn.onclick = () => this.castLine();
    viewBtn.onclick = () => this.switchCameraPerspective();
+   dexBtn.onclick = () => this.showDex(true);
    
    this.createMinigameUI(gameContainer);
  }
@@ -371,15 +406,8 @@ class GameScene extends Phaser.Scene {
   }
   
   generateFishes() {
-    const fishTypes = [
-      { name: 'ブルーギル', minSize: 10, maxSize: 25, color: 0x66ccff, points: 10, speed: 0.02 },
-      { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012 },
-      { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018 },
-      { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015 },
-      { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01 }
-    ];
-    for (let i = 0; i < 30; i++) {
-      const fishType = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+    for (let i = 0; i < 30; i++) { // 10から増量
+      const fishType = FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
       const size = Math.floor(Math.random() * (fishType.maxSize - fishType.minSize + 1)) + fishType.minSize;
       const minRadius = 0.4;
       const maxRadius = 1.2;
@@ -853,6 +881,7 @@ class GameScene extends Phaser.Scene {
 
     if (success) {
       // 釣り成功
+      FishDex.recordCatch(caughtFish.type.name, caughtFish.size); // 釣果を記録
       this.gameState.score += caughtFish.type.points;
       this.updateScoreUI();
       this.showMessage(`${caughtFish.size}cmの${caughtFish.type.name}を釣った！ +${caughtFish.type.points}ポイント`);
@@ -905,6 +934,103 @@ class GameScene extends Phaser.Scene {
 
     // 竿をカメラの子にして、常に一緒に動くようにする
     this.threeCamera.add(this.fishingRod);
+  }
+
+  showDex(visible) {
+    let dexContainer = document.getElementById('dex-container');
+    if (!dexContainer) {
+        dexContainer = document.createElement('div');
+        dexContainer.id = 'dex-container';
+        document.getElementById('game-container')?.appendChild(dexContainer);
+        dexContainer.style.position = 'absolute';
+        dexContainer.style.top = '0';
+        dexContainer.style.left = '0';
+        dexContainer.style.width = '100%';
+        dexContainer.style.height = '100%';
+        dexContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        dexContainer.style.zIndex = '1000';
+        dexContainer.style.display = 'flex';
+        dexContainer.style.justifyContent = 'center';
+        dexContainer.style.alignItems = 'center';
+        dexContainer.style.color = 'white';
+        dexContainer.style.backdropFilter = 'blur(5px)';
+
+        const dexContent = document.createElement('div');
+        dexContent.style.width = '90%';
+        dexContent.style.height = '90%';
+        dexContent.style.maxWidth = '1000px';
+        dexContent.style.maxHeight = '700px';
+        dexContent.style.background = 'rgba(30, 30, 30, 0.9)';
+        dexContent.style.borderRadius = '20px';
+        dexContent.style.padding = '20px';
+        dexContent.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        dexContent.style.overflowY = 'auto';
+        dexContainer.appendChild(dexContent);
+
+        const title = document.createElement('h2');
+        title.textContent = '魚図鑑';
+        title.style.textAlign = 'center';
+        title.style.marginBottom = '20px';
+        title.style.fontSize = '2rem';
+        dexContent.appendChild(title);
+        
+        const fishGrid = document.createElement('div');
+        fishGrid.id = 'dex-fish-grid';
+        fishGrid.style.display = 'grid';
+        fishGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
+        fishGrid.style.gap = '20px';
+        dexContent.appendChild(fishGrid);
+
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '閉じる';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '30px';
+        closeButton.style.right = '40px';
+        closeButton.style.fontSize = '1rem';
+        closeButton.style.padding = '10px 20px';
+        closeButton.style.cursor = 'pointer';
+        dexContainer.appendChild(closeButton);
+        closeButton.onclick = () => this.showDex(false);
+    }
+    
+    // 表示/非表示の切り替え
+    dexContainer.style.display = visible ? 'flex' : 'none';
+
+    if (visible) {
+      // 表示時に内容を更新
+      const fishGrid = document.getElementById('dex-fish-grid');
+      if (!fishGrid) return;
+      fishGrid.innerHTML = ''; // 既存の内容をクリア
+
+      const dexData = FishDex.getDexData();
+      
+      FISH_TYPES.forEach(fishType => {
+        const data = dexData[fishType.name];
+        const card = document.createElement('div');
+        card.style.background = 'rgba(50, 50, 50, 0.8)';
+        card.style.borderRadius = '10px';
+        card.style.padding = '15px';
+        card.style.textAlign = 'center';
+        
+        if (data && data.caught) {
+          card.innerHTML = `
+            <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
+            <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
+            <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
+            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
+          `;
+        } else {
+          card.style.opacity = '0.6';
+          card.innerHTML = `
+            <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
+            <p style="margin: 5px 0;">最大サイズ: ---</p>
+            <p style="margin: 5px 0;">獲得ポイント: ---</p>
+            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
+          `;
+        }
+        fishGrid.appendChild(card);
+      });
+    }
   }
 }
 
