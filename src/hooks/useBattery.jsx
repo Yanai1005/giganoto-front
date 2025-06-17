@@ -120,7 +120,6 @@ export const useBattery = () => {
         let tooltip = `バッテリー: ${level}%`;
 
         if (charging) {
-            tooltip += ' (充電中)';
             const timeText = formatBatteryTime(chargingTime);
             if (timeText) {
                 tooltip += ` - 満充電まで${timeText}`;
@@ -135,19 +134,11 @@ export const useBattery = () => {
         return tooltip;
     }, [batteryInfo, formatBatteryTime]);
 
-    const getBatteryStatusText = useCallback(() => {
-        if (batteryInfo.charging) {
-            return batteryInfo.level === 100 ? '充電完了' : '充電中';
-        }
-        return '';
-    }, [batteryInfo.charging, batteryInfo.level]);
-
     return {
         ...batteryInfo,
         getBatteryClass: (level = batteryInfo.level, charging = batteryInfo.charging) =>
             getBatteryClass(level, charging),
         formatBatteryTime,
-        getBatteryTooltip,
-        getBatteryStatusText
+        getBatteryTooltip
     };
 };

@@ -42,29 +42,5 @@
             "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
             "modulePath": "../games/fishing/game.js"
         }
-    },
-    "systemIcons": [
-        {
-            "id": "news",
-            "icon": "📰",
-            "title": "ニュース",
-            "color": "#FF6B6B"
-        },
-        {
-            "id": "controller",
-            "icon": "🎮",
-            "title": "コントローラー",
-            "color": "#45B7D1"
-        },
-        {
-            "id": "settings",
-            "icon": "⚙️",
-            "title": "設定",
-            "color": "#96CEB4"
-        }
-    ],
-    "userProfile": {
-        "username": "Player",
-        "avatar": "👤"
     }
 }

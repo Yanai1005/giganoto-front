@@ -1,5 +1,3 @@
-// _top-bar.scss - 改善されたトップバーのスタイル
-
 @use '../globals/variables' as *;
 @use '../globals/mixins' as *;
 @use '../globals/themes' as *;
@@ -16,7 +14,6 @@
     height: $top-bar-height;
     transition: all $transition-smooth;
 
-    // ユーザーセクション
     &__user-section {
         @include flex-center;
         gap: $spacing-3;
@@ -61,9 +58,9 @@
     }
 }
 
-// ========================================
+
 // ユーザーアバター
-// ========================================
+
 
 .user-avatar {
     @include button-reset;
@@ -72,7 +69,9 @@
     width: $user-avatar-size;
     height: $user-avatar-size;
     border-radius: $border-radius-full;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
     font-size: $font-size-xl;
     cursor: pointer;
     transition: all $transition-fast;
@@ -81,6 +80,7 @@
     &:hover {
         transform: scale(1.1);
         box-shadow: 0 4px 8px var(--shadow-hover);
+        background: var(--surface-hover);
     }
 
     &:active {
@@ -96,20 +96,14 @@
     }
 }
 
-// ========================================
 // バッテリー表示コンテナ
-// ========================================
-
 .battery-container {
     @include flex-center;
     gap: $spacing-2;
     position: relative;
 }
 
-// ========================================
 // バッテリーアイコン
-// ========================================
-
 .battery-icon {
     position: relative;
     width: 28px;
@@ -123,7 +117,6 @@
         opacity: 1;
     }
 
-    // バッテリー端子
     &::before {
         content: '';
         position: absolute;
@@ -149,14 +142,17 @@
     // 充電インジケーター
     &__charging-indicator {
         position: absolute;
-        right: -12px;
-        top: -2px;
-        font-size: 12px;
-        color: #FFD700;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-primary);
         animation: pulse 1.5s ease-in-out infinite;
+        z-index: 10;
     }
 
-    // バッテリーレベル別の色と幅（白黒統一）
     &--high::after {
         background: var(--text-primary);
         width: calc(100% - 4px);
@@ -194,8 +190,7 @@
     text-align: right;
 }
 
-// Wi-Fiアイコン（Lucide React）用のスタイル
-
+// Wi-Fiアイコン
 .wifi-icon {
     @include flex-center;
     transition: all $transition-fast;
@@ -205,12 +200,10 @@
         opacity: 1;
     }
 
-    // SVGアイコン用のスタイル
     &__svg {
         transition: all $transition-fast;
     }
 
-    // 接続状態別のスタイル（白黒表示）
     &--disconnected {
         opacity: 0.3;
 
@@ -286,14 +279,12 @@
     }
 }
 
-// アニメーション効果
 .wifi-icon__svg {
     &:hover {
         transform: scale(1.1);
     }
 }
 
-// 高コントラストモード
 @media (prefers-contrast: high) {
     .wifi-icon {
         .wifi-icon__svg {
@@ -314,10 +305,7 @@
     }
 }
 
-// ========================================
 // アニメーション
-// ========================================
-
 @keyframes pulse {
 
     0%,
@@ -344,19 +332,11 @@
     }
 }
 
-// ========================================
-// JavaScript用のCSS変数設定
-// ========================================
-
 .battery-icon {
-    // JavaScriptから動的に設定される変数
     --battery-width: 100%;
 }
 
-// ========================================
 // レスポンシブ対応
-// ========================================
-
 @include sm {
     .top-bar {
         padding: $spacing-3 $spacing-4;
@@ -412,10 +392,7 @@
     }
 }
 
-// ========================================
 // ダークモード特有のスタイル
-// ========================================
-
 .theme-dark {
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -434,10 +411,7 @@
     }
 }
 
-// ========================================
 // ライトモード特有のスタイル
-// ========================================
-
 .theme-light {
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -456,10 +430,7 @@
     }
 }
 
-// ========================================
-// アクセシビリティ改善
-// ========================================
-
+// アクセシビリティ
 @media (prefers-reduced-motion: reduce) {
     .battery-icon {
 
@@ -471,10 +442,7 @@
     }
 }
 
-// ========================================
 // 高コントラストモード対応
-// ========================================
-
 @media (prefers-contrast: high) {
     .battery-icon {
         border-width: 3px;
