@@ -1,19 +1,17 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, SignalHigh } from 'lucide-react';
+import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, SignalHigh, Zap, User } from 'lucide-react';
 import { useBattery, useTime, useWifi } from '../hooks';
 
-const TopBar = ({ userProfile, onUserClick }) => {
+const TopBar = ({ onUserClick }) => {
     const batteryIconRef = useRef(null);
 
-    // カスタムフックを使用
     const { currentTime, formatTime } = useTime();
     const {
         level: batteryLevel,
         charging,
         getBatteryClass,
         getBatteryTooltip,
-        getBatteryStatusText,
         loading: batteryLoading,
         error: batteryError
     } = useBattery();
@@ -24,7 +22,6 @@ const TopBar = ({ userProfile, onUserClick }) => {
         isOnline
     } = useWifi();
 
-    // バッテリー表示の動的更新
     useEffect(() => {
         if (batteryIconRef.current && !batteryLoading) {
             const batteryWidth = `${Math.max(batteryLevel, 5)}%`;
@@ -32,7 +29,6 @@ const TopBar = ({ userProfile, onUserClick }) => {
         }
     }, [batteryLevel, batteryLoading]);
 
-    // Wi-Fiアイコンを強度に応じて選択
     const getWifiIcon = () => {
         const iconProps = {
             size: 18,
@@ -56,7 +52,6 @@ const TopBar = ({ userProfile, onUserClick }) => {
         }
     };
 
-    // バッテリーの状態に応じたスタイルクラス
     const batteryClass = getBatteryClass();
     const wifiClass = getWifiClass();
 
@@ -66,11 +61,10 @@ const TopBar = ({ userProfile, onUserClick }) => {
                 <button
                     className="user-avatar"
                     onClick={onUserClick}
-                    aria-label={`ユーザープロフィール: ${userProfile?.username || 'Player'}`}
+                    aria-label="ユーザープロフィール"
                 >
-                    {userProfile?.avatar || '👤'}
+                    <User size={20} />
                 </button>
-                <div className="top-bar__home-indicator">HOME</div>
             </div>
 
             <div className="top-bar__status-section">
@@ -97,11 +91,6 @@ const TopBar = ({ userProfile, onUserClick }) => {
                                 <div className="battery-percentage">
                                     {batteryError ? '--' : `${batteryLevel}%`}
                                 </div>
-                                {getBatteryStatusText() && (
-                                    <div className="battery-status">
-                                        {getBatteryStatusText()}
-                                    </div>
-                                )}
                             </div>
                             <div
                                 ref={batteryIconRef}
@@ -110,7 +99,9 @@ const TopBar = ({ userProfile, onUserClick }) => {
                                 aria-label={getBatteryTooltip()}
                             >
                                 {charging && (
-                                    <div className="battery-icon__charging-indicator">⚡</div>
+                                    <div className="battery-icon__charging-indicator">
+                                        <Zap size={14} />
+                                    </div>
                                 )}
                                 {batteryError && (
                                     <div className="battery-icon__error-indicator">❌</div>
@@ -125,18 +116,10 @@ const TopBar = ({ userProfile, onUserClick }) => {
 };
 
 TopBar.propTypes = {
-    userProfile: PropTypes.shape({
-        username: PropTypes.string,
-        avatar: PropTypes.string
-    }),
     onUserClick: PropTypes.func
 };
 
 TopBar.defaultProps = {
-    userProfile: {
-        username: 'Player',
-        avatar: '👤'
-    },
     onUserClick: () => { }
 };
 

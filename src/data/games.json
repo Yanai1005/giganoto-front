@@ -15,9 +15,16 @@
             "image": "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop",
             "path": "/game",
             "gameType": "shooter"
+        },
+        {
+            "id": 5,
+            "title": "釣りマスター3D",
+            "description": "3D釣りシミュレーション！様々な魚を釣り上げよう！",
+            "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+            "path": "/game",
+            "gameType": "fishing"
         }
-    ],
-    "gameTypes": {
+    ],    "gameTypes": {
         "puzzle": {
             "name": "パズル",
             "description": "思考力を試すパズルゲーム",
@@ -29,30 +36,11 @@
             "description": "敵を倒すアクションゲーム",
             "controls": "矢印キーまたはWASDで移動、スペースで射撃",
             "modulePath": "../games/shooter/game.js"
+        },        "fishing": {
+            "name": "釣り",
+            "description": "3Dフィッシングゲーム",
+            "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+            "modulePath": "../games/fishing/game.js"
         }
-    },
-    "systemIcons": [
-        {
-            "id": "news",
-            "icon": "📰",
-            "title": "ニュース",
-            "color": "#FF6B6B"
-        },
-        {
-            "id": "controller",
-            "icon": "🎮",
-            "title": "コントローラー",
-            "color": "#45B7D1"
-        },
-        {
-            "id": "settings",
-            "icon": "⚙️",
-            "title": "設定",
-            "color": "#96CEB4"
-        }
-    ],
-    "userProfile": {
-        "username": "Player",
-        "avatar": "👤"
     }
 }
