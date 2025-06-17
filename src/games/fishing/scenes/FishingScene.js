@@ -415,7 +415,6 @@ class GameScene extends Phaser.Scene {
       },
       onComplete: () => {
         this.gameState.casting = false;
-        this.startFishingChance();
       }
     });
   }
@@ -429,38 +428,6 @@ class GameScene extends Phaser.Scene {
     ];
     this.fishingLine.geometry.setFromPoints(linePoints);
     this.fishingLine.geometry.attributes.position.needsUpdate = true;
-  }
-  
-  startFishingChance() {
-    setTimeout(() => {
-      if (Math.random() < 0.3) {
-        this.gameState.catchingFish = true;
-        this.showMessage("魚がかかった！リールを巻こう！");
-        
-        this.tweens.add({
-          targets: { y: -1 },
-          y: -0.8,
-          ease: 'Sine.inOut',
-          duration: 300,
-          yoyo: true,
-          repeat: 3,
-          onUpdate: (tween, target) => {
-            if (this.float) {
-              this.float.position.y = target.y;
-              this.updateFishingLine();
-            }
-          },
-          onComplete: () => {
-            this.fishingTimeout = setTimeout(() => {
-              if (this.gameState.catchingFish) {
-                this.gameState.catchingFish = false;
-                this.showMessage("魚が逃げてしまった!");
-              }
-            }, 2000);
-          }
-        });
-      }
-    }, 1000 + Math.random() * 3000);
   }
   
   reelLine() {
