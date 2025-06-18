@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 // スコア（後で別のファイルに分離する予定）
 let rationalScore = 0;
 let instinctScore = 0;
+let neutralScore = 0; 
 
 class ScenarioGame extends Phaser.Scene {
   constructor() {
@@ -93,9 +94,10 @@ class ScenarioGame extends Phaser.Scene {
         this.dialogIndex++;
       }
     } else {
-      this.dialogText.setText('--- エピソード終了 ---');
-      this.soulText.setText('');
+      const endingKey = this.evaluateEnding();
+      this.scene.start('EndScene', { endingKey });
     }
+    
   }
 
   showChoices(choices) {
@@ -131,6 +133,20 @@ class ScenarioGame extends Phaser.Scene {
     const label = this.currentSoul === 'logic' ? '理性モード' : '衝動モード';
     this.modeText.setText(label);
   }
+
+  //各ルートのエンディング判定（ハッピーエンド,バットエンド）
+  evaluateEnding() {
+  if (rationalScore >= 7 && instinctScore <= 3) {
+    return neutralScore >= 3 ? 'rational-happy' : 'rational-bad';
+  } else if (instinctScore >= 7 && rationalScore <= 3) {
+    return neutralScore >= 3 ? 'instinct-happy' : 'instinct-bad';
+  } else if (rationalScore >= 4 && instinctScore >= 4) {
+    return neutralScore >= 3 ? 'balanced-happy' : 'balanced-bad';
+  } else {
+    return 'unknown';
+  }
+}
+
 }
 
 export default ScenarioGame;
