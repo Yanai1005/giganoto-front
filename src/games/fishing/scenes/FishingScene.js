@@ -3,20 +3,8 @@ import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { FishDex } from '../utils/FishDex.js';
 import { UpgradeManager, UPGRADE_CONFIG } from '../utils/UpgradeManager.js';
-
-// ゲームに登場する魚のマスターデータ
-const FISH_TYPES = [
-  { name: 'ブルーギル', minSize: 10, maxSize: 25, color: 0x66ccff, points: 10, speed: 0.02, timingDifficulty: 1.0, description: '北アメリカ原産の淡水魚。繁殖力が非常に強い。' },
-  { name: 'コイ', minSize: 30, maxSize: 80, color: 0xff9900, points: 30, speed: 0.012, timingDifficulty: 1.3, description: '古くから親しまれている魚。口のひげが特徴的。' },
-  { name: 'ブラックバス', minSize: 20, maxSize: 60, color: 0x333333, points: 20, speed: 0.018, timingDifficulty: 1.4, description: '大きな口で小魚を捕食する、人気のゲームフィッシュ。' },
-  { name: 'フナ', minSize: 15, maxSize: 35, color: 0xaaaa55, points: 12, speed: 0.015, timingDifficulty: 1.2, description: 'コイに似ているが、口にひげがなく、体高が高い。' },
-  { name: 'ナマズ', minSize: 40, maxSize: 100, color: 0x222222, points: 50, speed: 0.01, timingDifficulty: 1.8, description: '長いひげと、ぬるぬるとした体が特徴の夜行性の魚。' },
-  { name: 'ニジマス', minSize: 20, maxSize: 50, color: 0xffa07a, points: 25, speed: 0.022, timingDifficulty: 1.5, description: '体に散らばる黒点と、虹色の模様が美しい渓流の女王。' },
-  { name: 'アユ', minSize: 15, maxSize: 30, color: 0x90ee90, points: 18, speed: 0.025, timingDifficulty: 1.6, description: '独特の香りが特徴で「香魚」とも呼ばれる。縄張り意識が強い。' },
-  { name: 'ウナギ', minSize: 40, maxSize: 90, color: 0x4B0082, points: 40, speed: 0.016, timingDifficulty: 1.7, description: 'にょろにょろと泳ぐ、細長い体の魚。夜行性で、滋養が高い。' },
-  { name: 'オオサンショウウオ', minSize: 50, maxSize: 120, color: 0x556b2f, points: 100, speed: 0.008, timingDifficulty: 2.0, description: '生きた化石と呼ばれる世界最大級の両生類。特別天然記念物。' },
-  { name: 'ドクターフィッシュ', minSize: 5, maxSize: 10, color: 0x808080, points: 5, speed: 0.03, timingDifficulty: 0.8, description: '人の古い角質を食べる習性を持つ小さな魚。実はコイの仲間。' }
-];
+import { FISH_TYPES } from '../data/fishData.js';
+import { UIManager } from '../ui/UIManager.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -100,6 +88,9 @@ class GameScene extends Phaser.Scene {
     FishDex.initialize(FISH_TYPES);
     UpgradeManager.initialize();
 
+    // UIマネージャーを初期化
+    this.ui = new UIManager(this);
+
     // Three.jsの初期化（canvasの生成と追加もここで行う）
     this.initThreeJS();
     
@@ -110,14 +101,14 @@ class GameScene extends Phaser.Scene {
     this.setupFishingRodControls();
     
     // HTMLベースのUIを作成
-    this.createHTMLUI();
+    this.ui.create();
 
     // ウィンドウリサイズイベントに対応
     window.addEventListener('resize', this.onResize.bind(this));
     // Scene破棄時にイベントリスナーを削除
     this.events.on('shutdown', () => {
       window.removeEventListener('resize', this.onResize.bind(this));
-      this.cleanupHTML();
+      this.ui.cleanup();
       if (this.threeRenderer) {
           this.threeRenderer.domElement.remove();
       }
@@ -185,318 +176,22 @@ class GameScene extends Phaser.Scene {
       () => console.error("Failed to load background texture")
       );
   }
-
-  createHTMLUI() {
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-      gameContainer.style.position = 'relative';
-    }
-
-   let scoreDiv = document.getElementById('score-ui');
-   if (!scoreDiv) {
-     scoreDiv = document.createElement('div');
-     scoreDiv.id = 'score-ui';
-     scoreDiv.classList.add('game-scene-ui');
-     gameContainer?.appendChild(scoreDiv);
-   }
-   scoreDiv.style.position = 'absolute';
-   scoreDiv.style.top = '24px';
-   scoreDiv.style.left = '32px';
-   scoreDiv.style.zIndex = '100';
-   scoreDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-   scoreDiv.style.color = '#fff';
-   scoreDiv.style.fontSize = '2.2rem';
-   scoreDiv.style.fontWeight = 'bold';
-   scoreDiv.style.padding = '12px 32px';
-   scoreDiv.style.borderRadius = '16px';
-   scoreDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
-   scoreDiv.style.letterSpacing = '0.05em';
-   scoreDiv.style.textShadow = '0 2px 8px #000a';
-   scoreDiv.style.userSelect = 'none';
-   this.scoreDiv = scoreDiv;
-   this.updateScoreUI();
-
-   let btnArea = document.getElementById('btn-area');
-   if (!btnArea) {
-     btnArea = document.createElement('div');
-     btnArea.id = 'btn-area';
-     btnArea.classList.add('game-scene-ui');
-     gameContainer?.appendChild(btnArea);
-   }
-   btnArea.style.position = 'absolute';
-   btnArea.style.left = '50%';
-   btnArea.style.transform = 'translateX(-50%)';
-   btnArea.style.width = 'auto'; // 幅を自動調整
-   btnArea.style.bottom = '24px';
-   btnArea.style.display = 'flex';
-   btnArea.style.justifyContent = 'center';
-   btnArea.style.gap = '32px';
-   btnArea.style.zIndex = '100';
-
-   const makeBtn = (id, text, bg) => {
-       let btn = document.getElementById(id);
-       if (!btn) {
-           btn = document.createElement('button');
-           btn.id = id;
-       }
-       btn.textContent = text;
-       btn.style.background = bg;
-       btn.style.color = '#fff';
-       btn.style.fontSize = '1.3rem';
-       btn.style.fontWeight = 'bold';
-       btn.style.padding = '12px 36px';
-       btn.style.border = 'none';
-       btn.style.borderRadius = '12px';
-       btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-       btn.style.cursor = 'pointer';
-       btn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
-       btn.style.whiteSpace = 'nowrap'; // テキストの折り返しを禁止
-       btn.onmouseover = () => {
-         if (!btn.disabled) {
-           const hoverBg = btn.id === 'reel-btn' ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' : 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
-           btn.style.background = hoverBg;
-           btn.style.transform = 'scale(1.07)';
-           btn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
-         }
-       };
-       btn.onmouseout = () => {
-         if (!btn.disabled) {
-           btn.style.background = bg;
-           btn.style.transform = 'scale(1)';
-           btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-         }
-       };
-       return btn;
-   };
-   const castBtn = makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
-   castBtn.onclick = () => this.castLine();
-
-   const reelBtn = makeBtn('reel-btn', 'リールを巻く', 'linear-gradient(135deg, #2980b9 0%, #2c3e50 100%)');
-   reelBtn.onmousedown = this.onReelBtnMouseDown.bind(this);
-   reelBtn.onmouseup = this.onReelBtnMouseUp.bind(this);
-   reelBtn.onmouseleave = () => { this.isPlayerPulling = false; }; // カーソルがボタンから外れた場合も考慮
-
-   const switchCamBtn = makeBtn('switch-cam-btn', '視点切替', 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)');
-   switchCamBtn.onclick = () => this.switchCameraPerspective();
-   
-   btnArea.appendChild(castBtn);
-   btnArea.appendChild(reelBtn);
-   btnArea.appendChild(switchCamBtn);
-   
-   let topUiArea = document.getElementById('top-ui-area');
-   if(!topUiArea) {
-       topUiArea = document.createElement('div');
-       topUiArea.id = 'top-ui-area';
-       topUiArea.classList.add('game-scene-ui');
-       gameContainer?.appendChild(topUiArea);
-   }
-   topUiArea.style.position = 'absolute';
-   topUiArea.style.top = '24px';
-   topUiArea.style.right = '32px';
-   topUiArea.style.zIndex = '100';
-   topUiArea.style.display = 'flex';
-   topUiArea.style.gap = '16px';
-
-   const dexBtn = makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
-   const titleBtn = makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #868f96 0%, #596164 100%)');
-   
-   topUiArea.appendChild(dexBtn);
-   topUiArea.appendChild(titleBtn);
-   
-   dexBtn.onclick = () => this.showDex(true);
-   titleBtn.onclick = () => this.scene.start('TitleScene');
-   
-   this.createAllMinigameUIs(gameContainer);
-   this.createUpgradeUI(gameContainer);
- }
   
-  createAllMinigameUIs(container) {
-    // --- テンションゲームUI ---
-    const tensionContainer = document.createElement('div');
-    tensionContainer.id = 'minigame-ui-tension';
-    tensionContainer.classList.add('minigame-container', 'game-scene-ui');
-    tensionContainer.style.display = 'none'; // 最初は非表示
-    container?.appendChild(tensionContainer);
-    tensionContainer.innerHTML = `
-      <img id="minigame-action-icon" style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; opacity: 0; transition: opacity 0.2s;">
-      <div style="width: 100%; height: 20px; background: #333; border-radius: 5px; position: relative; overflow: hidden;">
-        <div id="tension-safe-zone" style="position: absolute; left: ${this.minigame.tension.safeZone.start}%; width: ${this.minigame.tension.safeZone.end - this.minigame.tension.safeZone.start}%; height: 100%; background: rgba(20, 200, 20, 0.4);"></div>
-        <div id="tension-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #fceabb 0%, #f8b500 100%); border-radius: 5px; transition: width 0.1s linear;"></div>
-      </div>
-      <div class="progress-bar-bg"><div id="tension-progress-bar" class="progress-bar-fill"></div></div>
-    `;
-    
-    // --- タイミングゲームUI ---
-    const timingContainer = document.createElement('div');
-    timingContainer.id = 'minigame-ui-timing';
-    timingContainer.classList.add('minigame-container', 'game-scene-ui');
-    timingContainer.style.display = 'none'; // 最初は非表示
-    container?.appendChild(timingContainer);
-    timingContainer.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="text-align: left; color: white; font-size: 0.9rem; white-space: nowrap;">タイミングで止めろ！</div>
-            <div id="timing-miss-count" style="text-align: right; color: #ffc107; font-size: 0.9rem; font-weight: bold; white-space: nowrap;"></div>
-        </div>
-        <div id="timing-track" style="width: 100%; height: 25px; background: #333; border-radius: 5px; position: relative; overflow: hidden;">
-            <div id="timing-safe-zone" style="position: absolute; height: 100%; background: rgba(20, 200, 20, 0.5);"></div>
-            <div id="timing-marker" style="position: absolute; width: 4px; height: 100%; background: #ffc107;"></div>
-        </div>
-        <div class="progress-bar-bg"><div id="timing-progress-bar" class="progress-bar-fill"></div></div>
-    `;
- 
-    // 共通スタイルをCSSで定義 (可読性のため)
-    const style = document.createElement('style');
-    style.textContent = `
-      .minigame-container {
-        position: absolute; bottom: 120px; left: 50%;
-        transform: translateX(-50%); width: 300px; z-index: 200;
-        background: rgba(0,0,0,0.5); border-radius: 8px;
-        padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      }
-      .progress-bar-bg {
-        width: 100%; height: 8px; background: #333;
-        border-radius: 4px; margin-top: 8px;
-      }
-      .progress-bar-fill {
-        width: 0%; height: 100%;
-        background: linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%);
-        border-radius: 4px; transition: width 0.2s linear;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-  
-  createUpgradeUI(container) {
-    // ボタンをトップUIエリアに追加
-    const topUiArea = document.getElementById('top-ui-area');
-    const upgradeBtn = document.createElement('button');
-    upgradeBtn.id = 'upgrade-btn';
-    upgradeBtn.textContent = '強化';
-    // styleは createHTMLUI の makeBtn を参考に設定
-    upgradeBtn.style.background = 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)';
-    upgradeBtn.style.color = '#fff';
-    upgradeBtn.style.fontSize = '1.3rem';
-    upgradeBtn.style.fontWeight = 'bold';
-    upgradeBtn.style.padding = '12px 36px';
-    upgradeBtn.style.border = 'none';
-    upgradeBtn.style.borderRadius = '12px';
-    upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-    upgradeBtn.style.cursor = 'pointer';
-    upgradeBtn.style.transition = 'background 0.2s, box-shadow 0.2s, transform 0.1s';
-    upgradeBtn.style.whiteSpace = 'nowrap';
-    upgradeBtn.onmouseover = () => {
-        upgradeBtn.style.transform = 'scale(1.07)';
-        upgradeBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
-    };
-    upgradeBtn.onmouseout = () => {
-        upgradeBtn.style.transform = 'scale(1)';
-        upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-    };
-
-    topUiArea?.prepend(upgradeBtn); // 図鑑ボタンの前に追加
-
-    // アップグレードパネル本体
-    const panel = document.createElement('div');
-    panel.id = 'upgrade-panel';
-    panel.classList.add('game-scene-ui');
-    panel.style.cssText = `
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 400px; background: rgba(30,30,30,0.9); border-radius: 16px;
-        z-index: 500; display: none; padding: 20px; color: white;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
-        border: 1px solid rgba(255,255,255,0.1);
-    `;
-    container?.appendChild(panel);
-
-    upgradeBtn.onclick = () => {
-      this.updateUpgradePanel(); // パネルを開く前に内容を最新にする
-      panel.style.display = 'block';
-    };
-
-    // UIの内容を生成する
-    panel.innerHTML = `
-        <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
-            <h2 style="font-size: 1.8rem; margin: 0; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">装備強化</h2>
-            <button id="upgrade-close-btn" style="background: #555; border: none; color: white; border-radius: 50%; width: 30px; height: 30px; font-size: 1rem; cursor: pointer;">×</button>
-        </div>
-        <div id="upgrade-items-container"></div>
-        <div style="text-align: right; margin-top: 20px; font-size: 1.2rem;">
-            所持ポイント: <span id="upgrade-current-points" style="font-weight: bold; color: #ffc107;"></span>
-        </div>
-    `;
-
-    document.getElementById('upgrade-close-btn').onclick = () => {
-      panel.style.display = 'none';
-    };
-
-    this.updateUpgradePanel(); // 初期表示のために呼び出し
-  }
-
-  updateUpgradePanel() {
-      const container = document.getElementById('upgrade-items-container');
-      if (!container) return;
-
-      container.innerHTML = ''; // コンテナをクリア
-
-      ['rod', 'reel'].forEach(type => {
-          const config = UPGRADE_CONFIG[type];
-          const level = UpgradeManager.getLevel(type);
-          const cost = UpgradeManager.getUpgradeCost(type);
-          const canAfford = UpgradeManager.canUpgrade(type, this.gameState.score);
-
-          const itemDiv = document.createElement('div');
-          itemDiv.style.cssText = `
-              display: flex; justify-content: space-between; align-items: center;
-              padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;
-          `;
-
-          itemDiv.innerHTML = `
-              <div style="flex: 1; margin-right: 15px;">
-                  <h3 style="margin: 0 0 5px 0;">${config.name} <span style="font-size: 0.9rem; color: #ccc;">Lv. ${level}</span></h3>
-                  <p style="margin: 0; font-size: 0.8rem; color: #aaa;">${config.description}</p>
-              </div>
-              <div>
-                  <button class="upgrade-buy-btn" data-type="${type}" ${cost === null || !canAfford ? 'disabled' : ''}>
-                      ${cost !== null ? `${cost}P` : 'MAX'}
-                  </button>
-              </div>
-          `;
-          container.appendChild(itemDiv);
-      });
+  onUpgradeAttempt(type) {
+    const cost = UpgradeManager.attemptUpgrade(type, this.gameState.score);
+    if (cost > 0) {
+      this.gameState.score -= cost;
+      this.ui.updateScoreUI();
+      this.ui.updateUpgradePanel(); // 表示を更新
+      this.ui.showMessage(`${UPGRADE_CONFIG[type].name}を強化した！`, 1500, false);
       
-      // ボタンのスタイルとイベントリスナー
-      document.querySelectorAll('.upgrade-buy-btn').forEach(btn => {
-          btn.style.cssText = `
-              background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
-              border: none; color: #333; font-weight: bold; padding: 8px 16px;
-              border-radius: 6px; cursor: pointer; transition: transform 0.1s;
-          `;
-          if (btn.disabled) {
-              btn.style.background = '#555';
-              btn.style.cursor = 'not-allowed';
-              btn.style.color = '#999';
-          }
-          btn.onclick = (e) => {
-            const type = e.target.dataset.type;
-            const cost = UpgradeManager.attemptUpgrade(type, this.gameState.score);
-            if (cost > 0) {
-              this.gameState.score -= cost;
-              this.updateScoreUI();
-              this.updateUpgradePanel(); // 表示を更新
-              this.showMessage(`${UPGRADE_CONFIG[type].name}を強化した！`, 1500, false);
-              
-              // 釣り竿を強化したら、魚を再生成してレベルを即時反映
-              if (type === 'rod') {
-                  this.generateFishes();
-              }
-            } else {
-              this.showMessage('ポイントが足りません！', 1500, false);
-            }
-          };
-      });
-
-      const pointsSpan = document.getElementById('upgrade-current-points');
-      if (pointsSpan) pointsSpan.textContent = this.gameState.score;
+      // 釣り竿を強化したら、魚を再生成してレベルを即時反映
+      if (type === 'rod') {
+          this.generateFishes();
+      }
+    } else {
+      this.ui.showMessage('ポイントが足りません！', 1500, false);
+    }
   }
   
   createEnvironment() {
@@ -523,15 +218,6 @@ class GameScene extends Phaser.Scene {
         );
         rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
         this.threeScene.add(rock);
-    }
-
-    if (this.gameState.catchingFish) {
-      // タイミングゲーム以外では長押しを検出
-      if (this.minigame.type !== 'timing') {
-        this.isPlayerPulling = true;
-      }
-    } else {
-      this.reelLine();
     }
   }
   
@@ -723,7 +409,7 @@ class GameScene extends Phaser.Scene {
     if (this.float) this.float.visible = true;
 
     this.gameState.casting = true;
-    this.showMessage("キャスト！");
+    this.ui.showMessage("キャスト！");
     
     const angle = Math.random() * Math.PI * 2;
     const radius = Math.random() * (this.pondRadius - 1);
@@ -802,59 +488,6 @@ class GameScene extends Phaser.Scene {
       this.gameState.reeling = false;
       this.gameState.catchingFish = false;
     }
-  }
-  
-  showMessage(text, duration = 2000, isMajor = true) {
-    let msgDiv = document.getElementById('message-ui');
-    if (!msgDiv) {
-      msgDiv = document.createElement('div');
-      msgDiv.id = 'message-ui';
-      msgDiv.classList.add('game-scene-ui');
-      const gameContainer = document.getElementById('game-container');
-      if (gameContainer) {
-          gameContainer.appendChild(msgDiv);
-      }
-      msgDiv.style.position = 'absolute';
-      msgDiv.style.top = '50%';
-      msgDiv.style.left = '50%';
-      msgDiv.style.transform = 'translate(-50%, -50%)';
-      msgDiv.style.zIndex = '300';
-      msgDiv.style.background = 'rgba(0,0,0,0.7)';
-      msgDiv.style.color = 'white';
-      msgDiv.style.padding = '20px 40px';
-      msgDiv.style.borderRadius = '12px';
-      msgDiv.style.textAlign = 'center';
-      msgDiv.style.transition = 'opacity 0.4s ease-in-out';
-      msgDiv.style.opacity = '0';
-      msgDiv.style.pointerEvents = 'none';
-      msgDiv.style.boxShadow = '0 5px 25px rgba(0,0,0,0.3)';
-      msgDiv.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
-    }
-
-    msgDiv.textContent = text;
-    
-    if (isMajor) {
-      msgDiv.style.fontSize = '2rem';
-      msgDiv.style.fontWeight = 'bold';
-    } else {
-      msgDiv.style.fontSize = '1.4rem';
-      msgDiv.style.fontWeight = 'normal';
-    }
-
-    if (msgDiv.hideTimeout) clearTimeout(msgDiv.hideTimeout);
-    if (msgDiv.showTimeout) clearTimeout(msgDiv.showTimeout);
-
-    msgDiv.style.display = 'block';
-    msgDiv.showTimeout = setTimeout(() => {
-        msgDiv.style.opacity = '1';
-    }, 50);
-
-    msgDiv.hideTimeout = setTimeout(() => {
-      msgDiv.style.opacity = '0';
-      msgDiv.hideTimeout = setTimeout(() => {
-        msgDiv.style.display = 'none';
-      }, 400); 
-    }, duration);
   }
 
   switchCameraPerspective() {
@@ -1074,12 +707,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  updateScoreUI() {
-    if (this.scoreDiv) {
-      this.scoreDiv.textContent = `SCORE: ${this.gameState.score}`;
-    }
-  }
-
   startRandomMinigame(fish) {
     if (this.minigame.active) return;
     
@@ -1128,7 +755,7 @@ class GameScene extends Phaser.Scene {
         document.getElementById('minigame-ui-timing').style.display = 'block';
     }
     
-    this.showMessage("HIT! 魚とのファイト開始！");
+    this.ui.showMessage("HIT! 魚とのファイト開始！");
   }
 
   endMinigame(success) {
@@ -1144,11 +771,11 @@ class GameScene extends Phaser.Scene {
       // 釣り成功
       FishDex.recordCatch(caughtFish.type.name, caughtFish.size); // 釣果を記録
       this.gameState.score += caughtFish.type.points;
-      this.updateScoreUI();
-      this.showMessage(`やった！${caughtFish.size}cmの${caughtFish.type.name}を釣り上げた！`, 3000);
+      this.ui.updateScoreUI();
+      this.ui.showMessage(`やった！${caughtFish.size}cmの${caughtFish.type.name}を釣り上げた！`, 3000);
     } else {
       // 釣り失敗
-      this.showMessage('逃げられてしまった...', 3000);
+      this.ui.showMessage('逃げられてしまった...', 3000);
       caughtFish.state = 'swim';
     }
     
@@ -1246,108 +873,6 @@ class GameScene extends Phaser.Scene {
     document.getElementById('timing-progress-bar').style.width = `${this.minigame.overallProgress}%`;
   }
 
-  showDex(visible) {
-    let dexContainer = document.getElementById('fish-dex-container');
-    if (!dexContainer) {
-        dexContainer = document.createElement('div');
-        dexContainer.id = 'fish-dex-container';
-        dexContainer.classList.add('game-scene-ui');
-        document.getElementById('game-container')?.appendChild(dexContainer);
-        dexContainer.style.position = 'absolute';
-        dexContainer.style.top = '0';
-        dexContainer.style.left = '0';
-        dexContainer.style.width = '100%';
-        dexContainer.style.height = '100%';
-        dexContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-        dexContainer.style.zIndex = '1000';
-        dexContainer.style.display = 'flex';
-        dexContainer.style.justifyContent = 'center';
-        dexContainer.style.alignItems = 'center';
-        dexContainer.style.color = 'white';
-        dexContainer.style.backdropFilter = 'blur(5px)';
-
-        const dexContent = document.createElement('div');
-        dexContent.style.width = '90%';
-        dexContent.style.height = '90%';
-        dexContent.style.maxWidth = '1000px';
-        dexContent.style.maxHeight = '700px';
-        dexContent.style.background = 'rgba(30, 30, 30, 0.9)';
-        dexContent.style.borderRadius = '20px';
-        dexContent.style.padding = '20px';
-        dexContent.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-        dexContent.style.overflowY = 'auto';
-        dexContainer.appendChild(dexContent);
-
-        const title = document.createElement('h2');
-        title.textContent = '魚図鑑';
-        title.style.textAlign = 'center';
-        title.style.marginBottom = '20px';
-        title.style.fontSize = '2rem';
-        dexContent.appendChild(title);
-        
-        const fishGrid = document.createElement('div');
-        fishGrid.id = 'dex-fish-grid';
-        fishGrid.style.display = 'grid';
-        fishGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
-        fishGrid.style.gap = '20px';
-        dexContent.appendChild(fishGrid);
-
-        const closeButton = document.createElement('button');
-        closeButton.textContent = '閉じる';
-        closeButton.style.position = 'absolute';
-        closeButton.style.top = '30px';
-        closeButton.style.right = '40px';
-        closeButton.style.fontSize = '1rem';
-        closeButton.style.padding = '10px 20px';
-        closeButton.style.cursor = 'pointer';
-        dexContainer.appendChild(closeButton);
-        closeButton.onclick = () => this.showDex(false);
-    }
-    
-    // 表示/非表示の切り替え
-    dexContainer.style.display = visible ? 'flex' : 'none';
-
-    if (visible) {
-      // 表示時に内容を更新
-      const fishGrid = document.getElementById('dex-fish-grid');
-      if (!fishGrid) return;
-      fishGrid.innerHTML = ''; // 既存の内容をクリア
-
-      const dexData = FishDex.getDexData();
-      
-      FISH_TYPES.forEach(fishType => {
-        const data = dexData[fishType.name];
-        const card = document.createElement('div');
-        card.style.background = 'rgba(50, 50, 50, 0.8)';
-        card.style.borderRadius = '10px';
-        card.style.padding = '15px';
-        card.style.textAlign = 'center';
-        
-        if (data && data.caught) {
-          card.innerHTML = `
-            <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
-            <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
-            <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
-            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
-          `;
-        } else {
-          card.style.opacity = '0.6';
-          card.innerHTML = `
-            <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
-            <p style="margin: 5px 0;">最大サイズ: ---</p>
-            <p style="margin: 5px 0;">獲得ポイント: ---</p>
-            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
-          `;
-        }
-        fishGrid.appendChild(card);
-      });
-    }
-  }
-
-  cleanupHTML() {
-    document.querySelectorAll('.game-scene-ui').forEach(el => el.remove());
-  }
-
   onReelBtnMouseDown() {
     if (this.gameState.catchingFish) {
       // テンションゲームでは長押しを検出
@@ -1370,7 +895,7 @@ class GameScene extends Phaser.Scene {
       const { markerPosition, safeZone } = this.minigame.timing;
       if (markerPosition > safeZone.start && markerPosition < safeZone.start + safeZone.width) {
         this.minigame.overallProgress += 15; // 成功
-        this.showMessage("NICE!", 500, false);
+        this.ui.showMessage("NICE!", 500, false);
 
         // 加速処理
         const currentSpeed = Math.abs(this.minigame.timing.markerSpeed);
@@ -1382,15 +907,15 @@ class GameScene extends Phaser.Scene {
         document.getElementById('timing-miss-count').textContent = `ミス: ${this.minigame.timing.misses} / 3`;
 
         if (this.minigame.timing.misses >= 3) {
-            this.showMessage("3回ミス！逃げられた...", 1500);
+            this.ui.showMessage("3回ミス！逃げられた...", 1500);
             this.endMinigame(false);
         } else {
             this.minigame.overallProgress -= 10; 
-            this.showMessage("MISS...", 500, false);
+            this.ui.showMessage("MISS...", 500, false);
         }
       }
     }
   }
 }
 
-export default GameScene;
+export default GameScene; 
