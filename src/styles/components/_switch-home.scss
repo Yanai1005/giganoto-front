@@ -33,7 +33,6 @@
 }
 
 // キーボードナビゲーション表示
-
 .keyboard-hint {
     position: absolute;
     bottom: $system-menu-height + $spacing-16;
@@ -68,10 +67,7 @@
     }
 }
 
-
 // ゲーム詳細表示
-
-
 .game-detail {
     position: absolute;
     top: 50%;
@@ -171,7 +167,6 @@
             $system-menu-height + $spacing-4
         );
     justify-content: flex-start;
-
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
@@ -237,13 +232,11 @@
     }
 }
 
-
-// ダークモード特有のスタイル
-
-
+// テーマ固有のスタイル (Settings画面と統一)
 .theme-dark {
     .switch-home {
-        background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        // シンプルな単色背景（Settings画面と同じ）
+        background: var(--bg-primary);
     }
 
     .game-detail,
@@ -252,20 +245,15 @@
     }
 
     .keyboard-hint__key {
-        background: #404040;
-        border-color: #555555;
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
     }
 }
 
-
-// ライトモード特有のスタイル
-
-
 .theme-light {
     .switch-home {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        background-size: 200% 200%;
-        animation: gradientShift 10s ease infinite;
+        // シンプルな単色背景（Settings画面と同じ）
+        background: var(--bg-primary);
     }
 
     .game-detail,
@@ -274,27 +262,12 @@
     }
 
     .keyboard-hint__key {
-        background: #FFFFFF;
-        border-color: #E0E0E0;
-    }
-}
-
-@keyframes gradientShift {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
     }
 }
 
 // フォーカス管理
-
 .switch-home {
     &:focus-within {
         .keyboard-hint {
@@ -304,11 +277,11 @@
 }
 
 // プリント対応
-
 @media print {
     .switch-home {
         height: auto !important;
         overflow: visible !important;
+        background: white !important;
     }
 
     .game-grid {
@@ -329,9 +302,7 @@
 }
 
 // パフォーマンス最適化
-
 .switch-home {
-
     transform: translateZ(0);
     will-change: auto;
 
@@ -345,7 +316,6 @@
 }
 
 // アクセシビリティ改善
-
 @media (prefers-reduced-motion: reduce) {
 
     .switch-home,
@@ -416,7 +386,6 @@ scroll-behavior: smooth;
 }
 
 // 空の状態表示
-
 .empty-state {
     &__icon {
         font-size: 4rem;
@@ -446,7 +415,6 @@ scroll-behavior: smooth;
 }
 
 // ローディング状態
-
 .loading-overlay {
     @include absolute-center;
     @include flex-column-center;
@@ -470,7 +438,6 @@ scroll-behavior: smooth;
 }
 
 // エラー状態
-
 .error-overlay {
     @include absolute-center;
     @include flex-column-center;
