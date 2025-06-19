@@ -47,9 +47,7 @@ const Settings = () => {
     return (
         <div className="switch-settings">
             <div className="settings-header">
-                <button className="back-button">
-                    <SettingsIcon size={20} />
-                </button>
+                <SettingsIcon size={20} />
                 <h1>設定</h1>
             </div>
 

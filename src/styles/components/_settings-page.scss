@@ -31,6 +31,18 @@
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
+    svg {
+        pointer-events: none;
+        transition: none;
+
+        &:hover {
+            opacity: 1;
+            transform: none;
+            filter: none;
+            box-shadow: none;
+        }
+    }
+
     .back-button {
         background: none;
         border: none;
@@ -58,6 +70,7 @@
         font-size: 1.5rem;
         font-weight: 400;
         margin: 0;
+        margin-left: 1rem;
 
         &.theme-light {
             color: #333;
