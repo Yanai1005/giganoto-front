@@ -454,9 +454,12 @@ export class UIManager {
   }
 
   cleanup() {
+    // ゲームシーンで作成したUI要素を全て削除
     document.querySelectorAll('.game-scene-ui').forEach(el => el.remove());
+    
+    // ゲームシーンで追加したスタイルを削除
     const style = document.querySelector('style');
-    if (style) {
+    if (style && style.textContent.includes('.minigame-container')) {
         style.remove();
     }
   }
