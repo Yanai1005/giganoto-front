@@ -5,51 +5,37 @@
 
 .switch-settings {
     min-height: 100vh;
-    background: #2D2D2D;
-    color: white;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     font-family: system-ui, -apple-system, sans-serif;
     display: flex;
     flex-direction: column;
     transition: all $transition-smooth;
-
-    &.theme-light {
-        background: #F5F5F5;
-        color: #333;
-    }
+    position: relative;
 }
 
 .settings-header {
     display: flex;
     align-items: center;
     padding: 1.5rem 2rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 
-    &.theme-light {
-        background: rgba(0, 0, 0, 0.05);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .back-button {
-        background: none;
-        border: none;
-        color: white;
-        padding: 0.5rem;
-        margin-right: 1rem;
-        cursor: pointer;
-        border-radius: 0.5rem;
-        transition: all $transition-fast;
+    svg {
+        pointer-events: none;
+        transition: none;
+        color: var(--text-primary);
 
         &:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        &.theme-light {
-            color: #333;
-
-            &:hover {
-                background: rgba(0, 0, 0, 0.1);
-            }
+            opacity: 1;
+            transform: none;
+            filter: none;
+            box-shadow: none;
         }
     }
 
@@ -57,10 +43,8 @@
         font-size: 1.5rem;
         font-weight: 400;
         margin: 0;
-
-        &.theme-light {
-            color: #333;
-        }
+        margin-left: 1rem;
+        color: var(--text-primary);
     }
 }
 
@@ -68,33 +52,25 @@
     display: flex;
     flex: 1;
     min-height: calc(100vh - 70px);
+    padding-bottom: 120px;
 }
 
 .settings-sidebar {
     width: 350px;
-    background: rgba(255, 255, 255, 0.05);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
     overflow-y: auto;
-
-    &.theme-light {
-        background: rgba(0, 0, 0, 0.05);
-        border-right-color: rgba(0, 0, 0, 0.1);
-    }
 }
 
 .support-section {
     padding: 1.5rem 2rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
 
     h3 {
         margin: 0;
         font-size: 0.9rem;
         font-weight: 400;
-        color: #AAAAAA;
-
-        &.theme-light {
-            color: #666;
-        }
+        color: var(--text-secondary);
     }
 }
 
@@ -103,35 +79,28 @@
     align-items: center;
     padding: 1rem 2rem;
     cursor: pointer;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
     border-left: 3px solid transparent;
     transition: all 0.2s;
-
-    &.theme-light {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        &:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-    }
+    position: relative;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--bg-primary);
     }
 
     &.selected {
-        background: rgba(28, 191, 222, 0.1);
-        border-left-color: #1CBFDE;
+        background: var(--bg-primary);
+        border-left-color: var(--accent-primary);
+        border-left-width: 4px;
 
-        &::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: #1CBFDE;
+        svg {
+            color: var(--accent-primary);
         }
+    }
+
+    svg {
+        color: var(--text-secondary);
+        transition: color 0.2s;
     }
 
     span:first-of-type {
@@ -139,49 +108,23 @@
         flex: 1;
         font-size: 1rem;
         font-weight: 400;
-
-        &.theme-light {
-            color: #333;
-        }
+        color: var(--text-primary);
     }
 
     .submenu-arrow {
-        color: #AAAAAA;
+        color: var(--text-secondary);
         font-size: 1.2rem;
         margin-left: auto;
         opacity: 0.6;
-
-        &.theme-light {
-            color: #666;
-        }
     }
 }
 
 .settings-main {
     flex: 1;
-    background: #2D2D2D;
+    background: var(--bg-primary);
     padding: 0;
     overflow-y: auto;
     position: relative;
-
-    &::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 1px;
-        background: rgba(255, 255, 255, 0.1);
-        z-index: 1;
-    }
-
-    &.theme-light {
-        background: #F5F5F5;
-
-        &::before {
-            background: rgba(0, 0, 0, 0.1);
-        }
-    }
 }
 
 .settings-detail-section {
@@ -194,10 +137,6 @@
 
 .settings-main-content {
     padding: 3rem;
-
-    &.theme-light {
-        padding: 1rem;
-    }
 }
 
 .setting-header {
@@ -206,21 +145,191 @@
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid var(--border-color);
 
     h2 {
         font-size: 1.8rem;
         font-weight: 400;
         margin: 0;
-        color: white;
+        color: var(--text-primary);
+    }
+}
 
-        &.theme-light {
-            color: #333;
+// テーマコントロール
+.theme-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.theme-toggle-group {
+    display: flex;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.theme-option {
+    @include button-reset;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all $transition-fast;
+    cursor: pointer;
+    min-width: 80px;
+    justify-content: center;
+
+    &:hover {
+        color: var(--text-primary);
+        background: var(--bg-primary);
+    }
+
+    &.active {
+        background: var(--accent-primary);
+        color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+// テーマプレビュー
+.theme-preview {
+    margin: 2rem 0;
+
+    &__item {
+        display: flex;
+        justify-content: center;
+    }
+
+    &__card {
+        width: 300px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid;
+        transition: all $transition-smooth;
+
+        &--light {
+            background: #FFFFFF;
+            border-color: #E0E0E0;
+            color: #000000;
+        }
+
+        &--dark {
+            background: #404040;
+            border-color: #555555;
+            color: #FFFFFF;
         }
     }
 
-    &.theme-light {
-        border-bottom-color: rgba(0, 0, 0, 0.2);
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid;
+
+        .theme-preview__card--light & {
+            border-color: #E0E0E0;
+            background: #F8F8F8;
+        }
+
+        .theme-preview__card--dark & {
+            border-color: #555555;
+            background: #353535;
+        }
+    }
+
+    &__title {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    &__controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    &__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+
+        .theme-preview__card--light & {
+            background: #CCCCCC;
+
+            &:first-child {
+                background: #FF5F57;
+            }
+
+            &:nth-child(2) {
+                background: #FFBD2E;
+            }
+
+            &:nth-child(3) {
+                background: #28CA42;
+            }
+        }
+
+        .theme-preview__card--dark & {
+            background: #666666;
+
+            &:first-child {
+                background: #FF5F57;
+            }
+
+            &:nth-child(2) {
+                background: #FFBD2E;
+            }
+
+            &:nth-child(3) {
+                background: #28CA42;
+            }
+        }
+    }
+
+    &__content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    &__text-primary {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    &__text-secondary {
+        font-size: 0.9rem;
+        opacity: 0.7;
+    }
+
+    &__button {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+        width: fit-content;
+
+        .theme-preview__card--light & {
+            background: #E70009;
+            color: white;
+        }
+
+        .theme-preview__card--dark & {
+            background: #1CBFDE;
+            color: white;
+        }
     }
 }
 
@@ -230,191 +339,57 @@
     p {
         margin: 0 0 1rem 0;
         font-size: 1rem;
-        color: #CCCCCC;
-
-        &.theme-light {
-            color: #666666;
-        }
+        color: var(--text-secondary);
     }
+}
 
-    .quick-setting-note {
+.setting-note {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid var(--accent-primary);
+    margin-top: 2rem;
+
+    p {
+        margin: 0 0 0.5rem 0;
         font-size: 0.9rem;
-        color: #999999;
-        margin: 1.5rem 0 0 0;
+        color: var(--text-secondary);
 
-        &.theme-light {
-            color: #888888;
+        &:last-child {
+            margin-bottom: 0;
         }
     }
-}
-
-.toggle-switch-container {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 54px;
-    height: 30px;
-
-    input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.4);
-    transition: 0.4s;
-    border-radius: 30px;
-
-    &:before {
-        position: absolute;
-        content: "";
-        height: 22px;
-        width: 22px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
-    }
-}
-
-input:checked+.toggle-slider {
-    background-color: #1CBFDE;
-}
-
-input:checked+.toggle-slider:before {
-    transform: translateX(24px);
 }
 
 .placeholder-content {
     padding: 3rem;
     text-align: center;
-    color: #AAAAAA;
+    color: var(--text-secondary);
 
     h2 {
         margin-bottom: 1rem;
-        color: white;
+        color: var(--text-primary);
         font-weight: 400;
-
-        &.theme-light {
-            color: #333;
-        }
     }
 
     p {
         font-size: 1rem;
-
-        &.theme-light {
-            color: #666;
-        }
+        color: var(--text-secondary);
     }
 }
 
-// テーマ別の境界線の色
-.theme-dark {
-    .settings-sidebar {
-        border-right-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .settings-main::before {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .setting-header {
-        border-bottom-color: rgba(255, 255, 255, 0.2);
-    }
-}
-
-.theme-light {
-    .switch-settings {
-        background: #F5F5F5;
-        color: #333;
-    }
-
-    .settings-sidebar {
-        background: rgba(0, 0, 0, 0.05);
-        border-right-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .settings-main {
-        background: #F5F5F5;
-    }
-
-    .settings-main::before {
-        background: rgba(0, 0, 0, 0.1);
-    }
-
-    .setting-header {
-        border-bottom-color: rgba(0, 0, 0, 0.2);
-
-        h2 {
-            color: #333;
-        }
-    }
-
-    .setting-description-block p {
-        color: #666666;
-    }
-
-    .quick-setting-note {
-        color: #888888;
-    }
-
-    .placeholder-content {
-        color: #666;
-
-        h2 {
-            color: #333;
-        }
-    }
-
-    .support-section h3 {
-        color: #666;
-    }
-
-    .settings-header {
-        background: rgba(0, 0, 0, 0.05);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        .back-button {
-            color: #333;
-
-            &:hover {
-                background: rgba(0, 0, 0, 0.1);
-            }
-        }
-
-        h1 {
-            color: #333;
-        }
-    }
-
-    .sidebar-item {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        &:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        span:first-of-type {
-            color: #333;
-        }
-
-        .submenu-arrow {
-            color: #666;
-        }
+// HomeMenuの配置スタイル
+.switch-settings {
+    .nintendo-system-menu {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: var(--system-menu-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border-color);
     }
 }
 
@@ -422,16 +397,13 @@ input:checked+.toggle-slider:before {
 @media (max-width: 768px) {
     .settings-content {
         flex-direction: column;
+        padding-bottom: 140px;
     }
 
     .settings-sidebar {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .settings-detail-section {
-        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .settings-main-content {
@@ -448,49 +420,102 @@ input:checked+.toggle-slider:before {
         }
     }
 
-    .toggle-switch-container {
+    .theme-controls {
         align-self: flex-end;
+        width: 100%;
+        justify-content: flex-end;
     }
 
-    .theme-light .settings-sidebar {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    .theme-toggle-group {
+        width: 100%;
+        max-width: 200px;
     }
+
+    .theme-actions {
+        flex-direction: column;
+    }
+}
+
+.theme-dark {
+    .theme-preview__card--dark {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .theme-option {
+        &.active {
+            box-shadow: 0 2px 8px rgba(28, 191, 222, 0.3);
+        }
+    }
+}
+
+// ライトモード専用スタイル
+.theme-light {
+    .theme-preview__card--light {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .theme-option {
+        &.active {
+            box-shadow: 0 2px 8px rgba(231, 0, 9, 0.2);
+        }
+    }
+}
+
+// アニメーション
+@keyframes themeTransition {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.theme-preview__card {
+    animation: themeTransition 0.3s ease-out;
 }
 
 // アクセシビリティ
 @media (prefers-reduced-motion: reduce) {
 
     .sidebar-item,
-    .toggle-slider,
+    .theme-option,
+    .theme-preview__card,
     .switch-settings {
         transition: none !important;
+        animation: none !important;
     }
 }
 
-// プリント対応
-@media print {
-    .switch-settings {
-        height: auto !important;
-        overflow: visible !important;
-        background: white !important;
-        color: black !important;
+// 高コントラストモード
+@media (prefers-contrast: high) {
+    .theme-option {
+        border: 2px solid var(--border-color);
+
+        &.active {
+            border-color: var(--accent-primary);
+        }
     }
 
-    .settings-header {
-        border-bottom: 2px solid #000 !important;
-        background: white !important;
+    .theme-preview__card {
+        border-width: 2px;
     }
 
-    .settings-sidebar {
-        border-right: 1px solid rgba(0, 0, 0, 0.2) !important;
-        background: white !important;
+    .sidebar-item.selected {
+        border-left-width: 6px;
     }
+}
 
-    .settings-main::before {
-        background: rgba(0, 0, 0, 0.2) !important;
-    }
+// フォーカス管理
+.theme-option:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
 
-    .settings-main {
-        background: white !important;
-    }
+.sidebar-item:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
 }

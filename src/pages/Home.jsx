@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 import GameTile from '../components/GameTile';
 import TopBar from '../components/TopBar';
 import SystemMenu from '../components/SystemMenu';
@@ -9,8 +10,8 @@ import gamesData from '../data/games.json';
 
 const Home = () => {
     const navigate = useNavigate();
+    const { theme, changeTheme } = useTheme();
     const [selectedGame, setSelectedGame] = useState(0);
-    const [theme, setTheme] = useState('dark');
     const [showSettings, setShowSettings] = useState(false);
     const [activeSystemIcon, setActiveSystemIcon] = useState('');
     const [loading, setLoading] = useState(false);
@@ -20,11 +21,6 @@ const Home = () => {
     useEffect(() => {
         GameRegistry.initializeFromJson(gamesData);
     }, []);
-
-    // テーマの適用
-    useEffect(() => {
-        document.body.className = `theme-${theme}`;
-    }, [theme]);
 
     // ロードアニメーション
     useEffect(() => {
@@ -74,7 +70,6 @@ const Home = () => {
 
         setLoading(true);
 
-        // ゲーム読み込みシミュレーション
         setTimeout(() => {
             setLoading(false);
             navigate(game.path, {
@@ -100,7 +95,7 @@ const Home = () => {
     };
 
     const handleThemeChange = (newTheme) => {
-        setTheme(newTheme);
+        changeTheme(newTheme);
         setShowSettings(false);
     };
 
