@@ -62,8 +62,8 @@ class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('rod', 'src/games/fishing/assets/rod.png');
-    this.load.image('water', 'src/games/fishing/assets/water.jpg');
+    // this.load.image('rod', 'src/games/fishing/assets/rod.png');
+    // this.load.image('water', 'src/games/fishing/assets/water.jpg');
   }
 
   create() {
