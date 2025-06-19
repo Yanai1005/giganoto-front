@@ -69,7 +69,8 @@ class GameScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
     
-    this.fishDex = FishDex.initialize(FISH_TYPES);
+    FishDex.initialize(FISH_TYPES);
+    this.fishDex = FishDex;
     UpgradeManager.initialize();
 
     this.initThreeJS();

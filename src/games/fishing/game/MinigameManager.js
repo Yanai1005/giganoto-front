@@ -66,16 +66,20 @@ export class MinigameManager {
     const caughtFish = this.scene.catchingFishObj;
     this.scene.catchingFishObj = null; // 参照をクリア
 
-    if (success) {
+    if (success && caughtFish) {
       // 釣り成功
       this.scene.fishDex.recordCatch(caughtFish.type.name, caughtFish.size); // 釣果を記録
       this.scene.gameState.score += caughtFish.type.points;
       this.ui.updateScoreUI();
       this.ui.showMessage(`やった！${caughtFish.size}cmの${caughtFish.type.name}を釣り上げた！`, 3000);
-    } else {
+    } else if (!success && caughtFish) {
       // 釣り失敗
       this.ui.showMessage('逃げられてしまった...', 3000);
       caughtFish.state = 'swim';
+    } else if (!caughtFish) {
+      // 予期せぬエラーケース
+      console.error("Minigame ended without a fish.");
+      this.ui.showMessage('あれ？魚がいない...', 3000);
     }
     
     this.scene.gameState.catchingFish = false;
