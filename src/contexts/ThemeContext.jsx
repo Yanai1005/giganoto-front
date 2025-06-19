@@ -1,5 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import {
+    THEME_COLORS,
+    THEME_CONFIG,
+    CSS_VARIABLES,
+    META_SELECTORS
+} from '../constants/themeConstants';
 
 const ThemeContext = createContext();
 
@@ -11,11 +17,13 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
     const getInitialTheme = () => {
         try {
-            const savedTheme = localStorage.getItem('nintendo-switch-theme');
-            return savedTheme && ['light', 'dark'].includes(savedTheme) ? savedTheme : 'dark';
+            const savedTheme = localStorage.getItem(THEME_CONFIG.storageKey);
+            return savedTheme && THEME_CONFIG.availableThemes.includes(savedTheme)
+                ? savedTheme
+                : THEME_CONFIG.defaultTheme;
         } catch (error) {
-            console.warn('Failed to load theme from localStorage:', error);
-            return 'dark';
+            console.warn('テーマの読み込みに失敗しました:', error);
+            return THEME_CONFIG.defaultTheme;
         }
     };
 
@@ -25,47 +33,37 @@ export const ThemeProvider = ({ children }) => {
         document.body.className = `theme-${theme}`;
 
         try {
-            localStorage.setItem('nintendo-switch-theme', theme);
+            localStorage.setItem(THEME_CONFIG.storageKey, theme);
         } catch (error) {
-            console.warn('Failed to save theme to localStorage:', error);
+            console.warn('テーマの保存に失敗しました:', error);
         }
         updateSystemColors(theme);
     }, [theme]);
 
     const updateSystemColors = (currentTheme) => {
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        const metaMSAppTileColor = document.querySelector('meta[name="msapplication-TileColor"]');
+        const metaThemeColor = document.querySelector(META_SELECTORS.themeColor);
+        const metaMSAppTileColor = document.querySelector(META_SELECTORS.msAppTileColor);
+        const themeColors = THEME_COLORS[currentTheme];
 
-        if (currentTheme === 'light') {
-            if (metaThemeColor) {
-                metaThemeColor.setAttribute('content', '#F0F0F0');
-            }
-            if (metaMSAppTileColor) {
-                metaMSAppTileColor.setAttribute('content', '#E70009');
-            }
-
-            document.documentElement.style.setProperty('--system-ui-bg', '#F0F0F0');
-            document.documentElement.style.setProperty('--system-ui-text', '#000000');
-        } else {
-            if (metaThemeColor) {
-                metaThemeColor.setAttribute('content', '#2D2D2D');
-            }
-            if (metaMSAppTileColor) {
-                metaMSAppTileColor.setAttribute('content', '#1CBFDE');
-            }
-            document.documentElement.style.setProperty('--system-ui-bg', '#2D2D2D');
-            document.documentElement.style.setProperty('--system-ui-text', '#FFFFFF');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', themeColors.metaThemeColor);
         }
+        if (metaMSAppTileColor) {
+            metaMSAppTileColor.setAttribute('content', themeColors.metaTileColor);
+        }
+
+        document.documentElement.style.setProperty(CSS_VARIABLES.systemUiBg, themeColors.background);
+        document.documentElement.style.setProperty(CSS_VARIABLES.systemUiText, themeColors.text);
     };
     const toggleTheme = () => {
         setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
     };
 
     const changeTheme = (newTheme) => {
-        if (['light', 'dark'].includes(newTheme)) {
+        if (THEME_CONFIG.availableThemes.includes(newTheme)) {
             setTheme(newTheme);
         } else {
-            console.warn(`Invalid theme: ${newTheme}. Use 'light' or 'dark'.`);
+            console.warn(`無効なテーマです: ${newTheme}。利用可能なテーマ: ${THEME_CONFIG.availableThemes.join(', ')}`);
         }
     };
 
@@ -86,7 +84,7 @@ export const ThemeProvider = ({ children }) => {
             current: theme,
             system: systemTheme,
             isSystemTheme: theme === systemTheme,
-            available: ['light', 'dark']
+            available: THEME_CONFIG.availableThemes
         };
     };
 
@@ -95,7 +93,8 @@ export const ThemeProvider = ({ children }) => {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
             const handleSystemThemeChange = (e) => {
-                console.log('System theme changed to:', e.matches ? 'dark' : 'light');
+                const newTheme = e.matches ? 'ダーク' : 'ライト';
+                console.log(`システムテーマが変更されました: ${newTheme}モード`);
             };
 
             mediaQuery.addEventListener('change', handleSystemThemeChange);
