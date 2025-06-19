@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 export default class TitleScene extends Phaser.Scene {
   constructor() {
     super({ key: 'TitleScene' });
+    this.titleContainer = null;
   }
 
   preload() {}
@@ -23,6 +24,7 @@ export default class TitleScene extends Phaser.Scene {
 
     // タイトル画面用のコンテナを作成
     const titleContainer = document.createElement('div');
+    this.titleContainer = titleContainer; // コンテナへの参照を保存
     titleContainer.style.width = '100%';
     titleContainer.style.height = '100%';
     titleContainer.style.display = 'flex';
@@ -56,46 +58,65 @@ export default class TitleScene extends Phaser.Scene {
     subtitle.style.animation = 'fadeIn 1s 0.5s ease-out forwards';
     titleContainer.appendChild(subtitle);
     
-    // スタートボタン
-    const startButton = document.createElement('button');
-    startButton.textContent = 'スタート';
-    startButton.style.marginTop = '3rem';
-    startButton.style.padding = '1rem 3rem';
-    startButton.style.fontSize = '1.8rem';
-    startButton.style.fontWeight = 'bold';
-    startButton.style.color = '#fff';
-    startButton.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
-    startButton.style.border = 'none';
-    startButton.style.borderRadius = '50px';
-    startButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
-    startButton.style.cursor = 'pointer';
-    startButton.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-    startButton.style.opacity = '0';
-    // アニメーション：さらに遅れて表示
-    startButton.style.animation = 'fadeInUp 1s 0.8s ease-out forwards';
-    
-    // マウスオーバー時のインタラクション
-    startButton.onmouseover = () => {
-      startButton.style.transform = 'translateY(-4px)';
-      startButton.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
-    };
-    startButton.onmouseout = () => {
-      startButton.style.transform = 'translateY(0)';
-      startButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+    // ボタンコンテナ
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '20px';
+    buttonContainer.style.marginTop = '3rem';
+    // アニメーション：コンテナごと表示
+    buttonContainer.style.opacity = '0';
+    buttonContainer.style.animation = 'fadeInUp 1s 0.8s ease-out forwards';
+    titleContainer.appendChild(buttonContainer);
+
+    // ボタンを作成するヘルパー関数
+    const createButton = (text, background) => {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.style.padding = '1rem 3rem';
+        button.style.fontSize = '1.8rem';
+        button.style.fontWeight = 'bold';
+        button.style.color = '#fff';
+        button.style.background = background;
+        button.style.border = 'none';
+        button.style.borderRadius = '50px';
+        button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+        button.style.cursor = 'pointer';
+        button.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+        
+        button.onmouseover = () => {
+            button.style.transform = 'translateY(-4px)';
+            button.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
+        };
+        button.onmouseout = () => {
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+        };
+        return button;
     };
 
-    // クリックでゲームシーンへ
+    // スタートボタン
+    const startButton = createButton('スタート', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
     startButton.onclick = () => {
-      // クリックアニメーション
-      startButton.style.transform = 'translateY(2px)';
       // UIをフェードアウトさせてからシーン遷移
-      titleContainer.style.transition = 'opacity 0.5s ease';
-      titleContainer.style.opacity = '0';
+      this.titleContainer.style.transition = 'opacity 0.5s ease';
+      this.titleContainer.style.opacity = '0';
       setTimeout(() => {
         this.scene.start('GameScene');
       }, 500);
     };
-    titleContainer.appendChild(startButton);
+    buttonContainer.appendChild(startButton);
+
+    // Joy-Conテストボタン
+    const debugButton = createButton('Joy-Conテスト', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
+    debugButton.onclick = () => {
+        // UIをフェードアウトさせてからシーン遷移
+        this.titleContainer.style.transition = 'opacity 0.5s ease';
+        this.titleContainer.style.opacity = '0';
+        setTimeout(() => {
+            this.scene.start('JoyConDebugScene');
+        }, 500);
+    };
+    buttonContainer.appendChild(debugButton);
 
     // コピーライト
     const footer = document.createElement('footer');
@@ -256,11 +277,10 @@ export default class TitleScene extends Phaser.Scene {
 
     // クリックでセーブデータ削除
     deleteButton.onclick = () => {
-        this.showCustomConfirm(
-            '本当にセーブデータを削除しますか？<br><span style="font-size: 0.8em; color: #ccc;">この操作は取り消せません。</span>',
+        this.showCustomConfirm('本当にセーブデータを削除しますか？<br>この操作は取り消せません。', 
             () => {
-                localStorage.removeItem('giganoto_fishingGameUpgrades');
-                localStorage.removeItem('fishingGame_fishDex');
+                localStorage.removeItem('fishing_game_upgrades');
+                localStorage.removeItem('fishing_game_fish_dex');
                 this.showCustomAlert('セーブデータを削除しました。');
             }
         );
@@ -315,5 +335,23 @@ export default class TitleScene extends Phaser.Scene {
             alertBox.remove();
           }, 500);
       }, 2500);
+  }
+
+  shutdown() {
+    // このシーンで作成したDOM要素をクリーンアップ
+    if (this.titleContainer) {
+        this.titleContainer.remove();
+        this.titleContainer = null;
+    }
+    const styleElement = document.getElementById('fishing-game-styles');
+    if (styleElement) {
+        styleElement.remove();
+    }
+    // game-container に設定したスタイルをリセット
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.style.background = '';
+        gameContainer.style.overflow = '';
+    }
   }
 } 

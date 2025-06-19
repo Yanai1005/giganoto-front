@@ -12,9 +12,33 @@ export class UIManager {
   }
 
   create() {
-    this.createScoreUI();
+    // Top Bar Container
+    const topBar = document.createElement('div');
+    topBar.id = 'top-bar-container';
+    topBar.classList.add('game-scene-ui');
+    topBar.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 24px 32px;
+        box-sizing: border-box;
+        z-index: 100;
+        pointer-events: none;
+    `;
+    this.gameContainer?.appendChild(topBar);
+
+    // Children for Top Bar
+    const scoreUI = this.createScoreUI();
+    const topRightButtons = this.createTopRightButtons();
+    topBar.appendChild(scoreUI);
+    topBar.appendChild(topRightButtons);
+
+    // Other UI elements
     this.createControlButtons();
-    this.createTopRightButtons();
     this.createAllMinigameUIs();
     this.createUpgradeUI();
   }
@@ -24,25 +48,23 @@ export class UIManager {
     if (!scoreDiv) {
       scoreDiv = document.createElement('div');
       scoreDiv.id = 'score-ui';
-      scoreDiv.classList.add('game-scene-ui');
-      this.gameContainer?.appendChild(scoreDiv);
     }
-    scoreDiv.style.position = 'absolute';
-    scoreDiv.style.top = '24px';
-    scoreDiv.style.left = '32px';
-    scoreDiv.style.zIndex = '100';
-    scoreDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-    scoreDiv.style.color = '#fff';
-    scoreDiv.style.fontSize = '2.2rem';
-    scoreDiv.style.fontWeight = 'bold';
-    scoreDiv.style.padding = '12px 32px';
-    scoreDiv.style.borderRadius = '16px';
-    scoreDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
-    scoreDiv.style.letterSpacing = '0.05em';
-    scoreDiv.style.textShadow = '0 2px 8px #000a';
-    scoreDiv.style.userSelect = 'none';
+    scoreDiv.style.cssText = `
+        background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: bold;
+        padding: 12px 32px;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        letter-spacing: 0.05em;
+        text-shadow: 0 2px 8px #000a;
+        user-select: none;
+        pointer-events: auto;
+    `;
     this.scoreDiv = scoreDiv;
     this.updateScoreUI();
+    return scoreDiv;
   }
   
   _makeBtn(id, text, bg) {
@@ -120,24 +142,37 @@ export class UIManager {
     if(!topUiArea) {
         topUiArea = document.createElement('div');
         topUiArea.id = 'top-ui-area';
-        topUiArea.classList.add('game-scene-ui');
-        this.gameContainer?.appendChild(topUiArea);
     }
-    topUiArea.style.position = 'absolute';
-    topUiArea.style.top = '24px';
-    topUiArea.style.right = '32px';
-    topUiArea.style.zIndex = '100';
-    topUiArea.style.display = 'flex';
-    topUiArea.style.gap = '16px';
+    topUiArea.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        pointer-events: auto;
+    `;
  
+    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
     const dexBtn = this._makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
     const titleBtn = this._makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #868f96 0%, #596164 100%)');
     
+    upgradeBtn.onclick = () => {
+        this.updateUpgradePanel();
+        const panel = document.getElementById('upgrade-panel');
+        if(panel) panel.style.display = 'block';
+    }
     dexBtn.onclick = () => this.showDex(true);
     titleBtn.onclick = () => this.scene.scene.start('TitleScene');
 
+    topUiArea.appendChild(upgradeBtn);
+
+    if ('hid' in navigator) {
+        const joyConBtn = this._makeBtn('joycon-btn', 'Joy-Con接続', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
+        joyConBtn.onclick = () => this.scene.connectJoyCon();
+        topUiArea.appendChild(joyConBtn);
+    }
+
     topUiArea.appendChild(dexBtn);
     topUiArea.appendChild(titleBtn);
+    return topUiArea;
   }
 
   createAllMinigameUIs() {
@@ -197,20 +232,6 @@ export class UIManager {
   }
 
   createUpgradeUI() {
-    const topUiArea = document.getElementById('top-ui-area');
-    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
-    
-    upgradeBtn.onmouseover = () => {
-        upgradeBtn.style.transform = 'scale(1.07)';
-        upgradeBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
-    };
-    upgradeBtn.onmouseout = () => {
-        upgradeBtn.style.transform = 'scale(1)';
-        upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-    };
-
-    topUiArea?.prepend(upgradeBtn);
-
     const panel = document.createElement('div');
     panel.id = 'upgrade-panel';
     panel.classList.add('game-scene-ui');
@@ -222,11 +243,6 @@ export class UIManager {
         border: 1px solid rgba(255,255,255,0.1);
     `;
     this.gameContainer?.appendChild(panel);
-
-    upgradeBtn.onclick = () => {
-      this.updateUpgradePanel();
-      panel.style.display = 'block';
-    };
 
     panel.innerHTML = `
         <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
