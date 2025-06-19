@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Wifi, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { Settings as SettingsIcon, Wifi, Sun } from 'lucide-react';
 import HomeMenu from '../components/HomeMenu';
 
 const Settings = () => {
@@ -24,11 +24,6 @@ const Settings = () => {
 
     const handleCategoryClick = (categoryId) => {
         setSelectedCategory(categoryId);
-    };
-
-    const handleHomeMenuClick = (icon) => {
-        console.log(`HomeMenu ${icon.title} clicked`);
-        // ここで必要に応じてナビゲーション処理を追加
     };
 
     const InternetSettings = () => (
@@ -84,7 +79,7 @@ const Settings = () => {
         <div className="switch-settings">
             <div className="settings-header">
                 <button className="back-button">
-                    <ArrowLeft size={24} />
+                    <SettingsIcon size={20} />
                 </button>
                 <h1>設定</h1>
             </div>
@@ -124,12 +119,7 @@ const Settings = () => {
                     )}
                 </div>
             </div>
-
-            {/* HomeMenuを追加 */}
-            <HomeMenu
-                onIconClick={handleHomeMenuClick}
-                activeIcon="settings"
-            />
+            <HomeMenu />
         </div>
     );
 };
