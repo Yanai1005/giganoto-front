@@ -11,6 +11,7 @@
     display: flex;
     flex-direction: column;
     transition: all $transition-smooth;
+    position: relative;
 
     &.theme-light {
         background: #F5F5F5;
@@ -68,6 +69,7 @@
     display: flex;
     flex: 1;
     min-height: calc(100vh - 70px);
+    padding-bottom: 120px; // HomeMenuのための余白を追加
 }
 
 .settings-sidebar {
@@ -295,6 +297,26 @@ input:checked+.toggle-slider:before {
     }
 }
 
+// HomeMenuの配置スタイル
+.switch-settings {
+    .nintendo-system-menu {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(45, 45, 45, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    &.theme-light .nintendo-system-menu {
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+}
+
 // テーマ別の境界線の色
 .theme-dark {
     .settings-sidebar {
@@ -387,6 +409,7 @@ input:checked+.toggle-slider:before {
 @media (max-width: 768px) {
     .settings-content {
         flex-direction: column;
+        padding-bottom: 140px; // モバイルでは少し多めの余白
     }
 
     .settings-sidebar {
@@ -419,6 +442,35 @@ input:checked+.toggle-slider:before {
 
     .theme-light .settings-sidebar {
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .switch-settings .nintendo-system-menu {
+        &__bar {
+            padding: $spacing-2 $spacing-4;
+        }
+
+        &__icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 1px;
+
+            svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        &__pc-icon {
+            width: 44px;
+            height: 44px;
+            margin-top: $spacing-4;
+            margin-left: $spacing-4;
+
+            svg {
+                width: 24px;
+                height: 24px;
+            }
+        }
     }
 }
 
@@ -453,5 +505,9 @@ input:checked+.toggle-slider:before {
 
     .settings-main {
         background: white !important;
+    }
+
+    .nintendo-system-menu {
+        display: none !important;
     }
 }
