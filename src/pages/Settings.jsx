@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, Sun } from 'lucide-react';
+import { Settings as SettingsIcon, Sun, Moon, Monitor } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import HomeMenu from '../components/HomeMenu';
 
 const Settings = () => {
-    const [selectedCategory, setSelectedCategory] = useState('internet');
-    const [airplaneMode, setAirplaneMode] = useState(false);
-    const [currentTheme, setCurrentTheme] = useState('dark');
+    const { theme, changeTheme, toggleTheme, getThemeInfo } = useTheme();
+    const [selectedCategory, setSelectedCategory] = useState('theme');
 
     const settingsOptions = [
         {
             id: 'theme',
             title: 'テーマ設定',
-            icon: Sun,
+            icon: theme === 'light' ? Sun : Moon,
             description: 'ダークモード・ライトモードの切り替え'
         }
     ];
@@ -20,29 +20,37 @@ const Settings = () => {
         setSelectedCategory(categoryId);
     };
 
-    const ThemeSettings = () => (
-        <div className="settings-detail-section">
-            <div className="settings-main-content">
-                <div className="setting-header">
-                    <h2>テーマ設定</h2>
-                    <div className="toggle-switch-container">
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={currentTheme === 'light'}
-                                onChange={(e) => setCurrentTheme(e.target.checked ? 'light' : 'dark')}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
+    const ThemeSettings = () => {
+        return (
+            <div className="settings-detail-section">
+                <div className="settings-main-content">
+                    <div className="setting-header">
+                        <h2>テーマ設定</h2>
+                        <div className="theme-controls">
+                            <div className="theme-toggle-group">
+                                <button
+                                    className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+                                    onClick={() => changeTheme('light')}
+                                    aria-label="ライトモードに切り替え"
+                                >
+                                    <Sun size={20} />
+                                    <span>ライト</span>
+                                </button>
+                                <button
+                                    className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+                                    onClick={() => changeTheme('dark')}
+                                    aria-label="ダークモードに切り替え"
+                                >
+                                    <Moon size={20} />
+                                    <span>ダーク</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="setting-description-block">
-                    <p>ダークモードとライトモードを切り替えます。</p>
-                    <p>現在のテーマ: {currentTheme === 'dark' ? 'ダークモード' : 'ライトモード'}</p>
-                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="switch-settings">
