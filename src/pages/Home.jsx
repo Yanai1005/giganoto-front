@@ -4,7 +4,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import GameTile from '../components/GameTile';
 import TopBar from '../components/TopBar';
 import SystemMenu from '../components/SystemMenu';
-import SettingsOverlay from '../components/SettingsOverlay';
 import GameRegistry from '../gameManager/GameRegistry';
 import gamesData from '../data/games.json';
 
@@ -80,29 +79,6 @@ const Home = () => {
             });
         }, 1000);
     };
-
-    const handleSystemIconClick = (icon) => {
-        setActiveSystemIcon(icon.id);
-
-        switch (icon.id) {
-            case 'settings':
-                setShowSettings(!showSettings);
-                break;
-            default:
-                console.log(`${icon.title}を起動`);
-                break;
-        }
-    };
-
-    const handleThemeChange = (newTheme) => {
-        changeTheme(newTheme);
-        setShowSettings(false);
-    };
-
-    const handleUserClick = () => {
-        console.log('ユーザープロフィール表示');
-    };
-
     const handleCloseSettings = () => {
         setShowSettings(false);
     };
@@ -111,9 +87,7 @@ const Home = () => {
 
     return (
         <div className="switch-home">
-            <TopBar
-                onUserClick={handleUserClick}
-            />
+            <TopBar />
 
             <main className={`game-grid ${isLoaded ? 'game-grid--loaded' : ''}`}>
                 {gamesData.games.map((game, index) => (
@@ -141,17 +115,11 @@ const Home = () => {
             <SystemMenu
                 systemIcons={gamesData.systemIcons}
                 activeIcon={activeSystemIcon}
-                onIconClick={handleSystemIconClick}
                 notifications={notifications}
             />
 
             {showSettings && (
                 <>
-                    <SettingsOverlay
-                        currentTheme={theme}
-                        onThemeChange={handleThemeChange}
-                        onClose={handleCloseSettings}
-                    />
                     <div
                         className="settings-backdrop"
                         onClick={handleCloseSettings}
