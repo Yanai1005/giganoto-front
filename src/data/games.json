@@ -23,6 +23,14 @@
             "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
             "path": "/game",
             "gameType": "fishing"
+        },
+        {
+            "id": 6,
+            "title": "シナリオ",
+            "description": "シナリオ",
+            "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+            "path": "/game",
+            "gameType": "story"
         }
     ],    "gameTypes": {
         "puzzle": {
@@ -36,11 +44,18 @@
             "description": "敵を倒すアクションゲーム",
             "controls": "矢印キーまたはWASDで移動、スペースで射撃",
             "modulePath": "../games/shooter/game.js"
-        },        "fishing": {
+        },        
+        "fishing": {
             "name": "釣り",
             "description": "3Dフィッシングゲーム",
             "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
             "modulePath": "../games/fishing/game.js"
+        },
+        "story": {
+            "name": "釣り",
+            "description": "3Dフィッシングゲーム",
+            "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+            "modulePath": "../games/story/game.js"
         }
     }
 }
