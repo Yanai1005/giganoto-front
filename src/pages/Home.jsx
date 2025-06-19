@@ -74,7 +74,6 @@ const Home = () => {
 
         setLoading(true);
 
-        // ゲーム読み込みシミュレーション
         setTimeout(() => {
             setLoading(false);
             navigate(game.path, {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, Wifi, Sun } from 'lucide-react';
+import { Settings as SettingsIcon, Sun } from 'lucide-react';
 import HomeMenu from '../components/HomeMenu';
 
 const Settings = () => {
@@ -8,12 +8,6 @@ const Settings = () => {
     const [currentTheme, setCurrentTheme] = useState('dark');
 
     const settingsOptions = [
-        {
-            id: 'internet',
-            title: 'インターネット',
-            icon: Wifi,
-            description: 'ネットワーク接続の設定'
-        },
         {
             id: 'theme',
             title: 'テーマ設定',
@@ -25,31 +19,6 @@ const Settings = () => {
     const handleCategoryClick = (categoryId) => {
         setSelectedCategory(categoryId);
     };
-
-    const InternetSettings = () => (
-        <div className="settings-detail-section">
-            <div className="settings-main-content">
-                <div className="setting-header">
-                    <h2>機内モード</h2>
-                    <div className="toggle-switch-container">
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={airplaneMode}
-                                onChange={(e) => setAirplaneMode(e.target.checked)}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div className="setting-description-block">
-                    <p>Wi-FiやBluetoothなどの通信を切ります。</p>
-                    <p>機内モードにしたあと、一部の通信だけONにすることもできます。</p>
-                    <p className="quick-setting-note">※ クイック設定（🏠長押し）でも変えられます。</p>
-                </div>
-            </div>
-        </div>
-    );
 
     const ThemeSettings = () => (
         <div className="settings-detail-section">
@@ -107,9 +76,7 @@ const Settings = () => {
                 </div>
 
                 <div className="settings-main">
-                    {selectedCategory === 'internet' ? (
-                        <InternetSettings />
-                    ) : selectedCategory === 'theme' ? (
+                    {selectedCategory === 'theme' ? (
                         <ThemeSettings />
                     ) : (
                         <div className="placeholder-content">
