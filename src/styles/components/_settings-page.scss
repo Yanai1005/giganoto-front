@@ -43,29 +43,6 @@
         }
     }
 
-    .back-button {
-        background: none;
-        border: none;
-        color: white;
-        padding: 0.5rem;
-        margin-right: 1rem;
-        cursor: pointer;
-        border-radius: 0.5rem;
-        transition: all $transition-fast;
-
-        &:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        &.theme-light {
-            color: #333;
-
-            &:hover {
-                background: rgba(0, 0, 0, 0.1);
-            }
-        }
-    }
-
     h1 {
         font-size: 1.5rem;
         font-weight: 400;
@@ -330,109 +307,17 @@ input:checked+.toggle-slider:before {
     }
 }
 
-// テーマ別の境界線の色
-.theme-dark {
-    .settings-sidebar {
-        border-right-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .setting-header {
-        border-bottom-color: rgba(255, 255, 255, 0.2);
-    }
-}
-
-.theme-light {
-    .switch-settings {
-        background: #F5F5F5;
-        color: #333;
-    }
-
-    .settings-sidebar {
-        background: rgba(0, 0, 0, 0.05);
-        border-right-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .settings-main {
-        background: #F5F5F5;
-    }
-
-    .setting-header {
-        border-bottom-color: rgba(0, 0, 0, 0.2);
-
-        h2 {
-            color: #333;
-        }
-    }
-
-    .setting-description-block p {
-        color: #666666;
-    }
-
-    .quick-setting-note {
-        color: #888888;
-    }
-
-    .placeholder-content {
-        color: #666;
-
-        h2 {
-            color: #333;
-        }
-    }
-
-    .support-section h3 {
-        color: #666;
-    }
-
-    .settings-header {
-        background: rgba(0, 0, 0, 0.05);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        .back-button {
-            color: #333;
-
-            &:hover {
-                background: rgba(0, 0, 0, 0.1);
-            }
-        }
-
-        h1 {
-            color: #333;
-        }
-    }
-
-    .sidebar-item {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        &:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        span:first-of-type {
-            color: #333;
-        }
-
-        .submenu-arrow {
-            color: #666;
-        }
-    }
-}
-
 // レスポンシブ対応
 @media (max-width: 768px) {
     .settings-content {
         flex-direction: column;
-        padding-bottom: 140px; // モバイルでは少し多めの余白
+        padding-bottom: 140px;
     }
 
     .settings-sidebar {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .settings-detail-section {
-        padding: 1rem;
     }
 
     .settings-main-content {
@@ -456,35 +341,6 @@ input:checked+.toggle-slider:before {
     .theme-light .settings-sidebar {
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
-
-    .switch-settings .nintendo-system-menu {
-        &__bar {
-            padding: $spacing-2 $spacing-4;
-        }
-
-        &__icon {
-            width: 40px;
-            height: 40px;
-            margin: 0 1px;
-
-            svg {
-                width: 18px;
-                height: 18px;
-            }
-        }
-
-        &__pc-icon {
-            width: 44px;
-            height: 44px;
-            margin-top: $spacing-4;
-            margin-left: $spacing-4;
-
-            svg {
-                width: 24px;
-                height: 24px;
-            }
-        }
-    }
 }
 
 // アクセシビリティ
@@ -494,33 +350,5 @@ input:checked+.toggle-slider:before {
     .toggle-slider,
     .switch-settings {
         transition: none !important;
-    }
-}
-
-// プリント対応
-@media print {
-    .switch-settings {
-        height: auto !important;
-        overflow: visible !important;
-        background: white !important;
-        color: black !important;
-    }
-
-    .settings-header {
-        border-bottom: 2px solid #000 !important;
-        background: white !important;
-    }
-
-    .settings-sidebar {
-        border-right: 1px solid rgba(0, 0, 0, 0.2) !important;
-        background: white !important;
-    }
-
-    .settings-main {
-        background: white !important;
-    }
-
-    .nintendo-system-menu {
-        display: none !important;
     }
 }
