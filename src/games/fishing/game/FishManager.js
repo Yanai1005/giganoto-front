@@ -187,6 +187,7 @@ export class FishManager {
           currentSpeed = 0; // その場で待機
           if (!isFloatInWater) { fish.state = 'swim'; break; }
           if (time > fish.biteTimer) {
+            fish.state = 'hooked'; // 先に状態を更新
             this.scene.startRandomMinigame(fish); // Call back to the scene
           }
           break;

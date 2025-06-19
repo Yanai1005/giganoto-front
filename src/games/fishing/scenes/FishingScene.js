@@ -62,14 +62,15 @@ class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('rod', 'src/games/fishing/assets/rod.png');
-    this.load.image('water', 'src/games/fishing/assets/water.jpg');
+    // this.load.image('rod', 'src/games/fishing/assets/rod.png');
+    // this.load.image('water', 'src/games/fishing/assets/water.jpg');
   }
 
   create() {
     this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
     
-    this.fishDex = FishDex.initialize(FISH_TYPES);
+    FishDex.initialize(FISH_TYPES);
+    this.fishDex = FishDex;
     UpgradeManager.initialize();
 
     this.initThreeJS();
