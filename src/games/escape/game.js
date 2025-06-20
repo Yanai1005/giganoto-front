@@ -1,4 +1,4 @@
-//src/games/shooter/game.js
+// src/games/escape/game.js
 import Phaser from "phaser";
 import EscapeScene from "./scenes/EscapeScene.js";
 
@@ -7,13 +7,13 @@ export const initializeGame = (Container) => {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    present: Container,
-    backgroundColor: "#1a1a2e",
+    parent: Container,
+    backgroundColor: "#00008B1",
     physics: {
       default: "arcade",
       arcade: {
         gravity: { y: 0 },
-        debug: true, // デバッグを有効化
+        debug: true,
       },
     },
     scene: [EscapeScene],
