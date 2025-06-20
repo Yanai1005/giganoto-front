@@ -25,20 +25,6 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-
-    &__header {
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-
-        .btn {
-            &--secondary {
-                @include themed-button('secondary', 'small');
-            }
-        }
-    }
 }
 
 .game-info {
@@ -204,10 +190,6 @@
         width: 100%;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
-
-        &__header {
-            padding: 1rem;
-        }
     }
 
     .game-info {
@@ -228,8 +210,7 @@
         max-width: 100%;
     }
 
-    .game-controls,
-    .game-stats {
+    .game-controls {
         margin-bottom: 1rem;
         padding: 1rem;
     }

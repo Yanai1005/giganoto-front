@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../contexts/ThemeContext';
+import { useLocation } from 'react-router-dom';
 import GameRegistry from '../gameManager/GameRegistry';
 import HomeMenu from '../components/HomeMenu';
 
@@ -9,7 +8,6 @@ const Game = () => {
     const phaserGameRef = useRef(null);
     const location = useLocation();
     const [gameControls, setGameControls] = useState('');
-    const { theme } = useTheme();
 
     const gameType = location.state?.gameType;
     const gameTitle = location.state?.gameTitle;
