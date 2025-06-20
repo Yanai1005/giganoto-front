@@ -104,6 +104,7 @@ export class UIManager {
   };
   
   createControlButtons(){
+    // 画面下のボタンエリアを作成（強化、Joy-Con接続、図鑑用）
     let btnArea = document.getElementById('btn-area');
     if (!btnArea) {
       btnArea = document.createElement('div');
@@ -114,63 +115,51 @@ export class UIManager {
     btnArea.style.position = 'absolute';
     btnArea.style.left = '50%';
     btnArea.style.transform = 'translateX(-50%)';
-    btnArea.style.width = 'auto'; // 幅を自動調整
+    btnArea.style.width = 'auto';
     btnArea.style.bottom = '24px';
     btnArea.style.display = 'flex';
     btnArea.style.justifyContent = 'center';
-    btnArea.style.gap = '32px';
+    btnArea.style.gap = '20px';
     btnArea.style.zIndex = '100';
 
-    const castBtn = this._makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
-    castBtn.onclick = () => this.scene.castLine();
- 
-    const reelBtn = this._makeBtn('reel-btn', 'リールを巻く', 'linear-gradient(135deg, #2980b9 0%, #2c3e50 100%)');
-    reelBtn.onmousedown = this.scene.onReelBtnMouseDown.bind(this.scene);
-    reelBtn.onmouseup = this.scene.onReelBtnMouseUp.bind(this.scene);
-    reelBtn.onmouseleave = () => { this.scene.isPlayerPulling = false; };
- 
-    const switchCamBtn = this._makeBtn('switch-cam-btn', '視点切替', 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)');
-    switchCamBtn.onclick = () => this.scene.switchCameraPerspective();
-    
-    btnArea.appendChild(castBtn);
-    btnArea.appendChild(reelBtn);
-    btnArea.appendChild(switchCamBtn);
+    // 強化ボタン
+    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
+    upgradeBtn.onclick = () => {
+        this.updateUpgradePanel();
+        const panel = document.getElementById('upgrade-panel');
+        if(panel) panel.style.display = 'block';
+    };
+    btnArea.appendChild(upgradeBtn);
+
+    // Joy-Con接続ボタン（WebHID APIが利用可能な場合のみ）
+    if ('hid' in navigator) {
+        const joyConBtn = this._makeBtn('joycon-btn', 'Joy-Con接続', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
+        joyConBtn.onclick = () => this.scene.connectJoyCon();
+        btnArea.appendChild(joyConBtn);
+    }
+
+    // 図鑑ボタン
+    const dexBtn = this._makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
+    dexBtn.onclick = () => this.showDex(true);
+    btnArea.appendChild(dexBtn);
   }
 
   createTopRightButtons() {
+    // 右上にタイトルへボタンのみを配置
     let topUiArea = document.getElementById('top-ui-area');
     if(!topUiArea) {
         topUiArea = document.createElement('div');
         topUiArea.id = 'top-ui-area';
     }
     topUiArea.style.cssText = `
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        display: flex;
+        justify-content: flex-end;
         pointer-events: auto;
     `;
  
-    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
-    const dexBtn = this._makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
     const titleBtn = this._makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #868f96 0%, #596164 100%)');
-    
-    upgradeBtn.onclick = () => {
-        this.updateUpgradePanel();
-        const panel = document.getElementById('upgrade-panel');
-        if(panel) panel.style.display = 'block';
-    }
-    dexBtn.onclick = () => this.showDex(true);
     titleBtn.onclick = () => this.scene.scene.start('TitleScene');
 
-    topUiArea.appendChild(upgradeBtn);
-
-    if ('hid' in navigator) {
-        const joyConBtn = this._makeBtn('joycon-btn', 'Joy-Con接続', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
-        joyConBtn.onclick = () => this.scene.connectJoyCon();
-        topUiArea.appendChild(joyConBtn);
-    }
-
-    topUiArea.appendChild(dexBtn);
     topUiArea.appendChild(titleBtn);
     return topUiArea;
   }
@@ -440,33 +429,78 @@ export class UIManager {
 
       const dexData = FishDex.getDexData();
       
-      FISH_TYPES.forEach(fishType => {
-        const data = dexData[fishType.name];
-        const card = document.createElement('div');
-        card.style.background = 'rgba(50, 50, 50, 0.8)';
-        card.style.borderRadius = '10px';
-        card.style.padding = '15px';
-        card.style.textAlign = 'center';
-        
-        if (data && data.caught) {
-          card.innerHTML = `
-            <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
-            <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
-            <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
-            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
-          `;
-        } else {
-          card.style.opacity = '0.6';
-          card.innerHTML = `
-            <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
-            <p style="margin: 5px 0;">最大サイズ: ---</p>
-            <p style="margin: 5px 0;">獲得ポイント: ---</p>
-            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
-          `;
+      // レアリティ順にソート
+      const sortedFishTypes = [...FISH_TYPES].sort((a, b) => a.rarity - b.rarity);
+      
+      // レアリティごとにグループ分け
+      const rarityGroups = {};
+      sortedFishTypes.forEach(fishType => {
+        if (!rarityGroups[fishType.rarity]) {
+          rarityGroups[fishType.rarity] = [];
         }
-        fishGrid.appendChild(card);
+        rarityGroups[fishType.rarity].push(fishType);
+      });
+
+      // レアリティごとにセクションを作成
+      Object.keys(rarityGroups).sort((a, b) => a - b).forEach(rarity => {
+        const rarityInfo = this.getRarityInfo(parseInt(rarity));
+        
+        // セクションヘッダー
+        const sectionHeader = document.createElement('div');
+        sectionHeader.style.gridColumn = '1 / -1';
+        sectionHeader.style.margin = '20px 0 10px 0';
+        sectionHeader.style.padding = '10px 20px';
+        sectionHeader.style.background = `linear-gradient(135deg, ${rarityInfo.color}22, ${rarityInfo.color}44)`;
+        sectionHeader.style.borderRadius = '8px';
+        sectionHeader.style.borderLeft = `4px solid ${rarityInfo.color}`;
+        sectionHeader.innerHTML = `
+          <h3 style="margin: 0; color: ${rarityInfo.color}; font-size: 1.3rem;">
+            ${rarityInfo.label}
+          </h3>
+        `;
+        fishGrid.appendChild(sectionHeader);
+
+        // その レアリティの魚たち
+        rarityGroups[rarity].forEach(fishType => {
+          const data = dexData[fishType.name];
+          const card = document.createElement('div');
+          card.style.background = 'rgba(50, 50, 50, 0.8)';
+          card.style.borderRadius = '10px';
+          card.style.padding = '15px';
+          card.style.textAlign = 'center';
+          card.style.border = `2px solid ${rarityInfo.color}33`;
+          
+          if (data && data.caught) {
+            card.innerHTML = `
+              <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
+              <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
+              <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
+              <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
+            `;
+          } else {
+            card.style.opacity = '0.6';
+            card.innerHTML = `
+              <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
+              <p style="margin: 5px 0;">最大サイズ: ---</p>
+              <p style="margin: 5px 0;">獲得ポイント: ---</p>
+              <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
+            `;
+          }
+          fishGrid.appendChild(card);
+        });
       });
     }
+  }
+
+  getRarityInfo(rarity) {
+    const rarityMap = {
+      1: { label: '★☆☆☆☆ コモン', color: '#6c757d' },
+      2: { label: '★★☆☆☆ アンコモン', color: '#28a745' },
+      3: { label: '★★★☆☆ レア', color: '#007bff' },
+      4: { label: '★★★★☆ エピック', color: '#6f42c1' },
+      5: { label: '★★★★★ レジェンダリー', color: '#fd7e14' }
+    };
+    return rarityMap[rarity] || { label: '不明', color: '#6c757d' };
   }
 
   cleanup() {

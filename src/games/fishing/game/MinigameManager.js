@@ -1,4 +1,5 @@
 import { UpgradeManager } from '../utils/UpgradeManager.js';
+import { ScoreManager } from '../utils/ScoreManager.js';
 import { FISH_TYPES } from '../data/fishData.js';
 
 export class MinigameManager {
@@ -78,7 +79,12 @@ export class MinigameManager {
   
   onPlayerReelAction() {
     if (this.minigame.active && this.minigame.type === 'tension') {
-      this.minigame.tension.value += this.minigame.tension.pullStrength * 0.67; // 2.0から0.67に減少（さらに3分の1）
+      // リールレベルに応じて引き寄せ力を強化
+      const reelLevel = UpgradeManager.getLevel('reel');
+      const reelBonus = 1 + (reelLevel - 1) * 0.15; // レベル1で1.0倍、レベル10で2.35倍
+      
+      const baseInput = this.minigame.tension.pullStrength * 0.67;
+      this.minigame.tension.value += baseInput * reelBonus;
       this.minigame.tension.value = Math.min(this.minigame.tension.value, 100);
 
       // リールを巻く振動フィードバック（一時的に強い振動）
@@ -168,7 +174,7 @@ export class MinigameManager {
     if (success && caughtFish && caughtFish.type) {
       // 釣り成功
       this.scene.fishDex.recordCatch(caughtFish.type.name, caughtFish.size); // 釣果を記録
-      this.scene.gameState.score += caughtFish.type.points || 0;
+      this.scene.gameState.score = ScoreManager.addScore(caughtFish.type.points || 0);
       this.ui.updateScoreUI();
       this.ui.showMessage(`やった！${caughtFish.size}cmの${caughtFish.type.name}を釣り上げた！`, 3000);
     } else if (!success && caughtFish) {

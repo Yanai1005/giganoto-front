@@ -111,8 +111,8 @@ export class JoyConHIDManager {
     const deltaZ = az - this.lastAz;
 
     const THR_CAST = -8.0;
-    const THR_REEL = 7.0;
-    const COOLDOWN_MOTION = 1200;
+    const THR_REEL = 8.0;
+    const COOLDOWN_MOTION = 800;
 
     if (this.scene.minigame?.active) {
       if (this.scene.minigame.type === 'tension') {

@@ -86,7 +86,7 @@ export class PlayerActionManager {
       y: targetY,
       z: targetZ,
       ease: 'Quad.out',
-      duration: 100,
+      duration: 800,
       onUpdate: () => {
         this.updateFishingLine(); // 飛んでいる間も釣り糸を更新
       },

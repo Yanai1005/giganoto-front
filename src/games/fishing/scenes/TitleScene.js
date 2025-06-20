@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ScoreManager } from '../utils/ScoreManager.js';
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {
@@ -106,17 +107,7 @@ export default class TitleScene extends Phaser.Scene {
     };
     buttonContainer.appendChild(startButton);
 
-    // Joy-Conテストボタン
-    const debugButton = createButton('Joy-Conテスト', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
-    debugButton.onclick = () => {
-        // UIをフェードアウトさせてからシーン遷移
-        this.titleContainer.style.transition = 'opacity 0.5s ease';
-        this.titleContainer.style.opacity = '0';
-        setTimeout(() => {
-            this.scene.start('JoyConDebugScene');
-        }, 500);
-    };
-    buttonContainer.appendChild(debugButton);
+
 
     // コピーライト
     const footer = document.createElement('footer');
@@ -279,8 +270,10 @@ export default class TitleScene extends Phaser.Scene {
     deleteButton.onclick = () => {
         this.showCustomConfirm('本当にセーブデータを削除しますか？<br>この操作は取り消せません。', 
             () => {
-                localStorage.removeItem('fishing_game_upgrades');
-                localStorage.removeItem('fishing_game_fish_dex');
+                // 正しいキー名で削除
+                localStorage.removeItem('giganoto_fishingGameUpgrades'); // UpgradeManager
+                localStorage.removeItem('fishingGame_fishDex'); // FishDex
+                ScoreManager.resetScore(); // スコア（fishingGame_score）
                 this.showCustomAlert('セーブデータを削除しました。');
             }
         );

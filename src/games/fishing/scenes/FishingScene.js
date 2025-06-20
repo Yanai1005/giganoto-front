@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import * as THREE from 'three';
 import { FishDex } from '../utils/FishDex.js';
 import { UpgradeManager, UPGRADE_CONFIG } from '../utils/UpgradeManager.js';
+import { ScoreManager } from '../utils/ScoreManager.js';
 import { FISH_TYPES } from '../data/fishData.js';
 import { UIManager } from '../ui/UIManager.js';
 import { FishManager } from '../game/FishManager.js';
@@ -25,7 +26,7 @@ class GameScene extends Phaser.Scene {
       casting: false,
       reeling: false,
       catchingFish: false,
-      score: 0
+      score: 0 // 初期化時は0、create()で復元される
     };
     
     // Minigame State
@@ -74,6 +75,9 @@ class GameScene extends Phaser.Scene {
     FishDex.initialize(FISH_TYPES);
     this.fishDex = FishDex;
     UpgradeManager.initialize();
+    
+    // 保存されたスコアを復元
+    this.gameState.score = ScoreManager.loadScore();
 
     this.initThreeJS();
 
@@ -137,7 +141,7 @@ class GameScene extends Phaser.Scene {
   onUpgradeAttempt(type) {
     const cost = UpgradeManager.attemptUpgrade(type, this.gameState.score);
     if (cost > 0) {
-      this.gameState.score -= cost;
+      this.gameState.score = ScoreManager.subtractScore(cost);
       this.ui.updateScoreUI();
       this.ui.updateUpgradePanel();
       this.ui.showMessage(`${UPGRADE_CONFIG[type].name}を強化した！`, 1500, false);
