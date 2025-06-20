@@ -63,7 +63,7 @@ export class MinigameManager {
   
   startTensionGame() {
     this.minigame.tension.value = 50;
-    this.minigame.tension.pullStrength = 12.0; // 8.0から12.0に増加
+    this.minigame.tension.pullStrength = 15.0; // 12.0から15.0に増加
     this.minigame.tension.safeZone.start = 35 + Math.random() * 20;
     this.minigame.tension.safeZone.end = this.minigame.tension.safeZone.start + 25;
     this.minigame.tension.fishAction = 'normal';
@@ -83,9 +83,11 @@ export class MinigameManager {
       const reelLevel = UpgradeManager.getLevel('reel');
       const reelBonus = 1 + (reelLevel - 1) * 0.15; // レベル1で1.0倍、レベル10で2.35倍
       
-      const baseInput = this.minigame.tension.pullStrength * 0.67;
+      const baseInput = this.minigame.tension.pullStrength * 1.0; // 1.5から1.0に減少
       this.minigame.tension.value += baseInput * reelBonus;
       this.minigame.tension.value = Math.min(this.minigame.tension.value, 100);
+
+      console.log(`リール動作: +${(baseInput * reelBonus).toFixed(1)}, 現在値: ${this.minigame.tension.value.toFixed(1)}`);
 
       // リールを巻く振動フィードバック（一時的に強い振動）
       this.temporaryStrongRumble();
@@ -107,18 +109,12 @@ export class MinigameManager {
   updateTensionGame(time) {
     const tension = this.minigame.tension;
     
-    // --- プレイヤーのアクション ---
-    // isPlayerPulling はJoy-Conの傾きで制御される
-    /* if (this.scene.isPlayerPulling) {
-        tension.value += tension.pullStrength;
-    } */
-
     // --- 魚の抵抗 ---
-    let fishResistance = 0.4; // デフォルト値を0.15から0.4に大幅増加
+    let fishResistance = 0.7; // 0.45から0.7に大幅増加（かなり早い減少）
     if (this.currentFish && this.currentFish.type) {
       const fishData = this.currentFish.type;
       if (fishData.rarity) {
-        fishResistance = (fishData.rarity / 5) * 0.6 + 0.3; // 抵抗を大幅に増加
+        fishResistance = (fishData.rarity / 5) * 0.8 + 0.5; // 0.5 + 0.3から0.8 + 0.5に大幅増加
       }
     }
     tension.value -= fishResistance;
@@ -133,9 +129,9 @@ export class MinigameManager {
 
     // --- プログレスの更新 ---
     if (tension.value >= tension.safeZone.start && tension.value <= tension.safeZone.end) {
-      this.minigame.overallProgress += 0.004; // 0.008から0.004に減少（半分に）
+      this.minigame.overallProgress += 0.005; // 適度な速度を維持
     } else {
-      this.minigame.overallProgress -= 0.001; // 0.003から0.001に減少（緩やかに）
+      this.minigame.overallProgress -= 0.003; // 減少を早く維持
     }
     this.minigame.overallProgress = Math.max(0, this.minigame.overallProgress);
 
@@ -159,7 +155,7 @@ export class MinigameManager {
     document.getElementById('timing-marker').style.left = `${timing.markerPosition}%`;
     document.getElementById('timing-progress-bar').style.width = `${this.minigame.overallProgress}%`;
   }
-  
+
   end(success) {
     if (!this.minigame.active) return;
     
@@ -167,7 +163,7 @@ export class MinigameManager {
     
     this.minigame.active = false;
     this.ui.hideMinigameUI();
-    
+
     const caughtFish = this.currentFish;
     this.currentFish = null; // 参照をクリア
 
@@ -202,7 +198,7 @@ export class MinigameManager {
     document.getElementById('minigame-ui-tension').style.display = 'none';
     document.getElementById('minigame-ui-timing').style.display = 'none';
   }
-  
+
   startContinuousRumble() {
     if (!this.currentFish || !this.currentFish.type) {
       return;
@@ -217,8 +213,8 @@ export class MinigameManager {
     const baseRarity = fishData.rarity;
     const low_freq = 80 + (baseRarity - 1) * 10;   // 80Hz - 120Hz
     const high_freq = 160 + (baseRarity - 1) * 20; // 160Hz - 240Hz
-    const low_amp = 0.3 + (baseRarity - 1) * 0.1; // 0.3 - 0.7 (テスト用に強く)
-    const high_amp = 0.5 + (baseRarity - 1) * 0.1; // 0.5 - 0.9 (テスト用に強く)
+    const low_amp = 0.2 + (baseRarity - 1) * 0.08; // 0.2 - 0.52 (弱く調整)
+    const high_amp = 0.35 + (baseRarity - 1) * 0.08; // 0.35 - 0.67 (弱く調整)
 
     // 常時振動を開始
     const rumblePattern = () => {
@@ -256,8 +252,8 @@ export class MinigameManager {
           const baseRarity = fishData.rarity;
           const low_freq = 80 + (baseRarity - 1) * 10;
           const high_freq = 160 + (baseRarity - 1) * 20;
-          const low_amp = 0.3 + (baseRarity - 1) * 0.1;
-          const high_amp = 0.5 + (baseRarity - 1) * 0.1;
+          const low_amp = 0.2 + (baseRarity - 1) * 0.08; // 弱く調整
+          const high_amp = 0.35 + (baseRarity - 1) * 0.08; // 弱く調整
           this.scene.jcHID.rumble(low_freq, high_freq, low_amp, high_amp);
         }
       }

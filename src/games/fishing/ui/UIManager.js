@@ -462,31 +462,31 @@ export class UIManager {
 
         // その レアリティの魚たち
         rarityGroups[rarity].forEach(fishType => {
-          const data = dexData[fishType.name];
-          const card = document.createElement('div');
-          card.style.background = 'rgba(50, 50, 50, 0.8)';
-          card.style.borderRadius = '10px';
-          card.style.padding = '15px';
-          card.style.textAlign = 'center';
+        const data = dexData[fishType.name];
+        const card = document.createElement('div');
+        card.style.background = 'rgba(50, 50, 50, 0.8)';
+        card.style.borderRadius = '10px';
+        card.style.padding = '15px';
+        card.style.textAlign = 'center';
           card.style.border = `2px solid ${rarityInfo.color}33`;
-          
-          if (data && data.caught) {
-            card.innerHTML = `
-              <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
-              <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
-              <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
-              <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
-            `;
-          } else {
-            card.style.opacity = '0.6';
-            card.innerHTML = `
-              <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
-              <p style="margin: 5px 0;">最大サイズ: ---</p>
-              <p style="margin: 5px 0;">獲得ポイント: ---</p>
-              <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
-            `;
-          }
-          fishGrid.appendChild(card);
+        
+        if (data && data.caught) {
+          card.innerHTML = `
+            <h3 style="margin: 0 0 10px; color: #ffc107;">${fishType.name}</h3>
+            <p style="margin: 5px 0;">最大サイズ: <span style="font-weight: bold;">${data.maxSize} cm</span></p>
+            <p style="margin: 5px 0;">獲得ポイント: <span style="font-weight: bold;">${fishType.points} P</span></p>
+            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #ccc;">${fishType.description}</p>
+          `;
+        } else {
+          card.style.opacity = '0.6';
+          card.innerHTML = `
+            <h3 style="margin: 0 0 10px; color: #aaa;">???</h3>
+            <p style="margin: 5px 0;">最大サイズ: ---</p>
+            <p style="margin: 5px 0;">獲得ポイント: ---</p>
+            <p style="margin: 15px 0 0; font-size: 0.9rem; color: #888;">まだ釣っていない魚</p>
+          `;
+        }
+        fishGrid.appendChild(card);
         });
       });
     }

@@ -110,15 +110,17 @@ export class JoyConHIDManager {
     const az = (az1 + az2 + az3) / 3;
     const deltaZ = az - this.lastAz;
 
-    const THR_CAST = -8.0;
-    const THR_REEL = 8.0;
-    const COOLDOWN_MOTION = 800;
+    const THR_CAST = -9.0;
+    const THR_REEL = 9.0;
+    const COOLDOWN_MOTION = 1000;
 
     if (this.scene.minigame?.active) {
       if (this.scene.minigame.type === 'tension') {
-        if (deltaZ > THR_REEL && !this.motionCooldown) {
+        const MINIGAME_THR_REEL = 4.0;
+        if (deltaZ > MINIGAME_THR_REEL && !this.motionCooldown) {
+          console.log(`ミニゲーム中リール検知: deltaZ=${deltaZ.toFixed(2)}`);
           this.scene.minigameManager.onPlayerReelAction();
-          this.#startCooldown('motionCooldown', 80);
+          this.#startCooldown('motionCooldown', 60);
         }
       }
       this.lastAz = az;
