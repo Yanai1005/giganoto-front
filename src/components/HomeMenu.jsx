@@ -32,11 +32,6 @@ const HomeMenu = ({ onIconClick, activeIcon }) => {
             navigate('/');
         } else if (iconData.id === 'settings') {
             navigate('/settings');
-        } else if (iconData.url) {
-            window.open(iconData.url, '_blank', 'noopener,noreferrer');
-        } else {
-            // その他のアイコン（コントローラーなど）
-            console.log(`${iconData.title} clicked`);
         }
     };
 
@@ -52,7 +47,7 @@ const HomeMenu = ({ onIconClick, activeIcon }) => {
                             key={iconData.id}
                             className={`nintendo-system-menu__icon ${isSelected ? 'nintendo-system-menu__icon--selected' : ''}`}
                             onClick={() => handleIconClick(index)}
-                            title={iconData.title} // ツールチップ追加
+                            title={iconData.title}
                         >
                             <IconComponent
                                 size={22}

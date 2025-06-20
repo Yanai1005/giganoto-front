@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import GameTile from './GameTile';
 import TopBar from './TopBar';
 import SystemMenu from './SystemMenu';
-import SettingsOverlay from './SettingsOverlay';
 
 import gamesData from '../../data/games.json';
 
@@ -58,7 +57,6 @@ const SwitchHome = () => {
 
         setTimeout(() => {
             setLoading(false);
-            console.log(`ゲーム選択: ${game.title}`);
         }, 1000);
     };
 
@@ -103,13 +101,6 @@ const SwitchHome = () => {
                 notifications={notifications}
             />
 
-            {showSettings && (
-                <SettingsOverlay
-                    currentTheme={theme}
-                    onThemeChange={handleThemeChange}
-                    onClose={handleCloseSettings}
-                />
-            )}
             {showSettings && (
                 <div
                     className="settings-backdrop"
