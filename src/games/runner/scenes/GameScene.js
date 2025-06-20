@@ -75,6 +75,10 @@ class GameScene extends Phaser.Scene {
         this.physics.add.existing(this.player);
         this.player.body.setCollideWorldBounds(true);
         
+        // Y軸を完全に固定（重力の影響を受けないように）
+        this.player.body.setGravityY(-100); // 重力を完全に相殺
+        this.player.body.setMaxVelocity(400, 0); // Y軸の最大速度を0に制限
+        
         console.log('Player created at:', this.player.x, this.player.y);
 
         // 障害物グループを作成
@@ -361,6 +365,10 @@ class GameScene extends Phaser.Scene {
     update() {
         // ゲームオーバー時は処理を停止
         if (this.gameOver || !this.player || !this.player.body) return;
+
+        // プレイヤーのY座標を固定
+        this.player.y = 500;
+        this.player.body.setVelocityY(0);
 
         // velocityベースの移動 - DOMイベントとPhaserイベント両方をチェック
         const velocitySpeed = 400;
