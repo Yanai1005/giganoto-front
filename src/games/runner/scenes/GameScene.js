@@ -85,18 +85,18 @@ class GameScene extends Phaser.Scene {
         this.setupDOMKeyboardEvents();
 
         // スコア表示
-        this.scoreText = this.add.text(16, 16, 'Score: 0', {
+        this.scoreText = this.add.text(16, 16, 'スコア: 0', {
             fontSize: '32px',
             fill: '#FFFFFF'
         });
 
         // 操作説明を追加
-        this.add.text(400, 50, 'Use Arrow Keys or A/D to move', {
+        this.add.text(400, 50, '矢印キーまたはA/Dキーで移動', {
             fontSize: '24px',
             fill: '#FFFFFF'
         }).setOrigin(0.5);
         
-        this.add.text(400, 80, 'Avoid the red obstacles!', {
+        this.add.text(400, 80, '赤い障害物を避けよう！', {
             fontSize: '20px',
             fill: '#FFFF00'
         }).setOrigin(0.5);
@@ -292,12 +292,12 @@ class GameScene extends Phaser.Scene {
         player.setTint(0xff0000);
         
         // ゲームオーバーテキスト
-        this.add.text(400, 300, 'GAME OVER', {
+        this.add.text(400, 300, 'ゲームオーバー', {
             fontSize: '64px',
             fill: '#FF0000'
         }).setOrigin(0.5);
         
-        this.add.text(400, 380, 'Press SPACE to restart', {
+        this.add.text(400, 380, 'スペースキーでリスタート', {
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setOrigin(0.5);
@@ -357,7 +357,7 @@ class GameScene extends Phaser.Scene {
                     if (obstacle.getData('spawned')) {
                         this.score += 10;
                         if (this.scoreText) {
-                            this.scoreText.setText('Score: ' + this.score);
+                            this.scoreText.setText('スコア: ' + this.score);
                         }
                         obstacle.setData('spawned', false);
                     }
