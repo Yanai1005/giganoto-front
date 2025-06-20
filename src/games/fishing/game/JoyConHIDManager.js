@@ -6,6 +6,7 @@ export class JoyConHIDManager {
     this.reelCooldownAfterCast = false; // キャスト直後のリール防止用
     this.reelActionCooldown = false;    // リール連打防止用
     this.lastAz = 0;                  // 前回のZ軸加速度
+    this.subcommandPacketCounter = 0;
   }
 
   // --- Public ----------------------------------------------------------------
@@ -22,12 +23,16 @@ export class JoyConHIDManager {
       if (!device) return;
       this.device = device;
       await device.open();
+      this.subcommandPacketCounter = 0;
+      
+      const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-      // Enable IMU (sub-command 0x40 0x01)
-      await this.#sendSubCommand(0x40, new Uint8Array([0x01]));
-
-      // Enable standard full report mode 0x30 at 60 FPS (0x03)
+      // 1. Enable standard full report mode 0x30
       await this.#sendSubCommand(0x03, new Uint8Array([0x30]));
+      await sleep(100); // Wait for the Joy-Con to process the command
+      // 2. Enable IMU
+      await this.#sendSubCommand(0x40, new Uint8Array([0x01]));
+      await sleep(100);
 
       device.addEventListener('inputreport', (e) => this.#onReport(e));
       console.log('[JoyConHID] Connected:', device.productName);
@@ -79,17 +84,27 @@ export class JoyConHIDManager {
 
   // --- Private ---------------------------------------------------------------
   async #sendSubCommand(cmd, data) {
-    // Output report 0x01: [reportId=0x01][packet#=0][subCmd][data...]
-    const buf = new Uint8Array(1 + 1 + 1 + data.length);
-    buf[0] = 0x01; // report Id
-    buf[1] = 0x00; // packet counter (0 fixed)
-    buf[2] = cmd;
-    buf.set(data, 3);
+    if (!this.device) return;
+
+    // The payload for a subcommand (report 0x01) must be at least 10 bytes.
+    // [Packet Counter(1)] [Rumble Data(8)] [Subcommand ID(1)] [Subcommand Data(...)]
+    const buf = new Uint8Array(10 + data.length);
+    buf[0] = this.subcommandPacketCounter;
+    this.subcommandPacketCounter = (this.subcommandPacketCounter + 1) & 0x0f;
+
+    // Default neutral rumble data
+    buf[1] = 0x00; buf[2] = 0x01; buf[3] = 0x40; buf[4] = 0x40;
+    buf[5] = 0x00; buf[6] = 0x01; buf[7] = 0x40; buf[8] = 0x40;
+
+    buf[9] = cmd;
+    buf.set(data, 10);
+    
     await this.device.sendReport(0x01, buf);
   }
 
   #onReport(e) {
     if (e.reportId !== 0x30) return; // 0x30 = standard input report
+    
     const d = new DataView(e.data.buffer);
 
     // 最後のサンプルが先頭12B
@@ -98,9 +113,15 @@ export class JoyConHIDManager {
     const az = d.getInt16(17, true) / 4096;
     const deltaZ = az - this.lastAz; // 加速度の変化量を計算
 
+    /*
+    if (az !== 0 || this.lastAz !== 0) { // 意味のあるデータのみログ出力
+      console.log(`[JoyConHID] az: ${az.toFixed(3)}, deltaZ: ${deltaZ.toFixed(3)}`);
+    }
+    */
+
     // --- しきい値（加速度の「変化量」に対して） ---
-    const THR_CAST = -5.0; // 奥への急な振り
-    const THR_REEL = 5.0;  // 手前への急な振り
+    const THR_CAST = -1.5; // 奥への急な振り
+    const THR_REEL = 1.5;  // 手前への急な振り
     const COOLDOWN_CAST = 1000;
     const COOLDOWN_REEL_AFTER_CAST = 1500;
     const COOLDOWN_REEL_ACTION = 400; // 振り操作ごとのリールクールダウン
