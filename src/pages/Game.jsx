@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 import GameRegistry from '../gameManager/GameRegistry';
+import HomeMenu from '../components/HomeMenu';
 
 const Game = () => {
     const gameRef = useRef(null);
     const phaserGameRef = useRef(null);
     const location = useLocation();
     const [gameControls, setGameControls] = useState('');
+    const { theme } = useTheme();
 
     const gameType = location.state?.gameType;
     const gameTitle = location.state?.gameTitle;
@@ -37,17 +40,11 @@ const Game = () => {
                     // エラー表示
                     if (gameRef.current) {
                         gameRef.current.innerHTML = `
-                            <div style="
-                                padding: 40px; 
-                                text-align: center; 
-                                color: #e74c3c;
-                                background: #2c3e50;
-                                border-radius: 8px;
-                                font-family: Arial, sans-serif;
-                            ">
-                                <h3>ゲームのロードに失敗しました</h3>
-                                <p>ゲーム: ${gameType}</p>
-                                <p>エラー: ${error.message}</p>
+                            <div class="game-error">
+                                <div class="game-error__icon">⚠️</div>
+                                <h3 class="game-error__title">ゲームのロードに失敗しました</h3>
+                                <p class="game-error__message">ゲーム: ${gameType}</p>
+                                <p class="game-error__details">エラー: ${error.message}</p>
                             </div>
                         `;
                     }
@@ -65,66 +62,35 @@ const Game = () => {
     }, [gameType]);
 
     return (
-        <div style={{
-            padding: '20px',
-            backgroundColor: '#2c3e50',
-            minHeight: '100vh',
-            color: 'white'
-        }}>
-            <div style={{ marginBottom: '20px' }}>
-                <Link to="/">
-                    <button style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#3498db',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        fontSize: '16px'
-                    }}>
-                        ← ホームに戻る
-                    </button>
+        <div className="switch-game">
+            <div className="game-header">
+                <Link to="/" className="btn btn--secondary btn--small">
+                    ← ホームに戻る
                 </Link>
-                <h2 style={{ margin: '10px 0', fontSize: '24px' }}>{gameTitle}</h2>
+                <h2 className="game-title">{gameTitle}</h2>
             </div>
 
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '20px'
-            }}>
+            <div className="game-content">
                 <div
                     ref={gameRef}
                     id="game-container"
-                    style={{
-                        position: 'relative',
-                        border: '2px solid #34495e',
-                        borderRadius: '8px',
-                        backgroundColor: '#34495e',
-                        minHeight: '600px',
-                        minWidth: '800px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
+                    className="game-container"
                 >
-                    <div style={{ color: '#bdc3c7' }}>ゲームをロード中...</div>
+                    <div className="game-loading">
+                        <div className="game-loading__spinner"></div>
+                        <div className="game-loading__text">ゲームをロード中...</div>
+                    </div>
                 </div>
 
-                <div style={{
-                    backgroundColor: '#34495e',
-                    padding: '15px',
-                    borderRadius: '8px',
-                    maxWidth: '800px',
-                    textAlign: 'center'
-                }}>
-                    <h3 style={{ margin: '0 0 10px 0', color: '#ecf0f1' }}>操作方法</h3>
-                    <p style={{ margin: 0, color: '#bdc3c7' }}>
+                <div className="game-controls">
+                    <h3 className="game-controls__title">操作方法</h3>
+                    <p className="game-controls__text">
                         {gameControls}
                     </p>
                 </div>
             </div>
+
+            <HomeMenu />
         </div>
     );
 };
