@@ -7,47 +7,60 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     font-family: system-ui, -apple-system, sans-serif;
-    display: flex;
-    flex-direction: column;
     transition: all $transition-smooth;
     position: relative;
     padding-bottom: 120px;
 }
 
-.game-header {
+.game-layout {
     display: flex;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    gap: 1rem;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
 
-    .btn {
-        &--secondary {
-            @include themed-button('secondary', 'small');
+.game-sidebar {
+    width: 400px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    &__header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+
+        .btn {
+            &--secondary {
+                @include themed-button('secondary', 'small');
+            }
         }
     }
 }
 
-.game-title {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin: 0;
-    color: var(--text-primary);
+.game-info {
+    padding: 2rem 1.5rem;
+    flex: 1;
+
+    &__title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0 0 2rem 0;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
 }
 
-.game-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2rem;
-    padding: 2rem;
+.game-main {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg-primary);
 }
 
 .game-container {
@@ -55,8 +68,9 @@
     border: 2px solid var(--border-color);
     border-radius: $border-radius-lg;
     background: var(--bg-secondary);
-    min-height: 600px;
-    min-width: 800px;
+    width: 100%;
+    height: 80vh;
+    max-width: 1000px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,14 +142,12 @@
 }
 
 .game-controls {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     padding: 1.5rem;
     border-radius: $border-radius-lg;
-    max-width: 800px;
-    width: 100%;
-    text-align: center;
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px var(--shadow-color);
+    margin-bottom: 2rem;
 
     &__title {
         margin: 0 0 1rem 0;
@@ -167,47 +179,59 @@
 }
 
 // レスポンシブ対応
-@media (max-width: 1024px) {
-    .game-container {
-        min-width: 700px;
-        min-height: 500px;
+@media (max-width: 1200px) {
+    .game-sidebar {
+        width: 350px;
+    }
+
+    .game-info {
+        padding: 1.5rem 1rem;
+
+        &__title {
+            font-size: 1.75rem;
+        }
     }
 }
 
 @media (max-width: 768px) {
-    .game-header {
-        padding: 1rem;
+    .game-layout {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        height: auto;
+        min-height: calc(100vh - 120px);
+    }
 
-        .game-title {
-            font-size: 1.25rem;
+    .game-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+
+        &__header {
+            padding: 1rem;
         }
     }
 
-    .game-content {
+    .game-info {
         padding: 1rem;
-        gap: 1.5rem;
+
+        &__title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    .game-main {
+        padding: 1rem;
     }
 
     .game-container {
-        min-width: 100%;
-        min-height: 400px;
+        height: 60vh;
         max-width: 100%;
     }
 
-    .game-controls {
+    .game-controls,
+    .game-stats {
+        margin-bottom: 1rem;
         padding: 1rem;
-        max-width: 100%;
-
-        &__title {
-            font-size: 1rem;
-        }
-
-        &__text {
-            font-size: $font-size-sm;
-        }
     }
 
     .switch-game {
@@ -216,20 +240,20 @@
 }
 
 @media (max-width: 480px) {
-    .game-header {
+    .game-info {
         padding: 0.75rem;
+
+        &__title {
+            font-size: 1.25rem;
+        }
     }
 
-    .game-content {
+    .game-main {
         padding: 0.75rem;
     }
 
     .game-container {
-        min-height: 300px;
-    }
-
-    .game-title {
-        font-size: 1.125rem;
+        height: 50vh;
     }
 }
 
@@ -240,23 +264,35 @@
     }
 }
 
+.game-sidebar {
+    animation: slideInFromLeft 0.6s ease-out;
+}
+
 .game-container {
-    animation: slideInFromBottom 0.6s ease-out;
+    animation: slideInFromRight 0.8s ease-out;
 }
 
-.game-controls {
-    animation: slideInFromBottom 0.8s ease-out;
-}
-
-@keyframes slideInFromBottom {
+@keyframes slideInFromLeft {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateX(-30px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
@@ -288,10 +324,11 @@
     }
 }
 
+// アクセシビリティ
 @media (prefers-reduced-motion: reduce) {
 
+    .game-sidebar,
     .game-container,
-    .game-controls,
     .game-loading__spinner {
         animation: none !important;
         transition: none !important;

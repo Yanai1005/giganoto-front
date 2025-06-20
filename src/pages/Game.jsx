@@ -63,30 +63,29 @@ const Game = () => {
 
     return (
         <div className="switch-game">
-            <div className="game-header">
-                <Link to="/" className="btn btn--secondary btn--small">
-                    ← ホームに戻る
-                </Link>
-                <h2 className="game-title">{gameTitle}</h2>
-            </div>
-
-            <div className="game-content">
-                <div
-                    ref={gameRef}
-                    id="game-container"
-                    className="game-container"
-                >
-                    <div className="game-loading">
-                        <div className="game-loading__spinner"></div>
-                        <div className="game-loading__text">ゲームをロード中...</div>
+            <div className="game-layout">
+                <div className="game-sidebar">
+                    <div className="game-info">
+                        <h1 className="game-info__title">{gameTitle}</h1>
+                        <div className="game-controls">
+                            <h3 className="game-controls__title">操作方法</h3>
+                            <p className="game-controls__text">
+                                {gameControls}
+                            </p>
+                        </div>
                     </div>
                 </div>
-
-                <div className="game-controls">
-                    <h3 className="game-controls__title">操作方法</h3>
-                    <p className="game-controls__text">
-                        {gameControls}
-                    </p>
+                <div className="game-main">
+                    <div
+                        ref={gameRef}
+                        id="game-container"
+                        className="game-container"
+                    >
+                        <div className="game-loading">
+                            <div className="game-loading__spinner"></div>
+                            <div className="game-loading__text">ゲームをロード中...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
