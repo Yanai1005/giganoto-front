@@ -90,13 +90,7 @@ class GameScene extends Phaser.Scene {
             fill: '#FFFFFF'
         });
 
-        // 操作説明を追加
-        this.add.text(400, 50, '矢印キーまたはA/Dキーで移動', {
-            fontSize: '24px',
-            fill: '#FFFFFF'
-        }).setOrigin(0.5);
-        
-        this.add.text(400, 80, '赤い障害物を避けよう！', {
+        this.add.text(400, 50, '赤い障害物を避けよう！', {
             fontSize: '20px',
             fill: '#FFFF00'
         }).setOrigin(0.5);
