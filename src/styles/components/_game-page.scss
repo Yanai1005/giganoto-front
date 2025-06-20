@@ -1,0 +1,334 @@
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.switch-game {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, sans-serif;
+    transition: all $transition-smooth;
+    position: relative;
+    padding-bottom: 120px;
+}
+
+.game-layout {
+    display: flex;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.game-sidebar {
+    width: 400px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.game-info {
+    padding: 2rem 1.5rem;
+    flex: 1;
+
+    &__title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0 0 2rem 0;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+}
+
+.game-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg-primary);
+}
+
+.game-container {
+    position: relative;
+    border: 2px solid var(--border-color);
+    border-radius: $border-radius-lg;
+    background: var(--bg-secondary);
+    width: 100%;
+    height: 80vh;
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    transition: all $transition-smooth;
+
+    &:hover {
+        box-shadow: 0 12px 32px var(--shadow-hover);
+    }
+}
+
+.game-loading {
+    @include flex-column-center;
+    gap: 1rem;
+    color: var(--text-secondary);
+
+    &__spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--accent-primary);
+        border-radius: $border-radius-full;
+        animation: spin 1s linear infinite;
+    }
+
+    &__text {
+        font-size: $font-size-base;
+        font-weight: $font-weight-medium;
+        color: var(--text-secondary);
+    }
+}
+
+.game-error {
+    @include flex-column-center;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-primary);
+    max-width: 400px;
+
+    &__icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &__title {
+        font-size: 1.25rem;
+        font-weight: $font-weight-semibold;
+        color: var(--accent-error);
+        margin: 0 0 0.5rem 0;
+    }
+
+    &__message,
+    &__details {
+        font-size: $font-size-sm;
+        color: var(--text-secondary);
+        margin: 0.25rem 0;
+        line-height: $line-height-relaxed;
+    }
+
+    &__details {
+        font-family: $font-family-mono;
+        background: var(--bg-tertiary);
+        padding: 0.5rem;
+        border-radius: $border-radius-sm;
+        word-break: break-word;
+    }
+}
+
+.game-controls {
+    background: var(--bg-tertiary);
+    padding: 1.5rem;
+    border-radius: $border-radius-lg;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    margin-bottom: 2rem;
+
+    &__title {
+        margin: 0 0 1rem 0;
+        font-size: 1.125rem;
+        font-weight: $font-weight-semibold;
+        color: var(--text-primary);
+    }
+
+    &__text {
+        margin: 0;
+        font-size: $font-size-base;
+        color: var(--text-secondary);
+        line-height: $line-height-relaxed;
+    }
+}
+
+.switch-game {
+    .nintendo-system-menu {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: var(--system-menu-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+// レスポンシブ対応
+@media (max-width: 1200px) {
+    .game-sidebar {
+        width: 350px;
+    }
+
+    .game-info {
+        padding: 1.5rem 1rem;
+
+        &__title {
+            font-size: 1.75rem;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .game-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 120px);
+    }
+
+    .game-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .game-info {
+        padding: 1rem;
+
+        &__title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    .game-main {
+        padding: 1rem;
+    }
+
+    .game-container {
+        height: 60vh;
+        max-width: 100%;
+    }
+
+    .game-controls {
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .switch-game {
+        padding-bottom: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-info {
+        padding: 0.75rem;
+
+        &__title {
+            font-size: 1.25rem;
+        }
+    }
+
+    .game-main {
+        padding: 0.75rem;
+    }
+
+    .game-container {
+        height: 50vh;
+    }
+}
+
+// アニメーション
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.game-sidebar {
+    animation: slideInFromLeft 0.6s ease-out;
+}
+
+.game-container {
+    animation: slideInFromRight 0.8s ease-out;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.theme-dark {
+    .game-container {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+        &:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+        }
+    }
+
+    .game-controls {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.theme-light {
+    .game-container {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+        &:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    .game-controls {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+// アクセシビリティ
+@media (prefers-reduced-motion: reduce) {
+
+    .game-sidebar,
+    .game-container,
+    .game-loading__spinner {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+
+    .game-container,
+    .game-controls {
+        border-width: 2px;
+    }
+
+    .game-error__title {
+        font-weight: $font-weight-bold;
+    }
+}
+
+.game-container:focus-within {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
