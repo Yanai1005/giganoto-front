@@ -112,6 +112,7 @@ class EscapeScene extends Phaser.Scene {
 
         const isTrigger = /^[Tt]/.test(tile);
         const isDestination = /^[Pp]/.test(tile);
+        const isBarrier = /^S/.test(tile);
 
         // 床を敷く
         if (
@@ -119,6 +120,7 @@ class EscapeScene extends Phaser.Scene {
           tile === "a" ||
           tile === "b" ||
           isTrigger ||
+          isBarrier ||
           isDestination
         ) {
           this.add.sprite(x, y, "floorSprite").setDepth(-1);
@@ -288,6 +290,7 @@ class EscapeScene extends Phaser.Scene {
     this.createPlayer2();
     this.setupInput();
     this.setupGameplay();
+    this.createAnimations();
     this.physics.add.collider(this.player1, this.player2);
     this.physics.add.collider(this.player1, this.collidableGroup);
     this.physics.add.collider(this.player2, this.collidableGroup);
