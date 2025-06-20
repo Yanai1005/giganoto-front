@@ -11,7 +11,7 @@ export const initializeGame = (container) => {
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 0 },
+                gravity: { y: 100 },
                 debug: false
             }
         },
