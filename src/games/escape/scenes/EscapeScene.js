@@ -2,6 +2,25 @@ import Phaser from "phaser";
 const levelMapmain = [
   "WWWWWWWWWWWWWWWWWWWWWWWW",
   "W          W   S       W",
+  "W S        W     g     W",
+  "W          W           W",
+  "W    S     W   S   t S W",
+  "W   T      W           W",
+  "W     S    W  S        W",
+  "W          W   S       W",
+  "W     a    W     b     W",
+  "W   S      W        S  W",
+  "W    S     W     P     W",
+  "W          W           W",
+  "W       h  W  S      S W",
+  "W  SS      W           W",
+  "W     p    W   S       W",
+  "WWWWWWWWWWWWWWWWWWWWWWWW",
+];
+
+const levelMapsub = [
+  "WWWWWWWWWWWWWWWWWWWWWWWW",
+  "W          W   S       W",
   "W          W           W",
   "W          W  S        W",
   "W    S     W       t   W",
@@ -18,29 +37,6 @@ const levelMapmain = [
   "WWWWWWWWWWWWWWWWWWWWWWWW",
 ];
 
-const levelMapsub = [
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-  "W              W               W",
-  "W              W               W",
-  "W              W            C  W",
-  "W     SSS      W               W",
-  "W              W               W",
-  "W              W   S           W",
-  "W   b          WWWWWWWWWWWW    W",
-  "W       C S    W               W",
-  "W              W     S         W",
-  "W          C   W               W",
-  "W     S        W       SSS     W",
-  "W              W          a    W",
-  "W            C W               W",
-  "WWWWWWWWWWWWWWWW               W",
-  "W              W       S       W",
-  "W    C S       W               W",
-  "W              W      SSS      W",
-  "W              W   S           W",
-  "W   b          W               W",
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-]; //S:石, D::ドア, W::壁, C::チェスト
 class EscapeScene extends Phaser.Scene {
   constructor() {
     super({ key: "EscapeScene" });
@@ -65,6 +61,11 @@ class EscapeScene extends Phaser.Scene {
     this.load.image("floorSprite", "assets/floor.png");
     this.load.image("teleportTriggerSprite", "assets/trigger.png");
     this.load.image("teleportDestinationSprite", "assets/destination.png");
+    this.load.image("goalSprite1", "assets/button_green_off.png");
+    this.load.image("goalSprite2", "assets/button_red_off.png");
+    this.load.image("fin_goalSprite1", "assets/button_green_on.png");
+    this.load.image("fin_goalSprite2", "assets/button_red_on.png");
+
     // 下向き (1-3)
     this.load.image("p1_down_1", "assets/woman2_free_01.png");
     this.load.image("p1_down_2", "assets/woman2_free_02.png");
@@ -113,6 +114,7 @@ class EscapeScene extends Phaser.Scene {
         const isTrigger = /^[Tt]/.test(tile);
         const isDestination = /^[Pp]/.test(tile);
         const isBarrier = /^S/.test(tile);
+        const isGoal = /^[gh]/.test(tile);
 
         // 床を敷く
         if (
@@ -121,6 +123,7 @@ class EscapeScene extends Phaser.Scene {
           tile === "b" ||
           isTrigger ||
           isBarrier ||
+          isGoal ||
           isDestination
         ) {
           this.add.sprite(x, y, "floorSprite").setDepth(-1);
@@ -224,23 +227,14 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(11);
 
-    const replayButton = this.createButton(
-      centerX - 120,
-      centerY + 100,
-      "もう一度プレイ",
-      () => {
-        this.scene.restart();
-      }
-    );
-    const homeButton = this.createButton(
-      centerX + 120,
-      centerY + 100,
-      "ホームに戻る",
-      () => {
-        // ここは実際のプロジェクトのURLに合わせて変更してください
-        window.location.href = "/";
-      }
-    );
+    this.createButton(centerX - 120, centerY + 100, "もう一度プレイ", () => {
+      this.isGameCleared = false; // フラグをリセット
+      this.scene.restart();
+    });
+
+    this.createButton(centerX + 120, centerY + 100, "ホームに戻る", () => {
+      window.location.href = "/";
+    });
   }
   createButton(x, y, text, callback) {
     const button = this.add.container(x, y);
@@ -279,6 +273,7 @@ class EscapeScene extends Phaser.Scene {
   }
 
   create() {
+    this.physics.resume();
     this.createTextures();
     this.createUI();
 
@@ -317,41 +312,17 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createTextures() {
-    const gateGraphics = this.add.graphics();
-    gateGraphics.fillStyle(0xf8b400);
-    gateGraphics.fillRect(0, 0, 24, 24);
-    gateGraphics.generateTexture("grassSprite", 24, 24);
-    gateGraphics.destroy();
+    const finGoal1Graphics = this.add.graphics();
+    finGoal1Graphics.fillStyle(0x3b82f6); // プレイヤー1の色で塗りつぶし
+    finGoal1Graphics.fillRect(0, 0, 32, 32);
+    finGoal1Graphics.generateTexture("fin_goalSprite1", 32, 32);
+    finGoal1Graphics.destroy();
 
-    const doorGraphics = this.add.graphics();
-    doorGraphics.fillStyle(0x8b4513);
-    doorGraphics.fillRect(0, 0, 24, 48);
-    doorGraphics.generateTexture("doorSprite", 24, 48);
-    doorGraphics.destroy();
-
-    const keyGraphics = this.add.graphics();
-    keyGraphics.fillStyle(0xffff00);
-    keyGraphics.fillRect(0, 0, 12, 12);
-    keyGraphics.generateTexture("keySprite", 12, 12);
-    keyGraphics.destroy();
-
-    const exitGraphics = this.add.graphics();
-    exitGraphics.fillStyle(0x0000ff);
-    exitGraphics.fillRect(0, 0, 24, 48);
-    exitGraphics.generateTexture("exitSprite", 24, 48);
-    exitGraphics.destroy();
-
-    const goalGraphics1 = this.add.graphics();
-    goalGraphics1.lineStyle(2, 0x0000ff);
-    goalGraphics1.strokeRect(0, 0, 24, 24);
-    goalGraphics1.generateTexture("goalSprite1", 24, 24);
-    goalGraphics1.destroy();
-
-    const goalGraphics2 = this.add.graphics();
-    goalGraphics2.lineStyle(2, 0xcf3030);
-    goalGraphics2.strokeRect(0, 0, 24, 24);
-    goalGraphics2.generateTexture("goalSprite2", 24, 24);
-    goalGraphics2.destroy();
+    const finGoal2Graphics = this.add.graphics();
+    finGoal2Graphics.fillStyle(0xef4444); // プレイヤー2の色で塗りつぶし
+    finGoal2Graphics.fillRect(0, 0, 32, 32);
+    finGoal2Graphics.generateTexture("fin_goalSprite2", 32, 32);
+    finGoal2Graphics.destroy();
 
     const buttonGraphics = this.add.graphics();
     buttonGraphics.fillStyle(0x555555); // ボタンの色
@@ -371,7 +342,7 @@ class EscapeScene extends Phaser.Scene {
         { key: "p1_down_2" },
         { key: "p1_down_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
@@ -381,7 +352,7 @@ class EscapeScene extends Phaser.Scene {
         { key: "p1_left_2" },
         { key: "p1_left_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
@@ -391,13 +362,13 @@ class EscapeScene extends Phaser.Scene {
         { key: "p1_right_2" },
         { key: "p1_right_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
       key: "p1_up_anim",
       frames: [{ key: "p1_up_1" }, { key: "p1_up_2" }, { key: "p1_up_3" }],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     // --- プレイヤー2のアニメーション ---
@@ -408,7 +379,7 @@ class EscapeScene extends Phaser.Scene {
         { key: "p2_down_2" },
         { key: "p2_down_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
@@ -418,7 +389,7 @@ class EscapeScene extends Phaser.Scene {
         { key: "p2_left_2" },
         { key: "p2_left_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
@@ -428,13 +399,13 @@ class EscapeScene extends Phaser.Scene {
         { key: "p2_right_2" },
         { key: "p2_right_3" },
       ],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
     this.anims.create({
       key: "p2_up_anim",
       frames: [{ key: "p2_up_1" }, { key: "p2_up_2" }, { key: "p2_up_3" }],
-      frameRate: 6,
+      frameRate: 9,
       repeat: -1,
     });
   }
@@ -639,12 +610,24 @@ class EscapeScene extends Phaser.Scene {
     let player2OnGoal = false;
     this.goalTiles.getChildren().forEach((goal) => {
       const goalForPlayer = goal.getData("player");
+      if (goalForPlayer === 1) {
+        goal.setTexture("goalSprite1");
+      } else if (goalForPlayer === 2) {
+        goal.setTexture("goalSprite2");
+      }
+    });
+    this.goalTiles.getChildren().forEach((goal) => {
+      const goalForPlayer = goal.getData("player");
+
       // プレイヤー1が、プレイヤー1用のゴールに重なっているか？
+
       if (goalForPlayer === 1 && this.physics.overlap(this.player1, goal)) {
         player1OnGoal = true;
+        goal.setTexture("fin_goalSprite1");
       }
       if (goalForPlayer === 2 && this.physics.overlap(this.player2, goal)) {
         player2OnGoal = true;
+        goal.setTexture("fin_goalSprite2");
       }
     });
     if (player1OnGoal && player2OnGoal) {
