@@ -107,13 +107,14 @@ export class JoyConManager {
           if (this.scene.minigame.type === 'timing') {
             this.scene.minigameManager.onReelBtnMouseUp();
           }
-        } else {
+        }
+        /* else {
           if (this.scene.float && !this.scene.float.visible) {
             this.scene.castLine();
           } else if (this.scene.float && this.scene.float.visible) {
             this.scene.reelLine();
           }
-        }
+        } */
       }
       
       if (this.scene.minigame.active && this.scene.minigame.type === 'tension') {

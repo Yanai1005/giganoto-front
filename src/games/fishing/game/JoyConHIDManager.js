@@ -2,9 +2,7 @@ export class JoyConHIDManager {
   constructor(scene) {
     this.scene = scene;
     this.device = null;
-    this.castCooldown = false;        // キャスト連打防止用
-    this.reelCooldownAfterCast = false; // キャスト直後のリール防止用
-    this.reelActionCooldown = false;    // リール連打防止用
+    this.motionCooldown = false;        // モーション操作全体のクールダウン
     this.lastAz = 0;                  // 前回のZ軸加速度
     this.subcommandPacketCounter = 0;
   }
@@ -46,32 +44,30 @@ export class JoyConHIDManager {
   async rumble(low_freq, high_freq, low_amp, high_amp) {
     if (!this.device) return;
 
-    // Rumble data structure for Joy-Con
-    // [hf_freq, hf_amp, lf_freq, lf_amp] * 2 (for L/R)
-    // For a single Joy-Con, we only need the first 4 bytes.
     const rumbleData = new Uint8Array(8);
 
-    // Clamp and encode frequencies
-    // hf_freq: 80Hz - 1253Hz -> 0x00 - 0x7f
-    // lf_freq: 41Hz - 626Hz -> 0x00 - 0x7f
+    // Set neutral rumble data for the LEFT Joy-Con (bytes 0-3)
+    rumbleData[0] = 0x00;
+    rumbleData[1] = 0x01;
+    rumbleData[2] = 0x40;
+    rumbleData[3] = 0x40;
+
+    // Set desired rumble data for the RIGHT Joy-Con (bytes 4-7)
     const clamp = (v, min, max) => Math.max(min, Math.min(v, max));
     const hf = clamp(Math.round(32 * Math.log2(high_freq / 10.0)), 0x00, 0xff);
-    const hf_amp = clamp(Math.round(high_amp * 2), 0x00, 0x1c); // empirical limit
+    const hf_amp = clamp(Math.round(high_amp * 2), 0x00, 0x1c);
     const lf = clamp(Math.round(32 * Math.log2(low_freq / 10.0)), 0x00, 0xff);
     const lf_amp = clamp(Math.round(low_amp * 2), 0x00, 0x1c);
     
-    // This is a simplified encoding. A more accurate one exists.
-    // [hf_amp(upper 4bit), lf_freq] [hf_freq, lf_amp(upper 4bit)]
-    rumbleData[0] = hf;
-    rumbleData[1] = hf_amp;
-    rumbleData[2] = lf;
-    rumbleData[3] = lf_amp;
+    rumbleData[4] = hf;
+    rumbleData[5] = hf_amp;
+    rumbleData[6] = lf;
+    rumbleData[7] = lf_amp;
 
-    // Output report 0x10: [reportId=0x10][packet#=0][rumble_data...]
-    const buf = new Uint8Array(1 + 1 + rumbleData.length);
-    buf[0] = 0x10; // reportId for rumble
-    buf[1] = 0; // packet counter
-    buf.set(rumbleData, 2);
+    const buf = new Uint8Array(1 + rumbleData.length);
+    buf[0] = this.subcommandPacketCounter;
+    this.subcommandPacketCounter = (this.subcommandPacketCounter + 1) & 0x0f;
+    buf.set(rumbleData, 1);
     
     await this.device.sendReport(0x10, buf);
   }
@@ -103,62 +99,57 @@ export class JoyConHIDManager {
   }
 
   #onReport(e) {
-    if (e.reportId !== 0x30) return; // 0x30 = standard input report
-    
+    if (e.reportId !== 0x30) return;
     const d = new DataView(e.data.buffer);
 
-    // 最後のサンプルが先頭12B
-    const _ax = d.getInt16(13, true) / 4096; // ±4G -> G 単位 (未使用なのでプレフィックス)
-    const _ay = d.getInt16(15, true) / 4096;
-    const az = d.getInt16(17, true) / 4096;
-    const deltaZ = az - this.lastAz; // 加速度の変化量を計算
+    const az1 = d.getInt16(17, true) / 4096;
+    const az2 = d.getInt16(29, true) / 4096;
+    const az3 = d.getInt16(41, true) / 4096;
+    const az = (az1 + az2 + az3) / 3;
+    const deltaZ = az - this.lastAz;
 
-    /*
-    if (az !== 0 || this.lastAz !== 0) { // 意味のあるデータのみログ出力
-      console.log(`[JoyConHID] az: ${az.toFixed(3)}, deltaZ: ${deltaZ.toFixed(3)}`);
-    }
-    */
+    const THR_CAST = -8.0;
+    const THR_REEL = 8.0;
+    const COOLDOWN_MOTION = 1200;
 
-    // --- しきい値（加速度の「変化量」に対して） ---
-    const THR_CAST = -1.5; // 奥への急な振り
-    const THR_REEL = 1.5;  // 手前への急な振り
-    const COOLDOWN_CAST = 1000;
-    const COOLDOWN_REEL_AFTER_CAST = 1500;
-    const COOLDOWN_REEL_ACTION = 400; // 振り操作ごとのリールクールダウン
-
-    // ミニゲーム中は傾き(絶対値)で判定
     if (this.scene.minigame?.active) {
       if (this.scene.minigame.type === 'tension') {
         this.scene.isPlayerPulling = az > 0.5;
       }
-      this.lastAz = az; // 値を更新
+      this.lastAz = az;
+      return;
+    }
+    
+    if (this.motionCooldown) {
+      this.lastAz = az;
       return;
     }
 
-    // キャスト判定 (変化量で判定)
-    if (!this.castCooldown && deltaZ < THR_CAST) {
+    // Cast
+    if (deltaZ < THR_CAST) {
       if (this.scene.float && !this.scene.float.visible && !this.scene.gameState.catchingFish) {
-        console.log(`[JoyConHID] Cast by delta: ${deltaZ.toFixed(2)}`);
         this.scene.castLine();
-        this.#startCooldown('castCooldown', COOLDOWN_CAST);
-        this.#startCooldown('reelCooldownAfterCast', COOLDOWN_REEL_AFTER_CAST);
-        this.lastAz = az; // 判定後は値をリセット
+        this.rumble(160, 320, 0, 0.8);
+        setTimeout(() => this.rumble(160, 160, 0, 0), 150);
+        this.#startCooldown('motionCooldown', COOLDOWN_MOTION);
+        this.lastAz = az;
         return;
       }
     }
 
-    // リール判定 (変化量で判定)
-    if (this.scene.float && this.scene.float.visible && !this.scene.gameState.catchingFish && !this.reelCooldownAfterCast && !this.reelActionCooldown) {
-      if (deltaZ > THR_REEL) {
-        console.log(`[JoyConHID] Reel by delta: ${deltaZ.toFixed(2)}`);
-        this.scene.reelLine(); // 振るたびに一定量巻く
-        this.#startCooldown('reelActionCooldown', COOLDOWN_REEL_ACTION);
-        this.lastAz = az; // 判定後は値をリセット
+    // Reel
+    if (deltaZ > THR_REEL) {
+      if (this.scene.float && this.scene.float.visible && !this.scene.gameState.catchingFish) {
+        this.scene.reelLine();
+        this.rumble(120, 240, 0, 0.6);
+        setTimeout(() => this.rumble(160, 160, 0, 0), 100);
+        this.#startCooldown('motionCooldown', COOLDOWN_MOTION);
+        this.lastAz = az;
         return;
       }
     }
 
-    this.lastAz = az; // 最後に現在の値を保存
+    this.lastAz = az;
   }
 
   #startCooldown(type, ms) {
