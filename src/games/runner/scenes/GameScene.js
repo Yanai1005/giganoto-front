@@ -27,12 +27,31 @@ class GameScene extends Phaser.Scene {
         this.keyupHandler = null;
     }
 
+    init() {
+        // シーン初期化時にすべての状態をリセット
+        console.log('Scene init called');
+        this.gameOver = false;
+        this.score = 0;
+        
+        // キー状態をリセット
+        this.keys = {
+            left: false,
+            right: false,
+            a: false,
+            d: false
+        };
+    }
+
     preload() {
         // 空のpreload - テクスチャはcreate()で生成
     }
 
     create() {
         console.log('GameScene created');
+        
+        // ゲーム状態を確実にリセット
+        this.gameOver = false;
+        this.score = 0;
         
         // キー状態をリセット
         this.keys = {
@@ -135,6 +154,9 @@ class GameScene extends Phaser.Scene {
         
         // キーダウンイベント
         this.keydownHandler = (event) => {
+            // ゲームオーバー時は入力を無視
+            if (this.gameOver) return;
+            
             switch(event.code) {
                 case 'ArrowLeft':
                     this.keys.left = true;
@@ -176,6 +198,8 @@ class GameScene extends Phaser.Scene {
                     break;
                 case 'Space':
                     if (this.gameOver) {
+                        console.log('Space pressed - restarting via DOM');
+                        this.cleanupDOMEvents();
                         this.scene.restart();
                     }
                     break;
@@ -308,6 +332,11 @@ class GameScene extends Phaser.Scene {
         this.gameOver = true;
         this.physics.pause();
         
+        // タイマーを停止
+        if (this.obstacleTimer) {
+            this.obstacleTimer.destroy();
+        }
+        
         player.setTint(0xff0000);
         
         // ゲームオーバーテキスト
@@ -321,14 +350,17 @@ class GameScene extends Phaser.Scene {
             fill: '#FFFFFF'
         }).setOrigin(0.5);
 
-        // スペースキーでリスタート
+        // スペースキーでリスタート（一度だけ）
         this.input.keyboard.once('keydown-SPACE', () => {
+            console.log('Restarting game...');
+            this.cleanupDOMEvents();
             this.scene.restart();
         });
     }
 
     update() {
-        if (this.gameOver) return;
+        // ゲームオーバー時は処理を停止
+        if (this.gameOver || !this.player || !this.player.body) return;
 
         // velocityベースの移動 - DOMイベントとPhaserイベント両方をチェック
         const velocitySpeed = 400;
@@ -339,23 +371,23 @@ class GameScene extends Phaser.Scene {
         
         if (leftPressed) {
             this.player.body.setVelocityX(-velocitySpeed);
-            console.log('Moving left, velocity set to:', -velocitySpeed);
         } else if (rightPressed) {
             this.player.body.setVelocityX(velocitySpeed);
-            console.log('Moving right, velocity set to:', velocitySpeed);
         } else {
             this.player.body.setVelocityX(0);
         }
 
         // デバッグ用：現在のキー状態を表示
-        let keyStatus = 'Keys: ';
-        if (this.cursors.left.isDown) keyStatus += 'LEFT ';
-        if (this.cursors.right.isDown) keyStatus += 'RIGHT ';
-        if (this.keys.a) keyStatus += 'A ';
-        if (this.keys.d) keyStatus += 'D ';
-        if (this.keys.left) keyStatus += 'DOM-LEFT ';
-        if (this.keys.right) keyStatus += 'DOM-RIGHT ';
-        this.keyStatusText.setText(keyStatus);
+        if (this.keyStatusText) {
+            let keyStatus = 'Keys: ';
+            if (this.cursors.left.isDown) keyStatus += 'LEFT ';
+            if (this.cursors.right.isDown) keyStatus += 'RIGHT ';
+            if (this.keys.a) keyStatus += 'A ';
+            if (this.keys.d) keyStatus += 'D ';
+            if (this.keys.left) keyStatus += 'DOM-LEFT ';
+            if (this.keys.right) keyStatus += 'DOM-RIGHT ';
+            this.keyStatusText.setText(keyStatus);
+        }
 
         // プレイヤーを道路内に制限
         if (this.player.x < 220) {
@@ -367,23 +399,29 @@ class GameScene extends Phaser.Scene {
         }
 
         // 道路の動きをシミュレート
-        this.road.y += this.roadSpeed;
-        if (this.road.y > 60) {
-            this.road.y = 0;
+        if (this.road) {
+            this.road.y += this.roadSpeed;
+            if (this.road.y > 60) {
+                this.road.y = 0;
+            }
         }
 
         // 障害物の管理
-        this.obstacles.children.entries.forEach((obstacle, index) => {
-            if (obstacle.y > 650) {
-                // スコア加算
-                if (obstacle.getData('spawned')) {
-                    this.score += 10;
-                    this.scoreText.setText('Score: ' + this.score);
-                    obstacle.setData('spawned', false);
+        if (this.obstacles) {
+            this.obstacles.children.entries.forEach((obstacle, index) => {
+                if (obstacle.y > 650) {
+                    // スコア加算
+                    if (obstacle.getData('spawned')) {
+                        this.score += 10;
+                        if (this.scoreText) {
+                            this.scoreText.setText('Score: ' + this.score);
+                        }
+                        obstacle.setData('spawned', false);
+                    }
+                    obstacle.destroy();
                 }
-                obstacle.destroy();
-            }
-        });
+            });
+        }
 
         // ゲーム速度を徐々に上げる
         if (this.score > 0 && this.score % 100 === 0) {
