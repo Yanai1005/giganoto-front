@@ -106,16 +106,6 @@ class GameScene extends Phaser.Scene {
         // 衝突判定
         this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, null, this);
         
-        // マウス/タッチ入力も追加
-        this.input.on('pointerdown', (pointer) => {
-            if (pointer.x < 400) {
-                this.player.x -= 50; // 左クリックで左移動
-            } else {
-                this.player.x += 50; // 右クリックで右移動
-            }
-            this.player.x = Phaser.Math.Clamp(this.player.x, 220, 580);
-        });
-        
         // 最初の障害物を1秒後に生成
         this.time.delayedCall(1000, () => {
             this.spawnObstacle();
