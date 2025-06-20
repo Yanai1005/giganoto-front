@@ -38,6 +38,8 @@ const SystemMenu = ({ onIconClick, activeIcon }) => {
             }
         } else if (iconData.id === 'settings') {
             navigate('/settings');
+        } else if (iconData.url) {
+            window.open(iconData.url, '_blank', 'noopener,noreferrer');
         }
     };
 
