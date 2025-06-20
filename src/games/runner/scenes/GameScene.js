@@ -21,6 +21,10 @@ class GameScene extends Phaser.Scene {
             a: false,
             d: false
         };
+        
+        // イベントリスナーの参照を保存
+        this.keydownHandler = null;
+        this.keyupHandler = null;
     }
 
     preload() {
@@ -29,6 +33,14 @@ class GameScene extends Phaser.Scene {
 
     create() {
         console.log('GameScene created');
+        
+        // キー状態をリセット
+        this.keys = {
+            left: false,
+            right: false,
+            a: false,
+            d: false
+        };
         
         // 背景色を設定
         this.cameras.main.setBackgroundColor('#228B22');
@@ -70,6 +82,11 @@ class GameScene extends Phaser.Scene {
             fill: '#FFFFFF'
         }).setOrigin(0.5);
         
+        this.add.text(400, 80, 'Avoid the red obstacles!', {
+            fontSize: '20px',
+            fill: '#FFFF00'
+        }).setOrigin(0.5);
+        
         // デバッグ用：現在のキー状態を表示
         this.keyStatusText = this.add.text(16, 100, 'Keys: ', {
             fontSize: '16px',
@@ -77,12 +94,14 @@ class GameScene extends Phaser.Scene {
         });
 
         // 障害物生成タイマー
-        this.time.addEvent({
-            delay: 1500,
+        this.obstacleTimer = this.time.addEvent({
+            delay: 2000, // 2秒間隔
             callback: this.spawnObstacle,
             callbackScope: this,
             loop: true
         });
+        
+        console.log('Obstacle timer created');
 
         // 衝突判定
         this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, null, this);
@@ -100,11 +119,22 @@ class GameScene extends Phaser.Scene {
         });
         
         console.log('GameScene setup complete');
+        
+        // 最初の障害物を1秒後に生成
+        this.time.delayedCall(1000, () => {
+            console.log('Spawning initial obstacle');
+            this.spawnObstacle();
+        });
+        
+        console.log('GameScene setup complete');
     }
 
     setupDOMKeyboardEvents() {
+        // 既存のイベントリスナーを削除
+        this.cleanupDOMEvents();
+        
         // キーダウンイベント
-        document.addEventListener('keydown', (event) => {
+        this.keydownHandler = (event) => {
             switch(event.code) {
                 case 'ArrowLeft':
                     this.keys.left = true;
@@ -123,10 +153,10 @@ class GameScene extends Phaser.Scene {
                     console.log('DOM: D key down');
                     break;
             }
-        });
+        };
 
         // キーアップイベント
-        document.addEventListener('keyup', (event) => {
+        this.keyupHandler = (event) => {
             switch(event.code) {
                 case 'ArrowLeft':
                     this.keys.left = false;
@@ -150,25 +180,82 @@ class GameScene extends Phaser.Scene {
                     }
                     break;
             }
-        });
+        };
+        
+        document.addEventListener('keydown', this.keydownHandler);
+        document.addEventListener('keyup', this.keyupHandler);
+        
+        console.log('DOM event listeners added');
+    }
+    
+    spawnObstacleAlternative() {
+        if (this.gameOver) return;
+
+        console.log('Spawning alternative obstacle (rectangle)...');
+
+        // ランダムな位置に障害物を生成（道路内）
+        const x = Phaser.Math.Between(220, 580);
+        const obstacle = this.add.rectangle(x, 100, 40, 60, 0xFF0000);
+        
+        console.log('Rectangle obstacle created at:', x, 100);
+        
+        this.physics.add.existing(obstacle);
+        obstacle.body.setVelocity(0, this.gameSpeed);
+        
+        this.obstacles.add(obstacle);
+        
+        console.log('Rectangle obstacle added to group');
+
+        // 画面外に出た障害物を削除
+        obstacle.setData('spawned', true);
+    }
+
+    cleanupDOMEvents() {
+        if (this.keydownHandler) {
+            document.removeEventListener('keydown', this.keydownHandler);
+            this.keydownHandler = null;
+        }
+        if (this.keyupHandler) {
+            document.removeEventListener('keyup', this.keyupHandler);
+            this.keyupHandler = null;
+        }
+        console.log('DOM event listeners cleaned up');
+    }
+    
+    shutdown() {
+        // シーンが終了する時にイベントリスナーをクリーンアップ
+        this.cleanupDOMEvents();
+        super.shutdown();
+    }
+    
+    destroy() {
+        // シーンが破棄される時にイベントリスナーをクリーンアップ
+        this.cleanupDOMEvents();
+        super.destroy();
     }
 
     createTextures() {
         // プレイヤー用の青い四角形テクスチャを作成
-        const playerGraphics = this.add.graphics();
-        playerGraphics.fillStyle(0x0000FF);
-        playerGraphics.fillRect(0, 0, 40, 60);
-        playerGraphics.generateTexture('playerCar', 40, 60);
-        playerGraphics.destroy();
+        if (!this.textures.exists('playerCar')) {
+            const playerGraphics = this.add.graphics();
+            playerGraphics.fillStyle(0x0000FF);
+            playerGraphics.fillRect(0, 0, 40, 60);
+            playerGraphics.generateTexture('playerCar', 40, 60);
+            playerGraphics.destroy();
+            console.log('Player texture created');
+        }
 
         // 障害物用の赤い四角形テクスチャを作成
-        const obstacleGraphics = this.add.graphics();
-        obstacleGraphics.fillStyle(0xFF0000);
-        obstacleGraphics.fillRect(0, 0, 40, 60);
-        obstacleGraphics.generateTexture('obstacleCar', 40, 60);
-        obstacleGraphics.destroy();
+        if (!this.textures.exists('obstacleCar')) {
+            const obstacleGraphics = this.add.graphics();
+            obstacleGraphics.fillStyle(0xFF0000);
+            obstacleGraphics.fillRect(0, 0, 40, 60);
+            obstacleGraphics.generateTexture('obstacleCar', 40, 60);
+            obstacleGraphics.destroy();
+            console.log('Obstacle texture created');
+        }
         
-        console.log('Textures created');
+        console.log('All textures ready');
     }
 
     createRoad() {
@@ -195,14 +282,22 @@ class GameScene extends Phaser.Scene {
     spawnObstacle() {
         if (this.gameOver) return;
 
+        console.log('Spawning obstacle...');
+
         // ランダムな位置に障害物を生成（道路内）
         const x = Phaser.Math.Between(220, 580);
-        const obstacle = this.add.sprite(x, -50, 'obstacleCar');
+        
+        // rectangleを使用して確実に障害物を生成
+        const obstacle = this.add.rectangle(x, 50, 40, 60, 0xFF0000);
+        
+        console.log('Rectangle obstacle created at:', x, 50);
         
         this.physics.add.existing(obstacle);
         obstacle.body.setVelocity(0, this.gameSpeed);
         
         this.obstacles.add(obstacle);
+        
+        console.log('Obstacle added to group, velocity:', this.gameSpeed);
 
         // 画面外に出た障害物を削除
         obstacle.setData('spawned', true);
@@ -278,7 +373,7 @@ class GameScene extends Phaser.Scene {
         }
 
         // 障害物の管理
-        this.obstacles.children.entries.forEach(obstacle => {
+        this.obstacles.children.entries.forEach((obstacle, index) => {
             if (obstacle.y > 650) {
                 // スコア加算
                 if (obstacle.getData('spawned')) {
