@@ -42,7 +42,9 @@ export class JoyConHIDManager {
   }
 
   async rumble(low_freq, high_freq, low_amp, high_amp) {
-    if (!this.device) return;
+    if (!this.device) {
+      return;
+    }
 
     const rumbleData = new Uint8Array(8);
 
@@ -109,12 +111,15 @@ export class JoyConHIDManager {
     const deltaZ = az - this.lastAz;
 
     const THR_CAST = -8.0;
-    const THR_REEL = 8.0;
+    const THR_REEL = 7.0;
     const COOLDOWN_MOTION = 1200;
 
     if (this.scene.minigame?.active) {
       if (this.scene.minigame.type === 'tension') {
-        this.scene.isPlayerPulling = az > 0.5;
+        if (deltaZ > THR_REEL && !this.motionCooldown) {
+          this.scene.minigameManager.onPlayerReelAction();
+          this.#startCooldown('motionCooldown', 80);
+        }
       }
       this.lastAz = az;
       return;

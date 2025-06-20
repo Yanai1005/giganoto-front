@@ -118,7 +118,7 @@ export class JoyConManager {
       }
       
       if (this.scene.minigame.active && this.scene.minigame.type === 'tension') {
-        this.scene.isPlayerPulling = gamepad.buttons[0]?.pressed ?? false;
+        // this.scene.isPlayerPulling = gamepad.buttons[0]?.pressed ?? false;
       }
 
       // 状態の保存

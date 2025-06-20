@@ -479,4 +479,45 @@ export class UIManager {
         style.remove();
     }
   }
+
+  update() {
+    this.updateScoreUI();
+    this.updateUpgradePanel();
+  }
+
+  showMinigameUI(type) {
+    this.hideMinigameUI(); // Hide all first
+    const uiId = `minigame-ui-${type}`;
+    const uiElement = document.getElementById(uiId);
+    if (uiElement) {
+      uiElement.style.display = 'block';
+    }
+  }
+
+  hideMinigameUI() {
+    document.getElementById('minigame-ui-tension').style.display = 'none';
+    document.getElementById('minigame-ui-timing').style.display = 'none';
+  }
+
+  updateMinigameUI(minigame) {
+    if (!minigame.active) return;
+
+    if (minigame.type === 'tension') {
+        document.getElementById('tension-bar').style.width = `${minigame.tension.value}%`;
+        const safeZone = minigame.tension.safeZone;
+        const safeZoneEl = document.getElementById('tension-safe-zone');
+        safeZoneEl.style.left = `${safeZone.start}%`;
+        safeZoneEl.style.width = `${safeZone.end - safeZone.start}%`;
+        document.getElementById('tension-progress-bar').style.width = `${minigame.overallProgress * 100}%`;
+    } else { // 'timing'
+        const timingMarker = document.getElementById('timing-marker');
+        if (timingMarker) {
+          timingMarker.style.left = `${minigame.timing.markerPosition}%`;
+        }
+        const timingProgress = document.getElementById('timing-progress-bar');
+        if (timingProgress) {
+          timingProgress.style.width = `${minigame.overallProgress * 100}%`;
+        }
+    }
+  }
 } 
