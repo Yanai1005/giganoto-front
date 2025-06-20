@@ -9,7 +9,6 @@ class GameScene extends Phaser.Scene {
         this.gameSpeed = 200;
         this.score = 0;
         this.scoreText = null;
-        this.keyStatusText = null;
         this.gameOver = false;
         this.road = null;
         this.roadSpeed = 3;
@@ -29,7 +28,6 @@ class GameScene extends Phaser.Scene {
 
     init() {
         // シーン初期化時にすべての状態をリセット
-        console.log('Scene init called');
         this.gameOver = false;
         this.score = 0;
         
@@ -47,8 +45,6 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        console.log('GameScene created');
-        
         // ゲーム状態を確実にリセット
         this.gameOver = false;
         this.score = 0;
@@ -78,20 +74,15 @@ class GameScene extends Phaser.Scene {
         // Y軸を完全に固定（重力の影響を受けないように）
         this.player.body.setGravityY(-100); // 重力を完全に相殺
         this.player.body.setMaxVelocity(400, 0); // Y軸の最大速度を0に制限
-        
-        console.log('Player created at:', this.player.x, this.player.y);
 
         // 障害物グループを作成
         this.obstacles = this.physics.add.group();
 
         // キーボード入力を設定（Phaserと直接DOM両方）
         this.cursors = this.input.keyboard.createCursorKeys();
-        console.log('Cursors created:', this.cursors);
         
         // 直接DOMイベントリスナーを追加
         this.setupDOMKeyboardEvents();
-        
-        console.log('DOM keyboard events setup complete');
 
         // スコア表示
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
@@ -109,12 +100,6 @@ class GameScene extends Phaser.Scene {
             fontSize: '20px',
             fill: '#FFFF00'
         }).setOrigin(0.5);
-        
-        // デバッグ用：現在のキー状態を表示
-        this.keyStatusText = this.add.text(16, 100, 'Keys: ', {
-            fontSize: '16px',
-            fill: '#FFFFFF'
-        });
 
         // 障害物生成タイマー
         this.obstacleTimer = this.time.addEvent({
@@ -123,33 +108,24 @@ class GameScene extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
-        
-        console.log('Obstacle timer created');
 
         // 衝突判定
         this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, null, this);
         
         // マウス/タッチ入力も追加
         this.input.on('pointerdown', (pointer) => {
-            console.log('Pointer clicked at:', pointer.x, pointer.y);
             if (pointer.x < 400) {
                 this.player.x -= 50; // 左クリックで左移動
             } else {
                 this.player.x += 50; // 右クリックで右移動
             }
             this.player.x = Phaser.Math.Clamp(this.player.x, 220, 580);
-            console.log('Player moved to:', this.player.x);
         });
-        
-        console.log('GameScene setup complete');
         
         // 最初の障害物を1秒後に生成
         this.time.delayedCall(1000, () => {
-            console.log('Spawning initial obstacle');
             this.spawnObstacle();
         });
-        
-        console.log('GameScene setup complete');
     }
 
     setupDOMKeyboardEvents() {
@@ -164,19 +140,15 @@ class GameScene extends Phaser.Scene {
             switch(event.code) {
                 case 'ArrowLeft':
                     this.keys.left = true;
-                    console.log('DOM: Left arrow down');
                     break;
                 case 'ArrowRight':
                     this.keys.right = true;
-                    console.log('DOM: Right arrow down');
                     break;
                 case 'KeyA':
                     this.keys.a = true;
-                    console.log('DOM: A key down');
                     break;
                 case 'KeyD':
                     this.keys.d = true;
-                    console.log('DOM: D key down');
                     break;
             }
         };
@@ -186,23 +158,18 @@ class GameScene extends Phaser.Scene {
             switch(event.code) {
                 case 'ArrowLeft':
                     this.keys.left = false;
-                    console.log('DOM: Left arrow up');
                     break;
                 case 'ArrowRight':
                     this.keys.right = false;
-                    console.log('DOM: Right arrow up');
                     break;
                 case 'KeyA':
                     this.keys.a = false;
-                    console.log('DOM: A key up');
                     break;
                 case 'KeyD':
                     this.keys.d = false;
-                    console.log('DOM: D key up');
                     break;
                 case 'Space':
                     if (this.gameOver) {
-                        console.log('Space pressed - restarting via DOM');
                         this.cleanupDOMEvents();
                         this.scene.restart();
                     }
@@ -212,27 +179,19 @@ class GameScene extends Phaser.Scene {
         
         document.addEventListener('keydown', this.keydownHandler);
         document.addEventListener('keyup', this.keyupHandler);
-        
-        console.log('DOM event listeners added');
     }
     
     spawnObstacleAlternative() {
         if (this.gameOver) return;
 
-        console.log('Spawning alternative obstacle (rectangle)...');
-
         // ランダムな位置に障害物を生成（道路内）
         const x = Phaser.Math.Between(220, 580);
         const obstacle = this.add.rectangle(x, 100, 40, 60, 0xFF0000);
-        
-        console.log('Rectangle obstacle created at:', x, 100);
         
         this.physics.add.existing(obstacle);
         obstacle.body.setVelocity(0, this.gameSpeed);
         
         this.obstacles.add(obstacle);
-        
-        console.log('Rectangle obstacle added to group');
 
         // 画面外に出た障害物を削除
         obstacle.setData('spawned', true);
@@ -247,7 +206,6 @@ class GameScene extends Phaser.Scene {
             document.removeEventListener('keyup', this.keyupHandler);
             this.keyupHandler = null;
         }
-        console.log('DOM event listeners cleaned up');
     }
     
     shutdown() {
@@ -270,7 +228,6 @@ class GameScene extends Phaser.Scene {
             playerGraphics.fillRect(0, 0, 40, 60);
             playerGraphics.generateTexture('playerCar', 40, 60);
             playerGraphics.destroy();
-            console.log('Player texture created');
         }
 
         // 障害物用の赤い四角形テクスチャを作成
@@ -280,10 +237,7 @@ class GameScene extends Phaser.Scene {
             obstacleGraphics.fillRect(0, 0, 40, 60);
             obstacleGraphics.generateTexture('obstacleCar', 40, 60);
             obstacleGraphics.destroy();
-            console.log('Obstacle texture created');
         }
-        
-        console.log('All textures ready');
     }
 
     createRoad() {
@@ -310,22 +264,16 @@ class GameScene extends Phaser.Scene {
     spawnObstacle() {
         if (this.gameOver) return;
 
-        console.log('Spawning obstacle...');
-
         // ランダムな位置に障害物を生成（道路内）
         const x = Phaser.Math.Between(220, 580);
         
         // rectangleを使用して確実に障害物を生成
         const obstacle = this.add.rectangle(x, 50, 40, 60, 0xFF0000);
         
-        console.log('Rectangle obstacle created at:', x, 50);
-        
         this.physics.add.existing(obstacle);
         obstacle.body.setVelocity(0, this.gameSpeed);
         
         this.obstacles.add(obstacle);
-        
-        console.log('Obstacle added to group, velocity:', this.gameSpeed);
 
         // 画面外に出た障害物を削除
         obstacle.setData('spawned', true);
@@ -356,7 +304,6 @@ class GameScene extends Phaser.Scene {
 
         // スペースキーでリスタート（一度だけ）
         this.input.keyboard.once('keydown-SPACE', () => {
-            console.log('Restarting game...');
             this.cleanupDOMEvents();
             this.scene.restart();
         });
@@ -383,18 +330,6 @@ class GameScene extends Phaser.Scene {
             this.player.body.setVelocityX(velocitySpeed);
         } else {
             this.player.body.setVelocityX(0);
-        }
-
-        // デバッグ用：現在のキー状態を表示
-        if (this.keyStatusText) {
-            let keyStatus = 'Keys: ';
-            if (this.cursors.left.isDown) keyStatus += 'LEFT ';
-            if (this.cursors.right.isDown) keyStatus += 'RIGHT ';
-            if (this.keys.a) keyStatus += 'A ';
-            if (this.keys.d) keyStatus += 'D ';
-            if (this.keys.left) keyStatus += 'DOM-LEFT ';
-            if (this.keys.right) keyStatus += 'DOM-RIGHT ';
-            this.keyStatusText.setText(keyStatus);
         }
 
         // プレイヤーを道路内に制限
