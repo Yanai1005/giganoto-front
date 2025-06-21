@@ -39,6 +39,14 @@
       "image": "/assets/vibration_hunt.png",
       "path": "/game",
       "gameType": "vibration-hunt"
+    },
+    {
+      "id": 9,
+      "title": "Developer Detective",
+      "description": "開発者ツールを駆使して謎を解け！コンソール、DOM、ネットワークタブを活用した本格謎解きゲーム",
+      "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "dev-detective"
     }
   ],
   "gameTypes": {
@@ -71,6 +79,12 @@
       "description": "Joy-Conの振動機能を使って隠された強震動ポイントを探すゲーム",
       "controls": "マウスを動かして振動を感じ、Joy-ConのAボタンで決定。Joy-Con接続必須",
       "modulePath": "../games/vibration-hunt/game.js"
+    },
+    "dev-detective": {
+      "name": "Developer Detective",
+      "description": "開発者ツールを活用した謎解きゲーム",
+      "controls": "F12でデベロッパーツールを開き、コンソール・DOM・ネットワークタブを使って謎を解こう！",
+      "modulePath": "../games/dev-detective/game.js"
     }
   }
 }
