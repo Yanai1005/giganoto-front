@@ -1333,10 +1333,10 @@ export class VibrationHuntGame {
     const buttonY = containerY + 80;
     
     // タイトルに戻るボタン（タイトル画面と同じスタイル）
-    const titleButton = this.createStylishEndGameButton(containerX - 120, buttonY, 'タイトルに戻る', '#4a9eff', '#3a8eef');
+    const titleButton = this.createStylishEndGameButton(containerX - 150, buttonY, 'タイトルに戻る', '#4a9eff', '#3a8eef');
     
     // もう一度遊ぶボタン（タイトル画面と同じスタイル）
-    const retryButton = this.createStylishEndGameButton(containerX + 120, buttonY, 'もう一度遊ぶ', '#00d4aa', '#00b899');
+    const retryButton = this.createStylishEndGameButton(containerX + 150, buttonY, 'もう一度遊ぶ', '#00d4aa', '#00b899');
     
     // タイトルボタンのクリックイベント
     titleButton.on('pointerdown', () => {
