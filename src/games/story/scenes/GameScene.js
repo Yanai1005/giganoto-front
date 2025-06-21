@@ -28,14 +28,19 @@ export default class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('bg_hoom_morning', '/assets/bg_hoom_morning.jpg');
-    this.load.image('bg_hoom_evening', '/assets/bg_hoom_evening.jpg');
-    this.load.image('bg_street_morning', '/assets/bg_street_morning.jpg');
-    this.load.image('bg_school_gate', '/assets/bg_school_gate.jpg');
+    this.load.image('bg_home_morning', '../assets/bg_home_morning.jpg');
+    this.load.image('bg_home_evening', '../assets/bg_home_evening.jpg');
+    this.load.image('bg_street_morning', '../assets/bg_street_morning.jpg');
+    this.load.image('bg_street_evening', '../assets/bg_street_evening.jpg');
+    this.load.image('bg_school_gate', '../assets/bg_school_gate.jpg');
+    this.load.image('bg_cafe', '../assets/bg_cafe.jpg');
+    this.load.image('bg_campus', '../assets/bg_campus.jpg');
+    this.load.image('bg_kitchen', '../assets/bg_kitchen.png');
+    this.load.image('bg_entrance', '../assets/bg_entrance.jpg');
   }
 
   create() {
-    this.currentBg = this.add.image(0, 0, 'bg_hoom_morning')
+    this.currentBg = this.add.image(0, 0, 'bg_home_morning')
       .setOrigin(0)
       .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
 
@@ -104,6 +109,16 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-SPACE', () => this.advanceText());
 
     this.loadChapter();
+
+    this.fadeRect.setAlpha(1); // 黒で覆う（完全に暗転）
+
+    this.tweens.add({
+      targets: this.fadeRect,
+      alpha: 0,
+      duration: 5000, 
+      ease: 'Linear'
+    });
+
   }
 
   changeBackground(key) {
@@ -191,14 +206,20 @@ export default class GameScene extends Phaser.Scene {
     if (this.currentLineIndex < lines.length) {
       const line = lines[this.currentLineIndex];
 
-      if (line === '家朝') {
-        this.changeBackground('bg_hoom_morning');
-        this.currentLineIndex++;
-        this.showNextLine();
-        return;
-      }
-      if (line === '家夜') {
-        this.changeBackground('bg_hoom_evening');
+      const bgMap = {
+        '家朝': 'bg_home_morning',
+        '家夜': 'bg_home_evening',
+        '校門': 'bg_school_gate',
+        '通学路': 'bg_street_morning',
+        '通学路昼': 'bg_street_evening',
+        '教室昼': 'bg_classroom_day',
+        'キャンパス夕': 'bg_campus_evening',
+        '玄関': 'bg_entrance',
+        'カフェ': 'bg_cafe',
+      };
+
+      if (bgMap[line]) {
+        this.changeBackground(bgMap[line]);
         this.currentLineIndex++;
         this.showNextLine();
         return;
