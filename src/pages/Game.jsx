@@ -28,9 +28,6 @@ const Game = () => {
             // ゲームを読み込み
             if (gameRef.current && !phaserGameRef.current) {
                 try {
-                    console.log(`Loading game: ${gameType}`);
-                    console.log('Available games:', GameRegistry.getAllGames());
-
                     phaserGameRef.current = await GameRegistry.loadGame(gameType, gameRef.current);
                 } catch (error) {
                     console.error('Failed to load game:', error);
