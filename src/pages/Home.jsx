@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../contexts/ThemeContext';
 import { useJoyConContext } from '../contexts/JoyConContext';
 import GameTile from '../components/GameTile';
 import TopBar from '../components/TopBar';
@@ -16,7 +15,6 @@ import gamesData from '../data/games.json';
 
 const Home = () => {
     const navigate = useNavigate();
-    const { theme, changeTheme } = useTheme();
     const { isSupported, isConnected, connectJoyCon, rumble } = useJoyConContext();
 
     const [selectedGame, setSelectedGame] = useState(0);
