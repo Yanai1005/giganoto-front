@@ -1,4 +1,3 @@
-// src/pages/Home.jsx - Complete version with Joy-Con calibration
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,8 +26,8 @@ const Home = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [showJoyConModal, setShowJoyConModal] = useState(false);
     const [showCalibrationUI, setShowCalibrationUI] = useState(false);
-    const [cursorMode, setCursorMode] = useState(false); // カーソルモードの状態
-    const [isTogglingMode, setIsTogglingMode] = useState(false); // モード切り替え中の状態
+    const [cursorMode, setCursorMode] = useState(false);
+    const [isTogglingMode, setIsTogglingMode] = useState(false);
 
     const cursorControl = useJoyConCursor({
         enabled: isConnected && !showJoyConModal && !showSettings && !showCalibrationUI && cursorMode && !isTogglingMode,
@@ -39,12 +38,10 @@ const Home = () => {
         calibrationTime: 0
     });
 
-    // ゲームシステムの初期化
     useEffect(() => {
         GameRegistry.initializeFromJson(gamesData);
     }, []);
 
-    // ロードアニメーション
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsLoaded(true);
@@ -52,7 +49,6 @@ const Home = () => {
         return () => clearTimeout(timer);
     }, []);
 
-    // カーソルモード切り替え時の自動キャリブレーション
     useEffect(() => {
         if (cursorMode && cursorControl && cursorControl.recalibrate) {
             const timer = setTimeout(() => {
@@ -63,7 +59,6 @@ const Home = () => {
         }
     }, [cursorMode, cursorControl]);
 
-    // Navigation handlers
     const handleGameSelect = (game, index) => {
         if (typeof index === 'number') {
             setSelectedGame(index);
@@ -125,7 +120,6 @@ const Home = () => {
     };
 
     const toggleCursorMode = () => {
-        // デバウンス処理：連続してモード切り替えが呼ばれることを防ぐ
         if (isTogglingMode) return;
 
         setIsTogglingMode(true);
@@ -135,13 +129,12 @@ const Home = () => {
             console.log(`モード切り替え: ${prev ? 'カーソル' : 'ナビ'} → ${newMode ? 'カーソル' : 'ナビ'}`);
             if (newMode) {
                 console.log('カーソルモード開始: 強化キャリブレーション実行中...');
-                // カーソルモードに切り替え時、強化キャリブレーションを実行
                 setTimeout(() => {
                     if (cursorControl && cursorControl.recalibrate) {
                         cursorControl.recalibrate();
                         console.log('強化自動キャリブレーション実行完了');
                     }
-                }, 200); // より長い待機時間で安定性を確保
+                }, 200);
             } else {
                 console.log('ナビゲーションモードに戻ります');
             }
@@ -152,7 +145,6 @@ const Home = () => {
             rumble(200, 0.3, 80);
         }
 
-        // 500ms後にデバウンス状態を解除（キャリブレーション時間を考慮）
         setTimeout(() => {
             setIsTogglingMode(false);
         }, 500);
@@ -162,7 +154,6 @@ const Home = () => {
         setShowJoyConModal(true);
     };
 
-    // Joy-Con navigation setup
     useJoyConNavigation({
         onUp: !cursorMode && !isTogglingMode ? navigateUp : undefined,
         onDown: !cursorMode && !isTogglingMode ? navigateDown : undefined,
@@ -172,11 +163,10 @@ const Home = () => {
         onBack: () => { },
         onHome: () => { },
         onMenu: goToSettings,
-        onYButton: toggleCursorMode, // Yボタンでカーソルモード切り替え
+        onYButton: toggleCursorMode,
         enabled: !showJoyConModal && !showSettings && !showCalibrationUI
     });
 
-    // キーボードナビゲーション (fallback)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (showSettings || showJoyConModal || showCalibrationUI || isTogglingMode) return;
@@ -235,7 +225,6 @@ const Home = () => {
     return (
         <ErrorBoundary showDetails={true}>
             <div className="switch-home">
-                {/* Debug component wrapped in error boundary */}
                 <ErrorBoundary>
                     <JoyConDebug />
                 </ErrorBoundary>
@@ -258,7 +247,6 @@ const Home = () => {
                     ))}
                 </main>
 
-                {/* Control hints */}
                 <div className="control-hints">
                     <div className="control-hints__section">
                         {isConnected ? (
