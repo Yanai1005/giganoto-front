@@ -120,7 +120,7 @@ export class VibrationHuntGame {
     this.updateUI();
     
     // マウスとJoy-Con入力の両方を設定
-    this.setupMouseInput();
+    // this.setupMouseInput(); // マウス操作を無効化
     this.setupJoyConInput();
     
     console.log(`Round ${this.round}: 正解位置 (${this.targetPosition.x.toFixed(0)}, ${this.targetPosition.y.toFixed(0)})`);
@@ -255,6 +255,14 @@ export class VibrationHuntGame {
     }).setOrigin(1, 0);
     this.uiGroup.add(scoreValue);
     
+    // 操作説明（美しいカード風）
+    const instructionBg = this.scene.add.graphics();
+    instructionBg.fillStyle(0x2a2a4a, 0.9);
+    instructionBg.fillRoundedRect(100, 160, 600, 40, 12);
+    instructionBg.lineStyle(2, 0x4a9eff, 0.8);
+    instructionBg.strokeRoundedRect(100, 160, 600, 40, 12);
+    this.uiGroup.add(instructionBg);
+    
     // 操作説明パネル
     const controlPanelBg = this.scene.add.graphics();
     controlPanelBg.fillStyle(0x1a1a3a, 0.8);
@@ -263,7 +271,7 @@ export class VibrationHuntGame {
     controlPanelBg.strokeRoundedRect(100, 155, 600, 50, 10);
     this.uiGroup.add(controlPanelBg);
     
-    const controlText1 = this.scene.add.text(400, 170, '🖱️ マウスで移動  🅰 Aボタンで決定', {
+    const controlText1 = this.scene.add.text(400, 170, '🕹️ スティックで移動  🅰 Aボタンで決定', {
       fontSize: '14px',
       fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif'
@@ -311,121 +319,93 @@ export class VibrationHuntGame {
     console.log('=== updateUI完了 ===');
   }
 
+  setupJoyConInput() {
+    // マウス操作は常に有効
+    this.setupMouseInput();
+    
+    if (!this.jc) {
+      console.log('Joy-Conマネージャーが見つかりません - マウス移動のみ、決定ボタンなし');
+      return;
+    }
+    
+    console.log('Joy-Con入力設定開始 - Aボタンでの決定のみ有効');
+    
+    // 定期的にJoy-Conの入力をチェック（ボタンのみ）
+    this.inputUpdateInterval = setInterval(() => {
+      this.updateJoyConInput();
+    }, 16); // 約60FPS
+    
+    console.log('Joy-Con入力設定完了 - マウス移動 + Joy-Con決定');
+  }
+  
   setupMouseInput() {
+    console.log('マウス操作設定開始');
+    
+    // マウス移動でカーソルを制御
     this.scene.input.on('pointermove', (pointer) => {
       if (!this.gameActive) return;
-
-      this.currentPosition.x = pointer.x;
-      this.currentPosition.y = pointer.y;
-
-      // ゲームエリア内に制限
+      
+      // ゲームエリア内でのマウス位置を取得
       const bounds = this.GAME_AREA_BOUNDS;
-      this.currentPosition.x = Math.max(bounds.left, Math.min(bounds.right, this.currentPosition.x));
-      this.currentPosition.y = Math.max(bounds.top, Math.min(bounds.bottom, this.currentPosition.y));
-
+      const mouseX = Math.max(bounds.left, Math.min(bounds.right, pointer.x));
+      const mouseY = Math.max(bounds.top, Math.min(bounds.bottom, pointer.y));
+      
+      // カーソル位置を更新
+      this.currentPosition.x = mouseX;
+      this.currentPosition.y = mouseY;
+      
       if (this.cursor) {
         this.cursor.setPosition(this.currentPosition.x, this.currentPosition.y);
         this.cursorGlow.setPosition(this.currentPosition.x, this.currentPosition.y);
       }
-
+      
+      // 振動を計算・再生
       this.calculateAndPlayVibration();
     });
-    console.log('マウス入力設定完了');
-  }
-
-  setupJoyConInput() {
-    // Joy-Con入力の監視を開始
-    console.log('Joy-Con入力監視を開始します');
     
-    // 既存のインターバルがある場合は削除
-    if (this.inputUpdateInterval) {
-      clearInterval(this.inputUpdateInterval);
-      this.inputUpdateInterval = null;
-    }
+    // マウスクリックは無効（Joy-ConのAボタンのみで決定）
+    // this.scene.input.on('pointerdown', () => {
+    //   // マウスクリックでの決定は無効
+    // });
     
-    // ボタン状態を再度リセット（安全のため）
-    this.aButtonPressed = false;
-    this.xButtonPressed = false;
-    
-    this.inputUpdateInterval = setInterval(() => {
-      this.updateJoyConInput();
-    }, 8); // 120FPS相当の高頻度更新
-    
-    console.log('Joy-Con入力監視設定完了');
+    console.log('マウス操作設定完了');
   }
 
   updateJoyConInput() {
-    if (!this.gameActive || !this.jc) {
-      if (!this.lastDebugLog || Date.now() - this.lastDebugLog > 2000) {
-        console.log('ゲーム非アクティブまたはJoy-Con未接続', {
-          gameActive: this.gameActive,
-          joyConExists: !!this.jc
-        });
-        this.lastDebugLog = Date.now();
-      }
-      return;
-    }
-    
-    // Joy-Conデバイスの接続状態を確認
-    if (!this.jc.device) {
-      if (!this.lastDeviceLog || Date.now() - this.lastDeviceLog > 2000) {
-        console.log('Joy-Conデバイスが切断されています');
-        this.lastDeviceLog = Date.now();
-      }
-      return;
-    }
+    if (!this.gameActive || !this.jc) return;
     
     try {
-      // Joy-Conの入力状態を取得
       const inputState = this.jc.getInputState();
+      if (!inputState) return;
       
-      // 入力状態をログ出力（5秒に1回）
-      if (!this.lastInputLog || Date.now() - this.lastInputLog > 5000) {
-        console.log('取得した入力状態:', {
-          exists: !!inputState,
-          rightStick: inputState?.rightStick,
-          buttons: inputState?.buttons
-        });
-        this.lastInputLog = Date.now();
+      // スティック入力は無効（マウスのみでカーソル移動）
+      // const stickX = inputState.rightStick.x; // -1 to 1
+      // const stickY = inputState.rightStick.y; // -1 to 1
+      // スティックでのカーソル移動は無効化
+      
+      // Aボタンで決定
+      if (inputState.buttons.a && !this.aButtonPressed) {
+        this.aButtonPressed = true;
+        
+        // ゲーム開始からの経過時間をチェック（誤検出防止）
+        const elapsed = Date.now() - this.gameStartTime;
+        if (elapsed > this.buttonGracePeriod) {
+          console.log('[A-BUTTON] 決定ボタンが押されました');
+          this.submitAnswer();
+        } else {
+          console.log(`[A-BUTTON] ボタン猶予期間中 (${elapsed}ms < ${this.buttonGracePeriod}ms)`);
+        }
+      } else if (!inputState.buttons.a) {
+        this.aButtonPressed = false;
       }
       
-      if (inputState) {
-        // スティックでのカーソル移動は無効化
-        
-        // Aボタンの状態をチェック（ゲームが進行中かつ猶予期間経過後のみ）
-        const currentTime = Date.now();
-        const gracePeriodPassed = !this.gameStartTime || (currentTime - this.gameStartTime) > this.buttonGracePeriod;
-        
-        console.log('Aボタン状態チェック:', {
-          gameActive: this.gameActive,
-          aButtonState: inputState.buttons?.a,
-          aButtonPressed: this.aButtonPressed,
-          gracePeriodPassed: gracePeriodPassed,
-          timeElapsed: this.gameStartTime ? currentTime - this.gameStartTime : 'N/A'
-        });
-        
-        if (this.gameActive && gracePeriodPassed && inputState.buttons?.a && !this.aButtonPressed) {
-          this.aButtonPressed = true;
-          console.log('Joy-Con Aボタンが押されました - 回答提出');
-          this.submitAnswer();
-        } else if (!inputState.buttons?.a) {
-          this.aButtonPressed = false;
-        }
-        
-        // Xボタンでキャリブレーション再実行
-        if (inputState.buttons?.x && !this.xButtonPressed) {
-          this.xButtonPressed = true;
-          console.log('Joy-Con Xボタンが押されました - キャリブレーション再実行');
-          this.jc.recalibrate();
-        } else if (!inputState.buttons?.x) {
-          this.xButtonPressed = false;
-        }
-      } else {
-        // 5秒に1回だけログを出力（スパム防止）
-        if (!this.lastLogTime || Date.now() - this.lastLogTime > 5000) {
-          console.log('Joy-Con入力状態がnullです');
-          this.lastLogTime = Date.now();
-        }
+      // Xボタンでキャリブレーション再実行
+      if (inputState.buttons.x && !this.xButtonPressed) {
+        this.xButtonPressed = true;
+        console.log('[X-BUTTON] キャリブレーション再実行');
+        this.jc.recalibrate();
+      } else if (!inputState.buttons.x) {
+        this.xButtonPressed = false;
       }
     } catch (error) {
       console.error('Joy-Con入力エラー:', error);
@@ -433,7 +413,7 @@ export class VibrationHuntGame {
   }
 
   calculateAndPlayVibration() {
-    if (!this.jc || !this.gameActive) return;
+    if (!this.gameActive) return;
     
     const distance = this.getDistance(this.currentPosition, this.targetPosition);
     let vibrationStrength = this.calculateVibrationStrength(distance);
@@ -449,7 +429,10 @@ export class VibrationHuntGame {
       }
     }
     
-    this.playVibration(vibrationStrength);
+    // Joy-Conが接続されている場合のみ振動
+    if (this.jc) {
+      this.playVibration(vibrationStrength);
+    }
     
     // カーソルのグロー効果を振動の強さに応じて変更
     this.updateCursorGlow(vibrationStrength);
@@ -505,7 +488,9 @@ export class VibrationHuntGame {
     
     // ゲームを一時的に非アクティブにする（イベントハンドラーはクリアしない）
     this.gameActive = false;
-    this.jc.rumble(0, 0, 0, 0);
+    if (this.jc) {
+      this.jc.rumble(0, 0, 0, 0);
+    }
     
     // 入力監視を停止
     if (this.inputUpdateInterval) {
@@ -681,7 +666,7 @@ export class VibrationHuntGame {
     });
     
     // マウス操作の説明
-    const instructionText = this.scene.add.text(400, 520, 'マウスで操作、クリックで決定', {
+    const instructionText = this.scene.add.text(400, 520, 'Joy-Conスティックで操作、Aボタンで決定', {
       fontSize: '16px',
       fill: '#888888',
       fontFamily: 'Arial, sans-serif'

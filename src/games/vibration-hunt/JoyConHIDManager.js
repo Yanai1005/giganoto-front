@@ -131,6 +131,19 @@ export class JoyConHIDManager {
     
     console.log('キャリブレーションリセット完了 - 新しいキャリブレーションを開始します');
   }
+  
+  forceRecalibrate() {
+    // 強制的にキャリブレーションをリセット
+    this.stickCalibration = {
+      centerX: null,
+      centerY: null,
+      calibrated: false,
+      sampleCount: 0,
+      xSamples: [],
+      ySamples: []
+    };
+    console.log('[JoyCon] 強制再キャリブレーション開始 - スティックを中央に置いてください');
+  }
 
   async rumble(low_freq, high_freq, low_amp, high_amp) {
     if (!this.device) {
@@ -349,65 +362,143 @@ export class JoyConHIDManager {
 
     // ---------------- スティック解析 ----------------
     let stickX, stickY;
+    
+    // スティックデータの位置確認（必要時のみ）
+    if (this.reportCount < 5) {
+      console.log('[STICK RAW DATA] 全バイト確認:');
+      for (let i = 0; i < Math.min(d.byteLength, 20); i++) {
+        const val = d.getUint8(i);
+        if (val !== 0) {
+          console.log(`  byte${i}: ${val} (0x${val.toString(16).padStart(2, '0')})`);
+        }
+      }
+    }
+    
     if (this.isRightJoyCon) {
-      // Joy-Con R: bytes 9-11 に12bitずつ格納
+      // 複数の位置を試してみる
+      
+      // 位置1: bytes 9-11 (標準)
       const byte9 = d.getUint8(9);
       const byte10 = d.getUint8(10);  
       const byte11 = d.getUint8(11);
+      const stickX1 = byte9 | ((byte10 & 0x0f) << 8);
+      const stickY1 = (byte10 >> 4) | (byte11 << 4);
       
-      stickX = byte9 | ((byte10 & 0x0f) << 8);
-      stickY = (byte10 >> 4) | (byte11 << 4);
+      // 位置2: bytes 6-8 (Left Joy-Con位置)
+      const byte6 = d.getUint8(6);
+      const byte7 = d.getUint8(7);  
+      const byte8 = d.getUint8(8);
+      const stickX2 = byte6 | ((byte7 & 0x0f) << 8);
+      const stickY2 = (byte7 >> 4) | (byte8 << 4);
       
-      // デバッグ用：生のバイト値を表示
-      console.log(`[RAW BYTES] byte9=${byte9} byte10=${byte10} byte11=${byte11} | stickX=${stickX} stickY=${stickY}`);
+      // 位置3: bytes 12-14
+      const byte12 = d.getUint8(12);
+      const byte13 = d.getUint8(13);  
+      const byte14 = d.getUint8(14);
+      const stickX3 = byte12 | ((byte13 & 0x0f) << 8);
+      const stickY3 = (byte13 >> 4) | (byte14 << 4);
+      
+                    // デバッグ出力（最初の数回のみ）
+       if (this.reportCount < 10) {
+         console.log(`[STICK POSITIONS] 位置1(9-11): X=${stickX1} Y=${stickY1} | 位置2(6-8): X=${stickX2} Y=${stickY2} | 位置3(12-14): X=${stickX3} Y=${stickY3}`);
+       }
+       
+                 // 最適な位置から軸を取得：X軸は位置1、Y軸は位置3
+         stickX = stickX1; // bytes 9-11のX軸を使用（上下用）
+         stickY = stickY3; // bytes 12-14のY軸を使用（左右用）
     } else {
       // Joy-Con L: bytes 6-8
       stickX = d.getUint8(6) | ((d.getUint8(7) & 0x0f) << 8);
       stickY = (d.getUint8(7) >> 4) | (d.getUint8(8) << 4);
     }
 
-    // ----------- 動的キャリブレーション -----------
+    // ----------- 改良キャリブレーション -----------
     if (!this.stickCalibration) {
-      // 初回読み取り値を中央値として採用。一瞬でキャリブレーション完了させる。
       this.stickCalibration = {
-        centerX: stickX,
-        centerY: stickY,
-        calibrated: true
+        centerX: null,
+        centerY: null,
+        samples: [],
+        sampleCount: 0,
+        calibrated: false
       };
-      console.log(`[JoyCon] 即時キャリブレーション: centerX=${stickX}, centerY=${stickY}`);
+    }
+
+    // 最初の30サンプルで平均を取ってキャリブレーション
+    if (!this.stickCalibration.calibrated) {
+      this.stickCalibration.samples.push({ x: stickX, y: stickY });
+      this.stickCalibration.sampleCount++;
+      
+      if (this.stickCalibration.sampleCount >= 30) {
+        // 平均値を計算
+        const avgX = this.stickCalibration.samples.reduce((sum, s) => sum + s.x, 0) / 30;
+        const avgY = this.stickCalibration.samples.reduce((sum, s) => sum + s.y, 0) / 30;
+        
+        this.stickCalibration.centerX = Math.round(avgX);
+        this.stickCalibration.centerY = Math.round(avgY);
+        this.stickCalibration.calibrated = true;
+        
+        console.log(`[JoyCon] 改良キャリブレーション完了: centerX=${this.stickCalibration.centerX}, centerY=${this.stickCalibration.centerY}`);
+      }
+      
+      // キャリブレーション中は入力を無効化
+      this.inputState.rightStick.x = 0;
+      this.inputState.rightStick.y = 0;
+      return;
     }
 
     const centerX = this.stickCalibration.centerX;
     const centerY = this.stickCalibration.centerY;
     // Joy-Con縦持ち時の軸マッピング
-    // 物理X軸（左右）→ 画面の上下方向
-    // 物理Y軸（上下）→ 画面の左右方向
+    // 物理X軸（左右）→ 画面の左右方向
+    // 物理Y軸（上下）→ 画面の上下方向（反転必要）
     const range = 1800;
 
-    // 物理X軸を画面の上下方向に、物理Y軸を画面の左右方向にマッピング
-    let screenY = (stickX - centerX) / range;
-    let screenX = (stickY - centerY) / range;
+    // キャリブレーション完了後、すぐに入力処理開始
+
+    // Joy-Con縦持ち時の90度回転マッピング
+    // 物理軸を90度回転させて画面軸にマッピング
+    let screenX = (stickY - centerY) / range;  // 物理Y → 画面X（左右）
+    let screenY = -(stickX - centerX) / range; // 物理X → 画面Y（上下、反転）
 
     // 範囲をクランプ
     screenX = Math.max(-1, Math.min(1, screenX));
     screenY = Math.max(-1, Math.min(1, screenY));
 
-    // デッドゾーン
-    const deadzone = 0.05;
-    if (Math.abs(screenX) < deadzone) screenX = 0;
-    if (Math.abs(screenY) < deadzone) screenY = 0;
+    // 全方向対応のデッドゾーン（円形デッドゾーン）
+    const deadzone = 0.08;
+    const magnitude = Math.sqrt(screenX * screenX + screenY * screenY);
+    
+    if (magnitude < deadzone) {
+      // デッドゾーン内は入力なし
+      screenX = 0;
+      screenY = 0;
+    } else {
+      // デッドゾーン外は正規化して滑らかな入力
+      const normalizedMagnitude = (magnitude - deadzone) / (1 - deadzone);
+      const clampedMagnitude = Math.min(normalizedMagnitude, 1);
+      
+      screenX = (screenX / magnitude) * clampedMagnitude;
+      screenY = (screenY / magnitude) * clampedMagnitude;
+    }
 
     this.inputState.rightStick.x = screenX;  // 画面左右
     this.inputState.rightStick.y = screenY;  // 画面上下
 
-    // デバッグ
-    if (this.reportCount % 50 === 0) { // 50回に1回だけ出力（ログを減らすため）
-      console.log(`[JoyCon] Stick raw X=${stickX} Y=${stickY} | center X=${centerX} Y=${centerY} | screenX=${screenX.toFixed(3)} screenY=${screenY.toFixed(3)}`);
-    }
-    
-    // Y軸の詳細デバッグ
-    if (Math.abs(stickY - centerY) > 100 && this.reportCount % 10 === 0) {
-      console.log(`[Y軸詳細] stickY=${stickY}, centerY=${centerY}, diff=${stickY - centerY}, screenY=${screenY.toFixed(3)}`);
+    // 方向確認デバッグ出力
+    if (magnitude > 0.05) {
+      const angle = Math.atan2(screenY, screenX) * (180 / Math.PI);
+      let direction = '';
+      if (angle >= -22.5 && angle < 22.5) direction = '右';
+      else if (angle >= 22.5 && angle < 67.5) direction = '右下';
+      else if (angle >= 67.5 && angle < 112.5) direction = '下';
+      else if (angle >= 112.5 && angle < 157.5) direction = '左下';
+      else if (angle >= 157.5 || angle < -157.5) direction = '左';
+      else if (angle >= -157.5 && angle < -112.5) direction = '左上';
+      else if (angle >= -112.5 && angle < -67.5) direction = '上';
+      else if (angle >= -67.5 && angle < -22.5) direction = '右上';
+      
+      console.log(`[STICK] ${direction}方向 | X=${screenX.toFixed(2)} Y=${screenY.toFixed(2)} | 角度: ${angle.toFixed(1)}° | 強度: ${magnitude.toFixed(2)}`);
+      console.log(`[STICK] 生値: rawX=${stickX} rawY=${stickY} | 差分: diffX=${stickX-centerX} diffY=${stickY-centerY}`);
     }
   }
 } 
