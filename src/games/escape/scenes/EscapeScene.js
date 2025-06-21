@@ -5,7 +5,7 @@ const alllevels = [
     map: [
       "WWWWWWWWWWWWWWWWWWWWWWWW",
       "W          W   S       W",
-      "W S        W     g     W",
+      "W S        W     A     W",
       "W          W           W",
       "W    S     W   S   t S W",
       "W   T      W           W",
@@ -15,7 +15,7 @@ const alllevels = [
       "W   S      W        S  W",
       "W    S     W     P     W",
       "W          W           W",
-      "W       h  W  S      S W",
+      "W       B  W  S      S W",
       "W  SS      W           W",
       "W     p    W   S       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
@@ -24,7 +24,7 @@ const alllevels = [
   {
     //index1
     map: [
-      "WWWWWWWWWwwWwwWWWWWWWWWW",
+      "WWWWWWWWWwFWfwWWWWWWWWWW",
       "W        LlWrR  S      W",
       "W S      LlWrR   g     W",
       "W        LlWrR         W",
@@ -46,20 +46,20 @@ const alllevels = [
     //index2
     map: [
       "WWWWWWWWWWWWWWWWWWWWWWWW",
-      "W          W   S       W",
+      "W          W   i       W",
       "W          W           W",
-      "W          W  S        W",
-      "W    S     W           W",
+      "W          W  i        W",
+      "W    i     W           W",
       "W          W           W",
-      "W     S    W    S      W",
-      "W          W    S      W",
+      "W     i    W    i      W",
+      "W          W    i      W",
       "W          W           W",
-      "W          W    S      W",
+      "W          W    i      W",
       "W          W           W",
-      "W    SSS   W           W",
-      "W       h  W  S        W",
-      "W  SS      W           W",
-      "W         aWb  S     g W",
+      "W    iii   W           W",
+      "W          W  i        W",
+      "W  ii      W           W",
+      "W         aWb  i       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
     ],
   },
@@ -91,6 +91,7 @@ class EscapeScene extends Phaser.Scene {
     );
     this.load.image("wallSprite", "assets/wall.png");
     this.load.image("stoneSprite", "assets/ishi.png");
+    this.load.image("icestoneSprite", "assets/icestone.png");
     this.load.image("floorSprite", "assets/floor.png");
     this.load.image("teleportTriggerSprite", "assets/trigger.png");
     this.load.image("teleportDestinationSprite", "assets/destination.png");
@@ -102,7 +103,8 @@ class EscapeScene extends Phaser.Scene {
     this.load.image("r_stairsSprite", "assets/R_stairs.png");
     this.load.image("f_r_stairsSprite", "assets/F_R_stairs.png");
     this.load.image("f_l_stairsSprite", "assets/F_L_stairs.png");
-    this.load.image("wall2Sprite", "assets/wall(2).png");
+    this.load.image("fakewall1Sprite", "assets/wall(2).png");
+    this.load.image("fakewall2Sprite", "assets/wall(2).png");
     this.load.image("icefloorSprite", "assets/icefloor.png");
 
     // 下向き (1-3)
@@ -145,83 +147,91 @@ class EscapeScene extends Phaser.Scene {
     const tileSize = 32; // createTexturesのサイズと合わせる
 
     levelData.map.forEach((row, rowIndex) => {
-      if (this.currentLevelIndex === 0 || this.currentLevelIndex === 1)
-        row.split("").forEach((tile, colIndex) => {
-          const x = colIndex * tileSize + tileSize / 2 + offsetX;
-          const y = rowIndex * tileSize + tileSize / 2 + offsetY;
+      row.split("").forEach((tile, colIndex) => {
+        const x = colIndex * tileSize + tileSize / 2 + offsetX;
+        const y = rowIndex * tileSize + tileSize / 2 + offsetY;
 
-          const isTrigger = /^[Tt]/.test(tile);
-          const isDestination = /^[Pp]/.test(tile);
-          const isBarrier = /^S/.test(tile);
-          const isGoal = /^[gh]/.test(tile);
+        const isTrigger = /^[Tt]/.test(tile);
+        const isDestination = /^[Pp]/.test(tile);
+        const isBarrier = /^[Si]/.test(tile);
+        const isGoal = /^[gh]/.test(tile);
 
-          // 床を敷く
-          if (
-            tile === " " ||
-            tile === "a" ||
-            tile === "b" ||
-            isTrigger ||
-            isBarrier ||
-            isGoal ||
-            isDestination
-          ) {
-            this.add.sprite(x, y, "floorSprite").setDepth(-1);
-          }
-          if (tile === "W") {
-            this.collidableGroup.create(x, y, "wallSprite");
-          } else if (tile === "w") {
-            this.fakewall.create(x, y, "wall2Sprite");
-          } else if (tile === "S") {
-            this.collidableGroup.create(x, y, "stoneSprite");
-          } else if (tile === "a") {
-            this.player1Start = { x: x, y: y };
-          } else if (tile === "b") {
-            this.player2Start = { x: x, y: y };
-          } else if (isTrigger) {
-            const destinationKey = tile.replace(/^[Tt]/, (match) =>
-              match === "T" ? "P" : "p"
-            );
-            const triggerSprite = this.teleportTriggers.create(
-              x,
-              y,
-              "teleportTriggerSprite"
-            );
-            triggerSprite.setData("destinationKey", destinationKey);
-          } else if (isDestination) {
-            this.teleportDestinations[tile] = { x: x, y: y };
-            this.add.sprite(x, y, "teleportDestinationSprite");
-          } else if (tile === "g") {
-            // プレイヤー1のゴール
-            const goal = this.goalTiles.create(x, y, "goalSprite1");
-            goal.setData("player", 1);
-          } else if (tile === "h") {
-            // プレイヤー2のゴール
-            const goal = this.goalTiles.create(x, y, "goalSprite2");
-            goal.setData("player", 2);
-          } else if (tile === "l") {
-            const stairs = this.stairsTiles.create(x, y, "f_l_stairsSprite");
-          } else if (tile === "r") {
-            const stairs = this.stairsTiles.create(x, y, "f_r_stairsSprite");
-          } else if (tile === "L") {
-            this.add.sprite(x, y, "l_stairsSprite").setDepth(-1);
-            const halfWall = this.collidableGroup.create(
-              x - tileSize / 4,
-              y,
-              "dummy"
-            );
-            halfWall.setSize(tileSize / 3, tileSize);
-            halfWall.setVisible(false);
-          } else if (tile === "R") {
-            this.add.sprite(x, y, "r_stairsSprite").setDepth(-1);
-            const halfWall = this.collidableGroup.create(
-              x + tileSize / 4,
-              y,
-              "dummy"
-            );
-            halfWall.setSize(tileSize / 3, tileSize);
-            halfWall.setVisible(false);
-          }
-        });
+        let floorSpriteKey = "floorSprite"; // デフォルトは通常の床
+        if (this.currentLevelIndex === 2) {
+          floorSpriteKey = "icefloorSprite"; // ステージ2なら氷の床
+        }
+
+        const shouldPlaceFloor =
+          tile === " " ||
+          tile === "a" ||
+          tile === "b" ||
+          isTrigger ||
+          isBarrier ||
+          isGoal ||
+          isDestination;
+
+        if (shouldPlaceFloor) {
+          this.add.sprite(x, y, floorSpriteKey).setDepth(-1);
+        }
+        if (tile === "W") {
+          this.collidableGroup.create(x, y, "wallSprite");
+        } else if (tile === "F") {
+          const next = this.fakewall.create(x, y, "fakewall1Sprite");
+        } else if (tile === "f") {
+          const next = this.fakewall.create(x, y, "fakewall2Sprite");
+        } else if (tile === "S") {
+          this.collidableGroup.create(x, y, "stoneSprite");
+        } else if (tile === "i") {
+          this.collidableGroup.create(x, y, "icestoneSprite");
+        } else if (tile === "a") {
+          this.player1Start = { x: x, y: y };
+        } else if (tile === "b") {
+          this.player2Start = { x: x, y: y };
+        } else if (isTrigger) {
+          const destinationKey = tile.replace(/^[Tt]/, (match) =>
+            match === "T" ? "P" : "p"
+          );
+          const triggerSprite = this.teleportTriggers.create(
+            x,
+            y,
+            "teleportTriggerSprite"
+          );
+          triggerSprite.setData("destinationKey", destinationKey);
+        } else if (isDestination) {
+          this.teleportDestinations[tile] = { x: x, y: y };
+          this.add.sprite(x, y, "teleportDestinationSprite");
+        } else if (tile === "A") {
+          // プレイヤー1のゴール
+          const goal = this.goalTiles.create(x, y, "goalSprite1");
+          goal.setData("player", 1);
+        } else if (tile === "B") {
+          // プレイヤー2のゴール
+          const goal = this.goalTiles.create(x, y, "goalSprite2");
+          goal.setData("player", 2);
+        } else if (tile === "l") {
+          const stairs = this.stairsTiles.create(x, y, "f_l_stairsSprite");
+        } else if (tile === "r") {
+          const stairs = this.stairsTiles.create(x, y, "f_r_stairsSprite");
+        } else if (tile === "L") {
+          this.add.sprite(x, y, "l_stairsSprite").setDepth(-1);
+          const halfWall = this.collidableGroup.create(
+            x - tileSize / 4,
+            y,
+            "dummy"
+          );
+          halfWall.setSize(tileSize / 3, tileSize);
+          halfWall.setVisible(false);
+        } else if (tile === "R") {
+          this.add.sprite(x, y, "r_stairsSprite").setDepth(-1);
+          const halfWall = this.collidableGroup.create(
+            x + tileSize / 4,
+            y,
+            "dummy"
+          );
+          halfWall.setSize(tileSize / 3, tileSize);
+          halfWall.setVisible(false);
+        }
+      });
     });
   }
 
@@ -247,8 +257,9 @@ class EscapeScene extends Phaser.Scene {
       console.warn(`ワープ先が見つかりません: キー ${destinationKey}`);
     }
   }
-  nextstage(player, fakewall) {
-    iconsole.log("次のステージへ！");
+  handleNextStageTrigger(player, fakewall) {
+    if (this.isGameCleared) return;
+    console.log("次のステージへ移動します");
     this.scene.restart({ levelIndex: this.currentLevelIndex + 1 });
   }
 
@@ -377,14 +388,14 @@ class EscapeScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.player1,
       this.fakewall,
-      this.nextstage,
+      this.handleNextStageTrigger,
       null,
       this
     );
     this.physics.add.overlap(
       this.player2,
       this.fakewall,
-      this.nextstage,
+      this.handleNextStageTrigger,
       null,
       this
     );
