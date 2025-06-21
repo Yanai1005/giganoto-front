@@ -1,136 +1,122 @@
 import Phaser from 'phaser';
+import Chapter1 from './Chapters/Chapter1.js';
+import Chapter2 from './Chapters/Chapter2.js';
+import Chapter3 from './Chapters/Chapter3.js';
 
-let rationalScore = 0;
-let instinctScore = 0;
-let neutralScore = 0;
-let previousSoul = null;
 
-class ScenarioGame extends Phaser.Scene {
+
+export default class GameScene extends Phaser.Scene {
   constructor() {
-    super('ScenarioGame');
-    this.dialogIndex = 0;
-    this.currentSoul = 'logic'; // 'logic' or 'impulse'
-    this.choiceButtons = [];
+    super('GameScene');
+    this.chapterIndex = 1;
+    this.storyData = null;
+    this.currentLineIndex = 0;
+    this.personality = 'logic'; 
+    this.choicesVisible = false;
   }
 
   preload() {}
 
   create() {
-    this.dialog = [
-      { text: "……目が覚めたか？", soul: "logic" },
-      { text: "今日は授業がある日だったはずだ。", soul: "logic" },
-      {
-        text: "どう動く？",
-        soul: "logic",
-        isChoice: true,
-        choices: {
-          logic: [
-            { text: "計画通りに準備する", value: +1 },
-            { text: "朝食をとってから行動する", value: +1 }
-          ],
-          impulse: [
-            { text: "スマホでSNSチェック", value: +1 },
-            { text: "二度寝する", value: +1 }
-          ]
-        }
-      },
-      { text: "次の展開へ進む……", soul: "impulse" }
-    ];
-
-    this.dialogText = this.add.text(100, 400, '', {
-      font: '20px sans-serif',
-      wordWrap: { width: 600 }
+    this.textBox = this.add.text(50, 400, '', {
+      fontSize: '20px',
+      wordWrap: { width: 700 },
     });
 
-    this.soulText = this.add.text(100, 360, '', {
-      font: '16px sans-serif',
-      color: '#999'
-    });
+    this.choiceButtons = [];
+    for (let i = 0; i < 2; i++) {
+      const btn = this.add.text(600, 100 + i * 40, '', {
+        fontSize: '18px',
+        backgroundColor: '#333',
+        padding: { x: 10, y: 5 },
+      }).setInteractive().setVisible(false);
 
-    this.modeText = this.add.text(600, 20, '', {
-      font: '14px sans-serif',
-      color: '#00f'
-    });
+      btn.on('pointerdown', () => this.selectChoice(i));
+      this.choiceButtons.push(btn);
+    }
 
-    this.input.keyboard.on('keydown-SPACE', () => {
-      this.nextLine();
-    });
+    this.input.keyboard.on('keydown-ONE', () => this.setPersonality('logic'));
+    this.input.keyboard.on('keydown-TWO', () => this.setPersonality('impulse'));
+    this.input.keyboard.on('keydown-SPACE', () => this.advanceText());
 
-    this.input.keyboard.on('keydown-Q', () => {
-      this.currentSoul = this.currentSoul === 'logic' ? 'impulse' : 'logic';
-      this.updateSoulIndicator();
-      const line = this.dialog[this.dialogIndex];
-      if (line?.isChoice) this.showChoices(line.choices);
-    });
-
-    this.nextLine();
-    this.updateSoulIndicator();
+    this.loadChapter();
   }
 
-  nextLine() {
-    this.choiceButtons.forEach(btn => btn.destroy());
-    this.choiceButtons = [];
+  loadChapter() {
+    switch (this.chapterIndex) {
+      case 1:
+        this.storyData = Chapter1;
+        break;
+      case 2:
+        this.storyData = Chapter2;
+        break;
+      case 3:
+        this.storyData = Chapter3;
+        break;
+      default:
+        this.textBox.setText('終章です。ゲームを終了します。');
+        return;
+    }
 
-    if (this.dialogIndex < this.dialog.length) {
-      const line = this.dialog[this.dialogIndex];
-      this.dialogText.setText(`${line.text}`);
-      this.soulText.setText(`【${line.soul === 'logic' ? '理性' : '衝動'}の声】`);
+    this.currentLineIndex = 0;
+    this.choicesVisible = false;
+    this.textBox.setText('');
+    this.showNextLine();
+  }
 
-      if (line.isChoice) {
-        this.showChoices(line.choices);
-      } else {
-        this.dialogIndex++;
-      }
+  showNextLine() {
+    const lines = this.storyData.commonLines;
+    if (this.currentLineIndex < lines.length) {
+      this.textBox.setText(lines[this.currentLineIndex]);
+      this.currentLineIndex++;
     } else {
-      const endingKey = this.evaluateEnding();
-      this.scene.start('EndScene', { endingKey });
+      this.showChoices();
     }
   }
 
-  showChoices(choices) {
-    const selectedSet = this.currentSoul === 'logic' ? choices.logic : choices.impulse;
-
-    selectedSet.forEach((choice, index) => {
-      const btn = this.add.text(620, 50 + index * 40, `[${choice.text}]`, {
-        font: '16px sans-serif',
-        backgroundColor: '#333',
-        padding: { x: 6, y: 4 },
-        color: '#fff'
-      })
-      .setInteractive()
-      .on('pointerdown', () => {
-        if (this.currentSoul === 'logic') rationalScore += choice.value;
-        else instinctScore += choice.value;
-
-        if (previousSoul && previousSoul !== this.currentSoul) neutralScore += 1;
-        previousSoul = this.currentSoul;
-
-        this.choiceButtons.forEach(btn => btn.destroy());
-        this.choiceButtons = [];
-        this.dialogIndex++;
-        this.nextLine();
-      });
-
-      this.choiceButtons.push(btn);
-    });
+  showChoices() {
+    const choiceLines = this.storyData.choices[this.personality];
+    for (let i = 0; i < this.choiceButtons.length; i++) {
+      this.choiceButtons[i].setText(choiceLines[i]);
+      this.choiceButtons[i].setVisible(true);
+    }
+    this.choicesVisible = true;
   }
 
-  updateSoulIndicator() {
-    const label = this.currentSoul === 'logic' ? '理性モード' : '衝動モード';
-    this.modeText.setText(label);
+  selectChoice(index) {
+    const resultKey = `${this.personality}_${index + 1}`;
+    const resultLines = this.storyData.results[resultKey];
+    if (!resultLines) {
+      this.textBox.setText('分岐データが見つかりません');
+      return;
+    }
+    this.choiceButtons.forEach(btn => btn.setVisible(false));
+    this.showResult(resultLines);
   }
 
-  evaluateEnding() {
-    if (rationalScore >= 7 && instinctScore <= 3) {
-      return neutralScore >= 3 ? 'rational-happy' : 'rational-bad';
-    } else if (instinctScore >= 7 && rationalScore <= 3) {
-      return neutralScore >= 3 ? 'instinct-happy' : 'instinct-bad';
-    } else if (rationalScore >= 4 && instinctScore >= 4) {
-      return neutralScore >= 3 ? 'balanced-happy' : 'balanced-bad';
-    } else {
-      return 'unknown';
+  showResult(lines) {
+    let i = 0;
+    const nextLine = () => {
+      if (i < lines.length) {
+        this.textBox.setText(lines[i]);
+        i++;
+        this.input.keyboard.once('keydown-SPACE', nextLine);
+      } else {
+        this.chapterIndex++;
+        this.loadChapter();
+      }
+    };
+    nextLine();
+  }
+
+  setPersonality(type) {
+    this.personality = type;
+    this.textBox.setText(`人格を ${type === 'logic' ? '理性' : '本能'} に変更しました。スペースキーで進行。`);
+  }
+
+  advanceText() {
+    if (!this.choicesVisible) {
+      this.showNextLine();
     }
   }
 }
-
-export default ScenarioGame;
