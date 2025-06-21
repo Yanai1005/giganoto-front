@@ -2,44 +2,36 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import {
-    CircleDot,
-    FileText,
-    ShoppingBag,
+    House,
     Gamepad2,
     Settings,
-    Power,
     MonitorSpeaker
 } from 'lucide-react';
 
-const SystemMenu = ({ onIconClick, activeIcon }) => {
+const HomeMenu = ({ onIconClick, activeIcon }) => {
     const navigate = useNavigate();
     const [selectedIcon, setSelectedIcon] = useState(4);
 
     const systemIcons = [
-        { id: 'online', icon: CircleDot, title: 'Giganoto', bgColor: '#E60012', url: 'https://hackz-community.doorkeeper.jp/events/184015' },
-        { id: 'news', icon: FileText, title: 'ニュース', bgColor: '#00B894', url: 'https://topaz.dev/' },
-        { id: 'shop', icon: ShoppingBag, title: 'ショップ', bgColor: '#E84393', url: 'https://suzuri.jp/hackz-inc' },
         { id: 'controller', icon: Gamepad2, title: 'コントローラー', bgColor: '#636E72' },
-        { id: 'settings', icon: Settings, title: '設定', bgColor: '#636E72' },
-        { id: 'power', icon: Power, title: 'スリープ', bgColor: '#636E72' }
+        { id: 'House', icon: House, title: 'スリープ', bgColor: '#636E72' },
+        { id: 'settings', icon: Settings, title: '設定', bgColor: '#636E72' }
     ];
 
     const handleIconClick = (index) => {
         setSelectedIcon(index);
         const iconData = systemIcons[index];
 
+        // 親コンポーネントに通知（設定アイコンの場合など）
         if (onIconClick) {
             onIconClick(iconData);
         }
 
-        if (iconData.id === 'power') {
-            if (window.confirm('アプリケーションを終了しますか？')) {
-                window.close();
-            }
+        // アイコン別の処理
+        if (iconData.id === 'House') {
+            navigate('/');
         } else if (iconData.id === 'settings') {
             navigate('/settings');
-        } else if (iconData.url) {
-            window.open(iconData.url, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -82,14 +74,4 @@ const SystemMenu = ({ onIconClick, activeIcon }) => {
     );
 };
 
-SystemMenu.propTypes = {
-    onIconClick: PropTypes.func,
-    activeIcon: PropTypes.string,
-};
-
-SystemMenu.defaultProps = {
-    onIconClick: () => { },
-    activeIcon: '',
-};
-
-export default SystemMenu;
+export default HomeMenu;

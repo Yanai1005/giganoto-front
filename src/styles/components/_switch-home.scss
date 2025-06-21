@@ -12,14 +12,12 @@
     overflow: hidden;
     transition: all $transition-smooth;
 
-    // メイン表示エリア
     &__main {
         flex: 1;
         position: relative;
         @include flex-center;
     }
 
-    // 読み込み状態
     &--loading {
         .game-grid {
             pointer-events: none;
@@ -27,7 +25,6 @@
         }
     }
 
-    // エラー状態
     &--error {
         .game-grid {
             opacity: 0.5;
@@ -35,10 +32,7 @@
     }
 }
 
-// ========================================
 // キーボードナビゲーション表示
-// ========================================
-
 .keyboard-hint {
     position: absolute;
     bottom: $system-menu-height + $spacing-16;
@@ -73,10 +67,7 @@
     }
 }
 
-// ========================================
 // ゲーム詳細表示
-// ========================================
-
 .game-detail {
     position: absolute;
     top: 50%;
@@ -122,10 +113,7 @@
     }
 }
 
-// ========================================
 // アニメーション
-// ========================================
-
 @keyframes slideInFromRight {
     from {
         transform: translateX(100px);
@@ -166,10 +154,7 @@
     }
 }
 
-// ========================================
 // レスポンシブ対応
-// ========================================
-
 @include sm {
     .switch-home {
         &__main {
@@ -182,8 +167,6 @@
             $system-menu-height + $spacing-4
         );
     justify-content: flex-start;
-
-    // モバイルでは縦方向スクロールに変更
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
@@ -249,13 +232,11 @@
     }
 }
 
-// ========================================
-// ダークモード特有のスタイル
-// ========================================
-
+// テーマ固有のスタイル (Settings画面と統一)
 .theme-dark {
     .switch-home {
-        background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        // シンプルな単色背景（Settings画面と同じ）
+        background: var(--bg-primary);
     }
 
     .game-detail,
@@ -264,20 +245,15 @@
     }
 
     .keyboard-hint__key {
-        background: #404040;
-        border-color: #555555;
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
     }
 }
 
-// ========================================
-// ライトモード特有のスタイル
-// ========================================
-
 .theme-light {
     .switch-home {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        background-size: 200% 200%;
-        animation: gradientShift 10s ease infinite;
+        // シンプルな単色背景（Settings画面と同じ）
+        background: var(--bg-primary);
     }
 
     .game-detail,
@@ -286,29 +262,12 @@
     }
 
     .keyboard-hint__key {
-        background: #FFFFFF;
-        border-color: #E0E0E0;
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
     }
 }
 
-@keyframes gradientShift {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-// ========================================
 // フォーカス管理
-// ========================================
-
 .switch-home {
     &:focus-within {
         .keyboard-hint {
@@ -317,14 +276,12 @@
     }
 }
 
-// ========================================
 // プリント対応
-// ========================================
-
 @media print {
     .switch-home {
         height: auto !important;
         overflow: visible !important;
+        background: white !important;
     }
 
     .game-grid {
@@ -344,16 +301,11 @@
     }
 }
 
-// ========================================
 // パフォーマンス最適化
-// ========================================
-
 .switch-home {
-    // GPU加速を有効化
     transform: translateZ(0);
     will-change: auto;
 
-    // スクロール最適化
     .game-grid {
         contain: layout style paint;
 
@@ -363,10 +315,7 @@
     }
 }
 
-// ========================================
 // アクセシビリティ改善
-// ========================================
-
 @media (prefers-reduced-motion: reduce) {
 
     .switch-home,
@@ -394,7 +343,6 @@
     }
 }
 
-
 .game-grid {
     display: flex;
     gap: $game-tile-gap;
@@ -411,13 +359,11 @@ scroll-behavior: smooth;
 
 @include scrollbar-hidden;
 
-// ゲームタイルの配置
 .game-tile {
     scroll-snap-align: center;
     flex-shrink: 0;
 }
 
-// 初期表示アニメーション
 &--loaded {
     .game-tile {
         @for $i from 1 through 10 {
@@ -429,7 +375,6 @@ scroll-behavior: smooth;
     }
 }
 
-// 空の状態
 &--empty {
     @include flex-column-center;
 
@@ -440,10 +385,7 @@ scroll-behavior: smooth;
 }
 }
 
-// ========================================
 // 空の状態表示
-// ========================================
-
 .empty-state {
     &__icon {
         font-size: 4rem;
@@ -472,10 +414,7 @@ scroll-behavior: smooth;
     }
 }
 
-// ========================================
 // ローディング状態
-// ========================================
-
 .loading-overlay {
     @include absolute-center;
     @include flex-column-center;
@@ -498,10 +437,7 @@ scroll-behavior: smooth;
     }
 }
 
-// ========================================
 // エラー状態
-// ========================================
-
 .error-overlay {
     @include absolute-center;
     @include flex-column-center;

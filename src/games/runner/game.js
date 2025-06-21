@@ -1,4 +1,3 @@
-// src/games/shooter/game.js
 import Phaser from 'phaser';
 import GameScene from './scenes/GameScene.js';
 
@@ -12,8 +11,8 @@ export const initializeGame = (container) => {
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 0 },
-                debug: true  // デバッグを有効化
+                gravity: { y: 100 },
+                debug: false
             }
         },
         scene: [GameScene]

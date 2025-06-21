@@ -9,6 +9,8 @@
 @use 'components/top-bar';
 @use 'components/system-menu';
 @use 'components/settings-overlay';
+@use 'components/settings-page';
+@use 'components/game-page';
 
 * {
     box-sizing: border-box;

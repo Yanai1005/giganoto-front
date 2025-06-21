@@ -1,42 +1,56 @@
 {
   "games": [
     {
-      "id": 2,
-      "title": "Gem Matcher",
-      "description": "宝石を組み合わせるマッチ3パズルゲーム",
-      "image": "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop",
-      "path": "/game",
-      "gameType": "puzzle"
-    },
-    {
-      "id": 3,
-      "title": "Space Shooter",
-      "description": "宇宙を舞台にした縦スクロールシューティング",
-      "image": "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop",
-      "path": "/game",
-      "gameType": "shooter"
-    },
-    {
       "id": 4,
       "title": "Escape Room",
       "description": "二人で部屋から部屋から脱出するゲーム",
       "image": "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=400&h=300&fit=crop",
       "path": "/game",
       "gameType": "escape"
+    },
+    {
+      "id": 5,
+      "title": "釣りマスター3D",
+      "description": "3D釣りシミュレーション！様々な魚を釣り上げよう！",
+      "image": "/assets/fishing_game.png",
+      "path": "/game",
+      "gameType": "fishing"
+    },
+    {
+      "id": 6,
+      "title": "シナリオ",
+      "description": "シナリオ",
+      "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "story"
+    },
+    {
+      "id": 7,
+      "title": "走るゲーム",
+      "description": "走るゲーム",
+      "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+      "path": "/game",
+      "gameType": "runner"
     }
   ],
   "gameTypes": {
-    "puzzle": {
-      "name": "パズル",
-      "description": "思考力を試すパズルゲーム",
-      "controls": "クリックでタイル選択、隣接タイルとスワップして3つ以上揃えよう",
-      "modulePath": "../games/puzzle/game.js"
+    "fishing": {
+      "name": "釣り",
+      "description": "3Dフィッシングゲーム",
+      "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+      "modulePath": "../games/fishing/game.js"
     },
-    "shooter": {
-      "name": "シューティング",
-      "description": "敵を倒すアクションゲーム",
-      "controls": "矢印キーまたはWASDで移動、スペースで射撃",
-      "modulePath": "../games/shooter/game.js"
+    "story": {
+      "name": "釣り",
+      "description": "3Dフィッシングゲーム",
+      "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+      "modulePath": "../games/story/game.js"
+    },
+    "runner": {
+      "name": "走るゲーム",
+      "description": "走るゲーム",
+      "controls": "矢印キーで移動、スペースキーでジャンプ",
+      "modulePath": "../games/runner/game.js"
     },
     "escape": {
       "name": "脱出ゲーム",
@@ -44,29 +58,5 @@
       "controls": "スペースで調べ、二人を同時操作しながら謎を解いて脱出しよう",
       "modulePath": "../games/escape/game.js"
     }
-  },
-  "systemIcons": [
-    {
-      "id": "news",
-      "icon": "📰",
-      "title": "ニュース",
-      "color": "#FF6B6B"
-    },
-    {
-      "id": "controller",
-      "icon": "🎮",
-      "title": "コントローラー",
-      "color": "#45B7D1"
-    },
-    {
-      "id": "settings",
-      "icon": "⚙️",
-      "title": "設定",
-      "color": "#96CEB4"
-    }
-  ],
-  "userProfile": {
-    "username": "Player",
-    "avatar": "👤"
   }
 }
