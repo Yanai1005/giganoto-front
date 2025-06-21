@@ -3,8 +3,6 @@ import Chapter1 from './Chapters/Chapter1.js';
 import Chapter2 from './Chapters/Chapter2.js';
 import Chapter3 from './Chapters/Chapter3.js';
 
-
-
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -15,9 +13,22 @@ export default class GameScene extends Phaser.Scene {
     this.choicesVisible = false;
   }
 
-  preload() {}
+  preload() {
+    this.load.image('bg_room_morning', '/assets/bg_room_morning.jpg');
+    this.load.image('bg_street_morning', '/assets/bg_street_morning.jpg');
+    this.load.image('bg_school_gate', '/assets/bg_school_gate.jpg');
+  }
 
   create() {
+   this.currentBg = this.add.image(0, 0, 'bg_room_morning')
+    .setOrigin(0)
+    .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
+
+   this.fadeRect = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000)
+    .setOrigin(0)
+    .setDepth(100) // 前面に表示
+    .setAlpha(0);  // 最初は透明
+
    this.textBox = this.add.text(50, 450, '', {
      fontSize: '20px',
      color: '#ffffff',
@@ -47,6 +58,26 @@ export default class GameScene extends Phaser.Scene {
     this.loadChapter();
   }
 
+  changeBackground(key) {
+  // フェードアウト（暗転）
+  this.tweens.add({
+    targets: this.fadeRect,
+    alpha: 1,
+    duration: 500,
+    onComplete: () => {
+      // 背景変更
+      this.currentBg.setTexture(key);
+
+      // フェードイン（明転）
+      this.tweens.add({
+        targets: this.fadeRect,
+        alpha: 0,
+        duration: 500,
+        });
+      }
+    });
+  }
+
   loadChapter() {
     switch (this.chapterIndex) {
       case 1:
@@ -70,14 +101,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showNextLine() {
-    const lines = this.storyData.commonLines;
-    if (this.currentLineIndex < lines.length) {
-      this.textBox.setText(lines[this.currentLineIndex]);
+  const lines = this.storyData.commonLines;
+  if (this.currentLineIndex < lines.length) {
+    const line = lines[this.currentLineIndex];
+
+    // 特定のキーワードで背景変更
+    if (line === '家朝') {
+      this.changeBackground('bg_room_morning');
       this.currentLineIndex++;
-    } else {
-      this.showChoices();
+      this.showNextLine(); // 空行扱いでスキップ
+      return;
     }
+
+    this.textBox.setText(line);
+    this.currentLineIndex++;
+  } else {
+    this.showChoices();
   }
+}
+
 
   showChoices() {
     const choiceLines = this.storyData.choices[this.personality];
