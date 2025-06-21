@@ -121,7 +121,6 @@ const Home = () => {
         if (isTogglingMode) return;
 
         setIsTogglingMode(true);
-        setIsTogglingMode(true);
         setCursorMode(prev => {
             const newMode = !prev;
             console.log(`モード切り替え: ${prev ? 'カーソル' : 'ナビ'} → ${newMode ? 'カーソル' : 'ナビ'}`);
