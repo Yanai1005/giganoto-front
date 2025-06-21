@@ -52,7 +52,7 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // サブタイトル
-    this.add.text(400, 280, 'HD振動で隠された宝を見つけよう', {
+    this.add.text(400, 280, '一番振動が強い場所を探そう！', {
       fontSize: '18px',
       fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif',
@@ -67,7 +67,7 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Nintendo Switch 2のひみつ展風の説明
-    this.add.text(400, 350, 'Nintendo Switch 2のひみつ展にインスパイアされたゲーム', {
+    this.add.text(400, 350, 'Nintendo Switch 2のひみつ展のオマージュ', {
       fontSize: '12px',
       fill: '#8899bb',
       fontFamily: 'Arial, sans-serif',
@@ -195,21 +195,21 @@ class VibrationHuntScene extends Phaser.Scene {
     // 装飾的な円形要素（背景）
     const circle1 = this.add.graphics();
     circle1.fillStyle(0x4a3a6a, 0.1);
-    circle1.fillCircle(150, 100, 80);
+    circle1.fillCircle(150, 80, 80);
     
     const circle2 = this.add.graphics();
     circle2.fillStyle(0x5a4a7a, 0.08);
-    circle2.fillCircle(650, 500, 120);
+    circle2.fillCircle(650, 480, 120);
     
     const circle3 = this.add.graphics();
     circle3.fillStyle(0x6a5a8a, 0.06);
-    circle3.fillCircle(700, 150, 60);
+    circle3.fillCircle(700, 120, 60);
 
     // Joy-Conアイコンの作成（シンプルな図形で表現）
-    this.createJoyConIcon(400, 120);
+    this.createJoyConIcon(400, 100);
 
     // メインタイトル（グロー効果付き）
-    this.add.text(400, 180, 'Joy-Con接続', {
+    this.add.text(400, 160, 'Joy-Con接続', {
       fontSize: '32px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
@@ -218,26 +218,18 @@ class VibrationHuntScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5);
 
-    // サブタイトル
-    this.add.text(400, 220, 'HD振動で隠された宝を見つけよう', {
-      fontSize: '18px',
-      fill: '#b8c6ff',
-      fontFamily: 'Arial, sans-serif',
-      fontStyle: 'italic'
-    }).setOrigin(0.5);
-
     // 接続手順カード
     this.createInstructionCard();
 
     // スタイリッシュな接続ボタン
-    const connectButton = this.createStylishButton(400, 420, 'Joy-Con接続', '#00d4aa', '#00b899');
+    const connectButton = this.createStylishButton(400, 440, 'Joy-Con接続', '#00d4aa', '#00b899');
     
     connectButton.on('pointerdown', async () => {
       await this.connectJoyCon(connectButton);
     });
 
     // 戻るボタン
-    const backButton = this.createStylishButton(400, 490, 'タイトルに戻る', '#4a9eff', '#3a8eef');
+    const backButton = this.createStylishButton(400, 500, 'タイトルに戻る', '#4a9eff', '#3a8eef');
     
     backButton.on('pointerdown', () => {
       this.transitionToTitle();
@@ -247,11 +239,11 @@ class VibrationHuntScene extends Phaser.Scene {
     if (!('hid' in navigator)) {
       const warningBox = this.add.graphics();
       warningBox.fillStyle(0xff4444, 0.2);
-      warningBox.fillRoundedRect(100, 530, 600, 50, 10);
+      warningBox.fillRoundedRect(80, 520, 640, 50, 10);
       warningBox.lineStyle(2, 0xff6666, 1);
-      warningBox.strokeRoundedRect(100, 530, 600, 50, 10);
+      warningBox.strokeRoundedRect(80, 520, 640, 50, 10);
       
-      this.add.text(400, 555, '⚠️ このブラウザはWebHID APIに対応していません', {
+      this.add.text(400, 545, '⚠️ このブラウザはWebHID APIに対応していません', {
         fontSize: '16px',
         fill: '#ff8888',
         fontFamily: 'Arial, sans-serif'
@@ -305,38 +297,63 @@ class VibrationHuntScene extends Phaser.Scene {
   }
 
   createInstructionCard() {
-    // カード背景
+    // カード背景（より美しいデザイン）
     const cardGraphics = this.add.graphics();
-    cardGraphics.fillStyle(0x2a2a4a, 0.8);
-    cardGraphics.fillRoundedRect(150, 270, 500, 120, 15);
-    cardGraphics.lineStyle(2, 0x4a9eff, 0.5);
-    cardGraphics.strokeRoundedRect(150, 270, 500, 120, 15);
+    
+    // グラデーション背景
+    cardGraphics.fillGradientStyle(
+      0x2a2a4a, 0x2a2a4a,
+      0x3a3a5a, 0x3a3a5a,
+      0.9
+    );
+    cardGraphics.fillRoundedRect(120, 240, 560, 140, 20);
+    
+    // 外側のグロー効果
+    cardGraphics.fillStyle(0x4a9eff, 0.2);
+    cardGraphics.fillRoundedRect(115, 235, 570, 150, 25);
+    
+    // 境界線
+    cardGraphics.lineStyle(3, 0x4a9eff, 0.6);
+    cardGraphics.strokeRoundedRect(120, 240, 560, 140, 20);
+
+    // カードタイトル
+    this.add.text(400, 260, '接続手順', {
+      fontSize: '20px',
+      fill: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold',
+      stroke: '#4a9eff',
+      strokeThickness: 1
+    }).setOrigin(0.5);
 
     // 手順テキスト
     const steps = [
-      '1. Joy-Con (R) のペアリングボタンを長押し',
-      '2. LEDが点滅するまで待つ',
-      '3. 「Joy-Con接続」ボタンをクリック'
+      'Joy-Con (R) のペアリングボタンを長押し',
+      'LEDが点滅するまで待つ',
+      '下の「Joy-Con接続」ボタンをクリック'
     ];
 
     steps.forEach((step, index) => {
-      this.add.text(170, 295 + index * 25, step, {
-        fontSize: '14px',
-        fill: '#c8d6ff',
-        fontFamily: 'Arial, sans-serif'
-      });
-
-      // ステップ番号の装飾
-      const stepCircle = this.add.graphics();
-      stepCircle.fillStyle(0x4a9eff, 1);
-      stepCircle.fillCircle(160, 302 + index * 25, 8);
+      // ステップ番号の装飾（より美しく）
+      const stepBg = this.add.graphics();
+      stepBg.fillStyle(0x4a9eff, 1);
+      stepBg.fillCircle(150, 295 + index * 30, 12);
+      stepBg.lineStyle(2, 0xffffff, 1);
+      stepBg.strokeCircle(150, 295 + index * 30, 12);
       
-      this.add.text(160, 302 + index * 25, (index + 1).toString(), {
-        fontSize: '12px',
+      this.add.text(150, 295 + index * 30, (index + 1).toString(), {
+        fontSize: '14px',
         fill: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold'
       }).setOrigin(0.5);
+
+      // ステップテキスト
+      this.add.text(180, 295 + index * 30, step, {
+        fontSize: '16px',
+        fill: '#c8d6ff',
+        fontFamily: 'Arial, sans-serif'
+      }).setOrigin(0, 0.5);
     });
   }
 
@@ -414,6 +431,10 @@ class VibrationHuntScene extends Phaser.Scene {
   }
 
   createParticleEffect() {
+    // パーティクル配列を初期化
+    this.particles = [];
+    this.particleTweens = [];
+    
     // 浮遊するパーティクル効果
     for (let i = 0; i < 15; i++) {
       const particle = this.add.graphics();
@@ -423,8 +444,10 @@ class VibrationHuntScene extends Phaser.Scene {
       particle.x = Math.random() * 800;
       particle.y = Math.random() * 600;
       
+      this.particles.push(particle);
+      
       // ゆっくりとした浮遊アニメーション
-      this.tweens.add({
+      const tween = this.tweens.add({
         targets: particle,
         y: particle.y - 50,
         alpha: 0,
@@ -438,6 +461,34 @@ class VibrationHuntScene extends Phaser.Scene {
           particle.x = Math.random() * 800;
         }
       });
+      
+      this.particleTweens.push(tween);
+    }
+  }
+
+  stopParticleEffect() {
+    // パーティクルアニメーションを停止
+    if (this.particleTweens) {
+      this.particleTweens.forEach(tween => {
+        if (tween) tween.remove();
+      });
+      this.particleTweens = [];
+    }
+    
+    // パーティクルを非表示
+    if (this.particles) {
+      this.particles.forEach(particle => {
+        if (particle) particle.setVisible(false);
+      });
+    }
+  }
+
+  resumeParticleEffect() {
+    // パーティクルを再表示
+    if (this.particles) {
+      this.particles.forEach(particle => {
+        if (particle) particle.setVisible(true);
+      });
     }
   }
 
@@ -447,18 +498,8 @@ class VibrationHuntScene extends Phaser.Scene {
       button.buttonText.setText('接続中...');
       button.setScale(1);
       
-      // ローディングアニメーション
-      const loadingCircle = this.add.graphics();
-      loadingCircle.lineStyle(4, 0x00d4aa, 1);
-      loadingCircle.strokeCircle(400, 420, 30);
-      
-      this.tweens.add({
-        targets: loadingCircle,
-        rotation: Math.PI * 2,
-        duration: 1000,
-        repeat: -1,
-        ease: 'Linear'
-      });
+      // パーティクル効果を停止
+      this.stopParticleEffect();
 
       // 振動探しゲーム専用のJoyConHIDManagerをインポート
       const { JoyConHIDManager } = await import('./JoyConHIDManager.js');
@@ -466,14 +507,11 @@ class VibrationHuntScene extends Phaser.Scene {
       this.joyConManager = new JoyConHIDManager(this);
       const result = await this.joyConManager.connect();
 
-      // ローディング停止
-      loadingCircle.destroy();
-
       if (result === 'connected') {
         button.buttonText.setText('接続成功！');
         
         // 成功エフェクト
-        this.createSuccessEffect(400, 420);
+        this.createSuccessEffect(400, 440);
         
         // 2秒後にゲーム開始
         setTimeout(() => {
@@ -490,6 +528,9 @@ class VibrationHuntScene extends Phaser.Scene {
       } else {
         button.buttonText.setText('接続失敗 - 再試行');
         
+        // パーティクル効果を再開
+        this.resumeParticleEffect();
+        
         setTimeout(() => {
           button.buttonText.setText('Joy-Con接続');
         }, 2000);
@@ -497,6 +538,9 @@ class VibrationHuntScene extends Phaser.Scene {
     } catch (error) {
       console.error('Joy-Con接続エラー:', error);
       button.buttonText.setText('接続エラー - 再試行');
+      
+      // パーティクル効果を再開
+      this.resumeParticleEffect();
       
       setTimeout(() => {
         button.buttonText.setText('Joy-Con接続');
