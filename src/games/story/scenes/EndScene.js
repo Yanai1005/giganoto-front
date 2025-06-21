@@ -1,6 +1,20 @@
 import Phaser from 'phaser';
 
-class EndScene extends Phaser.Scene {
+import Ending1 from './Ending1.js';
+import Ending2 from './Ending2.js';
+import Ending3 from './Ending3.js';
+import Ending4 from './Ending4.js';
+import EndingTrue from './EndingTrue.js';
+
+const ENDINGS = {
+  logic_good: Ending1,
+  logic_bad: Ending2,
+  impulse_good: Ending3,
+  impulse_bad: Ending4,
+  true_ending: EndingTrue,
+};
+
+export default class EndScene extends Phaser.Scene {
   constructor() {
     super('EndScene');
   }
@@ -10,36 +24,29 @@ class EndScene extends Phaser.Scene {
   }
 
   create() {
-    let endingText = '';
+    const lines = ENDINGS[this.endingKey] || ['エンディングデータが見つかりません'];
 
-    switch (this.endingKey) {
-      case 'rational-happy':
-        endingText = '理性エンド（ハッピー）：穏やかな日常を手に入れた。';
-        break;
-      case 'rational-bad':
-        endingText = '理性エンド（バッド）：整った人生、でも虚しさが残る。';
-        break;
-      case 'instinct-happy':
-        endingText = '本能エンド（ハッピー）：自由で情熱的な未来へ！';
-        break;
-      case 'instinct-bad':
-        endingText = '本能エンド（バッド）：社会から孤立し、混乱の中へ。';
-        break;
-      case 'balanced-happy':
-        endingText = 'バランスエンド（ハッピー）：人格は融合し、真の自分に。';
-        break;
-      case 'balanced-bad':
-        endingText = 'バランスエンド（バッド）：人格は統合されず、混乱へ。';
-        break;
-      default:
-        endingText = 'エンディング判定失敗。';
-    }
-
-    this.add.text(100, 200, endingText, {
+    let i = 0;
+    const textBox = this.add.text(100, 200, '', {
       font: '20px sans-serif',
-      wordWrap: { width: 600 }
+      color: '#fff',
+      wordWrap: { width: 600 },
+      lineSpacing: 8
     });
+
+    const nextLine = () => {
+      if (i < lines.length) {
+        textBox.setText(lines[i]);
+        i++;
+        this.input.keyboard.once('keydown-SPACE', nextLine);
+      } else {
+        textBox.setText('fin');
+        this.input.keyboard.once('keydown-SPACE', () => {
+          location.reload();
+        });
+      }
+    };
+
+    nextLine();
   }
 }
-
-export default EndScene;
