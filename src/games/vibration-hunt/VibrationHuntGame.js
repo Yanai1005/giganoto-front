@@ -525,23 +525,28 @@ export class VibrationHuntGame {
     correctCircle.fillCircle(this.targetPosition.x, this.targetPosition.y, 15);
     correctCircle.lineStyle(3, 0xffffff, 1);
     correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 15);
+    this.uiGroup.add(correctCircle);
     
-    this.scene.add.text(this.targetPosition.x, this.targetPosition.y - 35, '正解！', {
+    const correctText = this.scene.add.text(this.targetPosition.x, this.targetPosition.y - 35, '正解！', {
       fontSize: '18px',
       fill: '#00ff00',
       fontWeight: 'bold'
     }).setOrigin(0.5);
+    this.uiGroup.add(correctText);
     
     // 結果表示
-    this.scene.add.text(400, 450, `誤差: ${distance.toFixed(0)}px`, {
+    const errorText = this.scene.add.text(400, 450, `誤差: ${distance.toFixed(0)}px`, {
       fontSize: '20px',
       fill: '#ffffff'
     }).setOrigin(0.5);
+    this.uiGroup.add(errorText);
     
-    this.scene.add.text(400, 480, `獲得スコア: ${roundScore}点`, {
+    // 結果表示
+    const scoreText = this.scene.add.text(400, 480, `獲得スコア: ${roundScore}点`, {
       fontSize: '20px',
       fill: '#ffff00'
     }).setOrigin(0.5);
+    this.uiGroup.add(scoreText);
     
     // 成功エフェクト
     if (distance < 50) {
@@ -600,6 +605,88 @@ export class VibrationHuntGame {
       this.uiGroup.destroy(true);
       this.uiGroup = null;
     }
+    
+    // 新しいUIグループを作成して終了画面を表示
+    this.uiGroup = this.scene.add.group();
+    
+    // 美しいグラデーション背景
+    const bg = this.scene.add.graphics();
+    bg.fillGradientStyle(
+      0x0a0a1a, 0x1a1a3a,
+      0x2a1a4a, 0x3a2a5a,
+      1
+    );
+    bg.fillRect(0, 0, 800, 600);
+    this.uiGroup.add(bg);
+    
+    // ゲーム終了タイトル
+    const gameOverTitle = this.scene.add.text(400, 150, 'ゲーム終了！', {
+      fontSize: '48px',
+      fill: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold',
+      stroke: '#00d4aa',
+      strokeThickness: 3
+    }).setOrigin(0.5);
+    this.uiGroup.add(gameOverTitle);
+    
+    // 最終スコア表示
+    const finalScoreText = this.scene.add.text(400, 250, `最終スコア: ${this.score}点`, {
+      fontSize: '36px',
+      fill: '#ffff00',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold'
+    }).setOrigin(0.5);
+    this.uiGroup.add(finalScoreText);
+    
+    // スコア評価
+    let evaluation = '';
+    if (this.score >= 400) evaluation = '素晴らしい！';
+    else if (this.score >= 300) evaluation = 'とても良い！';
+    else if (this.score >= 200) evaluation = '良い！';
+    else if (this.score >= 100) evaluation = 'まずまず';
+    else evaluation = 'もう一度挑戦してみよう！';
+    
+    const evaluationText = this.scene.add.text(400, 320, evaluation, {
+      fontSize: '24px',
+      fill: '#00ff88',
+      fontFamily: 'Arial, sans-serif',
+      fontStyle: 'italic'
+    }).setOrigin(0.5);
+    this.uiGroup.add(evaluationText);
+    
+    // ホームに戻るボタン
+    const homeButton = this.scene.add.graphics();
+    homeButton.fillStyle(0x4a9eff, 1);
+    homeButton.fillRoundedRect(-100, -25, 200, 50, 25);
+    homeButton.lineStyle(2, 0xffffff, 1);
+    homeButton.strokeRoundedRect(-100, -25, 200, 50, 25);
+    homeButton.x = 400;
+    homeButton.y = 450;
+    homeButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
+    this.uiGroup.add(homeButton);
+    
+    const homeButtonText = this.scene.add.text(400, 450, 'ホームに戻る', {
+      fontSize: '20px',
+      fill: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold'
+    }).setOrigin(0.5);
+    this.uiGroup.add(homeButtonText);
+    
+    // ホームボタンのクリックイベント
+    homeButton.on('pointerdown', () => {
+      console.log('ホームに戻るボタンがクリックされました');
+      window.location.href = '/';
+    });
+    
+    // マウス操作の説明
+    const instructionText = this.scene.add.text(400, 520, 'マウスで操作、クリックで決定', {
+      fontSize: '16px',
+      fill: '#888888',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(instructionText);
     
     // 入力監視を停止
     if (this.inputUpdateInterval) {
