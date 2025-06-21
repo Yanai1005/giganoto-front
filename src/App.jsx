@@ -13,13 +13,13 @@ function App() {
           <div className="app">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/game/:gameType" element={<Game />} />
+              <Route path="/game/" element={<Game />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </div>
         </Router>
       </JoyConProvider>
-    </ThemeProvider>
+    </ThemeProvider >
   );
 }
 
