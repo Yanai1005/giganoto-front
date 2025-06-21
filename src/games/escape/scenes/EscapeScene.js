@@ -1,40 +1,68 @@
 import Phaser from "phaser";
-const levelMapmain = [
-  "WWWWWWWWWWWWWWWWWWWWWWWW",
-  "W          W   S       W",
-  "W S        W     g     W",
-  "W          W           W",
-  "W    S     W   S   t S W",
-  "W   T      W           W",
-  "W     S    W  S        W",
-  "W          W   S       W",
-  "W     a    W     b     W",
-  "W   S      W        S  W",
-  "W    S     W     P     W",
-  "W          W           W",
-  "W       h  W  S      S W",
-  "W  SS      W           W",
-  "W     p    W   S       W",
-  "WWWWWWWWWWWWWWWWWWWWWWWW",
-];
-
-const levelMapsub = [
-  "WWWWWWWWWWWWWWWWWWWWWWWW",
-  "W          W   S       W",
-  "W          W           W",
-  "W          W  S        W",
-  "W    S     W       t   W",
-  "W   T      W           W",
-  "W     S    W    S      W",
-  "W          W    S      W",
-  "W     a    W     b     W",
-  "W          W    S      W",
-  "W          W     P     W",
-  "W    SSS   W           W",
-  "W       h  W  S        W",
-  "W  SS      W           W",
-  "W     p    W   S     g W",
-  "WWWWWWWWWWWWWWWWWWWWWWWW",
+const alllevels = [
+  {
+    //index 0
+    map: [
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+      "W          W   S       W",
+      "W S        W     g     W",
+      "W          W           W",
+      "W    S     W   S   t S W",
+      "W   T      W           W",
+      "W     S    W  S        W",
+      "W          W   S       W",
+      "W     a    W     b     W",
+      "W   S      W        S  W",
+      "W    S     W     P     W",
+      "W          W           W",
+      "W       h  W  S      S W",
+      "W  SS      W           W",
+      "W     p    W   S       W",
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+    ],
+  },
+  {
+    //index1
+    map: [
+      "WWWWWWWWWLFFFRWWWWWWWWWW",
+      "W        LFFFR  S      W",
+      "W S      LFFFR   g     W",
+      "W          W           W",
+      "W    S     W   S   t S W",
+      "W   T      W           W",
+      "W     S    W  S        W",
+      "W          W   S       W",
+      "W     a    W     b     W",
+      "W   S      W        S  W",
+      "W    S     W     P     W",
+      "W          W           W",
+      "W       h  W  S      S W",
+      "W  SS      W           W",
+      "W     p    W   S       W",
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+    ],
+  },
+  {
+    //index2
+    map: [
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+      "W          W   S       W",
+      "W          W           W",
+      "W          W  S        W",
+      "W    S     W           W",
+      "W          W           W",
+      "W     S    W    S      W",
+      "W          W    S      W",
+      "W          W           W",
+      "W          W    S      W",
+      "W          W           W",
+      "W    SSS   W           W",
+      "W       h  W  S        W",
+      "W  SS      W           W",
+      "W         aWb  S     g W",
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+    ],
+  },
 ];
 
 class EscapeScene extends Phaser.Scene {
@@ -45,10 +73,14 @@ class EscapeScene extends Phaser.Scene {
       right: false,
       up: false,
       down: false,
-      numbers: Array.from({ length: 10 }, (_, i) => false), // 0-9キー
     };
+    this.currentLevelIndex = 0;
+
     this.canTeleport = true;
     this.isGameCleared = false;
+  }
+  init(data) {
+    this.currentLevelIndex = data.levelIndex || 0;
   }
   preload() {
     // ダミーファイルをロード
@@ -65,6 +97,9 @@ class EscapeScene extends Phaser.Scene {
     this.load.image("goalSprite2", "assets/button_red_off.png");
     this.load.image("fin_goalSprite1", "assets/button_green_on.png");
     this.load.image("fin_goalSprite2", "assets/button_red_on.png");
+    this.load.image("l_stairsSprite", "assets/L_stairs.png");
+    this.load.image("r_stairsSprite", "assets/R_stairs.png");
+    this.load.image("f_stairsSprite", "assets/F_stairs.png");
 
     // 下向き (1-3)
     this.load.image("p1_down_1", "assets/woman2_free_01.png");
@@ -99,14 +134,13 @@ class EscapeScene extends Phaser.Scene {
     this.load.image("p2_up_2", "assets/man2_free_11.png");
     this.load.image("p2_up_3", "assets/man2_free_12.png");
   }
-  createLevel(offsetX, offsetY) {
+  buildLevel(levelData, offsetX, offsetY) {
     // グループを作成
-
     this.collidableGroup = this.physics.add.staticGroup();
     this.chests = this.physics.add.staticGroup();
     const tileSize = 32; // createTexturesのサイズと合わせる
 
-    levelMapmain.forEach((row, rowIndex) => {
+    levelData.map.forEach((row, rowIndex) => {
       row.split("").forEach((tile, colIndex) => {
         const x = colIndex * tileSize + tileSize / 2 + offsetX;
         const y = rowIndex * tileSize + tileSize / 2 + offsetY;
@@ -157,6 +191,12 @@ class EscapeScene extends Phaser.Scene {
           // プレイヤー2のゴール
           const goal = this.goalTiles.create(x, y, "goalSprite2");
           goal.setData("player", 2);
+        } else if (tile === "L") {
+          const stairs = this.stairsTIles.create(x, y, "l_stairsSprite");
+        } else if (tile === "R") {
+          const stairs = this.stairsTIles.create(x, y, "r_stairsSprite");
+        } else if (tile === "F") {
+          const stairs = this.stairsTiles.create(x, y, "f_stairsSprite");
         }
       });
     });
@@ -195,15 +235,15 @@ class EscapeScene extends Phaser.Scene {
     const centerX = cam.width / 2;
     const centerY = cam.height / 2;
 
-    // 半透明の背景
+    // 背景
     const rect = this.add
       .rectangle(centerX, centerY, cam.width, cam.height, 0x000000)
       .setScrollFactor(0)
       .setDepth(10);
 
-    // GAME CLEAR! テキスト
+    // テキスト
     this.add
-      .text(centerX, centerY - 80, "GAME CLEAR!", {
+      .text(centerX, centerY - 80, "STAGE CLEAR!", {
         fontSize: "64px",
         fill: "#ffd700",
         fontFamily: "Arial",
@@ -227,9 +267,8 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(11);
 
-    this.createButton(centerX - 120, centerY + 100, "もう一度プレイ", () => {
-      this.isGameCleared = false; // フラグをリセット
-      this.scene.restart();
+    this.createButton(centerX - 120, centerY + 100, "次のステージ", () => {
+      this.scene.restart({ levelIndex: this.currentLevelIndex + 1 });
     });
 
     this.createButton(centerX + 120, centerY + 100, "ホームに戻る", () => {
@@ -280,7 +319,8 @@ class EscapeScene extends Phaser.Scene {
     this.goalTiles = this.physics.add.staticGroup();
     this.teleportTriggers = this.physics.add.group({ allowGravity: false });
     this.teleportDestinations = {}; // ワープ先座標の保存用
-    this.createLevel(18, 50);
+    this.stairsTiles = this.physics.add.staticGroup();
+    this.buildLevel(alllevels[this.currentLevelIndex], 18, 50);
     this.createPlayer1();
     this.createPlayer2();
     this.setupInput();
@@ -312,18 +352,6 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createTextures() {
-    const finGoal1Graphics = this.add.graphics();
-    finGoal1Graphics.fillStyle(0x3b82f6); // プレイヤー1の色で塗りつぶし
-    finGoal1Graphics.fillRect(0, 0, 32, 32);
-    finGoal1Graphics.generateTexture("fin_goalSprite1", 32, 32);
-    finGoal1Graphics.destroy();
-
-    const finGoal2Graphics = this.add.graphics();
-    finGoal2Graphics.fillStyle(0xef4444); // プレイヤー2の色で塗りつぶし
-    finGoal2Graphics.fillRect(0, 0, 32, 32);
-    finGoal2Graphics.generateTexture("fin_goalSprite2", 32, 32);
-    finGoal2Graphics.destroy();
-
     const buttonGraphics = this.add.graphics();
     buttonGraphics.fillStyle(0x555555); // ボタンの色
     buttonGraphics.fillRoundedRect(0, 0, 180, 50, 16); // 横180, 縦50, 角丸16
@@ -442,10 +470,15 @@ class EscapeScene extends Phaser.Scene {
     this.player1.setCollideWorldBounds(true);
     this.player1.setBounce(0.2);
     this.player1.setVelocity(0, 0);
-    this.player1.setDrag(2000);
+    if (this.currentLevelIndex === 2) {
+      this.player1.setDrag(200);
+    } else {
+      this.player1.setDrag(2000);
+    }
     this.player1Speed = 200; // プレイヤー1の移動速度
     this.player1.body.setSize(20, 28).setOffset(6, 4);
   }
+
   createPlayer2() {
     this.player2 = this.physics.add.sprite(
       this.player2Start.x,
@@ -455,9 +488,13 @@ class EscapeScene extends Phaser.Scene {
     this.player2.setCollideWorldBounds(true);
     this.player2.setBounce(0.2);
     this.player2.setVelocity(0, 0);
-    this.player2.setDrag(2000);
+    if (this.currentLevelIndex === 2) {
+      this.player2.setDrag(200);
+    } else {
+      this.player2.setDrag(2000);
+    }
     this.player2Speed = 200; // プレイヤー2の移動速度
-    this.player1.body.setSize(20, 28).setOffset(6, 4);
+    this.player2.body.setSize(20, 28).setOffset(6, 4);
   }
 
   setupInput() {
