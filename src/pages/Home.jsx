@@ -6,15 +6,14 @@ import GameTile from '../components/GameTile';
 import TopBar from '../components/TopBar';
 import SystemMenu from '../components/SystemMenu';
 import JoyConConnectionModal from '../components/JoyConConnectionModal';
+import SimpleJoyConCursor from '../components/JoyConCursor';
 import GameRegistry from '../gameManager/GameRegistry';
 import { useJoyConNavigation } from '../hooks/useJoyConNavigation';
 import gamesData from '../data/games.json';
-import JoyConDebug from '../components/JoyConDebug';
 
 const Home = () => {
     const navigate = useNavigate();
-    const { theme, changeTheme } = useTheme();
-    const { isSupported, isConnected, connectJoyCon, rumble } = useJoyConContext();
+    const { isSupported, isConnected, connectJoyCon } = useJoyConContext();
 
     const [selectedGame, setSelectedGame] = useState(0);
     const [showSettings, setShowSettings] = useState(false);
@@ -22,6 +21,7 @@ const Home = () => {
     const [loading, setLoading] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [showJoyConModal, setShowJoyConModal] = useState(false);
+    const [mouseControlMode, setMouseControlMode] = useState(false); // マウス制御モード
 
     // ゲームシステムの初期化
     useEffect(() => {
@@ -41,9 +41,6 @@ const Home = () => {
         if (typeof index === 'number') {
             setSelectedGame(index);
         }
-        if (isConnected) {
-            rumble(400, 0.6, 150);
-        }
 
         setLoading(true);
 
@@ -58,15 +55,19 @@ const Home = () => {
         }, 1000);
     };
 
+    // Grid navigation functions (マウス制御モード時は無効)
     const navigateLeft = () => {
+        if (mouseControlMode) return;
         setSelectedGame(prev => Math.max(0, prev - 1));
     };
 
     const navigateRight = () => {
+        if (mouseControlMode) return;
         setSelectedGame(prev => Math.min(gamesData.games.length - 1, prev + 1));
     };
 
     const navigateUp = () => {
+        if (mouseControlMode) return;
         const currentRow = Math.floor(selectedGame / 6);
         const currentCol = selectedGame % 6;
         if (currentRow > 0) {
@@ -75,6 +76,7 @@ const Home = () => {
     };
 
     const navigateDown = () => {
+        if (mouseControlMode) return;
         const currentRow = Math.floor(selectedGame / 6);
         const currentCol = selectedGame % 6;
         const maxRow = Math.floor((gamesData.games.length - 1) / 6);
@@ -87,13 +89,11 @@ const Home = () => {
     };
 
     const selectGame = () => {
+        if (mouseControlMode) return;
         handleGameSelect(gamesData.games[selectedGame]);
     };
 
     const goToSettings = () => {
-        if (isConnected) {
-            rumble(300, 0.4, 100);
-        }
         navigate('/settings');
     };
 
@@ -101,7 +101,12 @@ const Home = () => {
         setShowJoyConModal(true);
     };
 
-    // Joy-Con navigation setup
+    // マウス制御モードの切り替え
+    const toggleMouseControlMode = () => {
+        setMouseControlMode(prev => !prev);
+    };
+
+    // Joy-Con navigation setup (マウス制御モード時は無効)
     useJoyConNavigation({
         onUp: navigateUp,
         onDown: navigateDown,
@@ -111,10 +116,11 @@ const Home = () => {
         onBack: () => { },
         onHome: () => { },
         onMenu: goToSettings,
-        enabled: !showJoyConModal && !showSettings
+        onYButton: toggleMouseControlMode, // Yボタンでマウス制御切り替え
+        enabled: !showJoyConModal && !showSettings && !mouseControlMode
     });
 
-    // キーボードナビゲーション (fallback)
+    // キーボードナビゲーション
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (showSettings || showJoyConModal) return;
@@ -141,11 +147,18 @@ const Home = () => {
                     e.preventDefault();
                     selectGame();
                     break;
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    toggleMouseControlMode();
+                    break;
                 case 'Escape':
                     if (showSettings) {
                         setShowSettings(false);
                     } else if (showJoyConModal) {
                         setShowJoyConModal(false);
+                    } else if (mouseControlMode) {
+                        setMouseControlMode(false);
                     }
                     break;
                 default:
@@ -155,7 +168,7 @@ const Home = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedGame, showSettings, showJoyConModal]);
+    }, [selectedGame, showSettings, showJoyConModal, mouseControlMode]);
 
     const handleCloseSettings = () => {
         setShowSettings(false);
@@ -165,7 +178,6 @@ const Home = () => {
 
     return (
         <div className="switch-home">
-            <JoyConDebug />
             <TopBar
                 onUserClick={openJoyConModal}
                 showJoyConStatus={true}
@@ -177,9 +189,10 @@ const Home = () => {
                     <GameTile
                         key={game.id}
                         game={game}
-                        selected={selectedGame === index}
+                        selected={!mouseControlMode && selectedGame === index}
                         onClick={(game) => handleGameSelect(game, index)}
                         loading={loading && selectedGame === index}
+                        className="mouse-clickable" // マウスクリック対応
                     />
                 ))}
             </main>
@@ -189,11 +202,26 @@ const Home = () => {
                 <div className="control-hints__section">
                     {isConnected ? (
                         <div className="control-hints__joycon">
-                            <span className="control-hints__status">🎮 Joy-Con接続済み</span>
+                            <span className="control-hints__status">
+                                🎮 Joy-Con接続済み {mouseControlMode ? '(マウス制御モード)' : '(グリッドモード)'}
+                            </span>
                             <div className="control-hints__keys">
-                                <span>左スティック/十字キー: 移動</span>
-                                <span>Aボタン: 決定</span>
-                                <span>+ボタン: 設定</span>
+                                {mouseControlMode ? (
+                                    <>
+                                        <span>左スティック: マウス移動</span>
+                                        <span>Aボタン: 左クリック</span>
+                                        <span>Bボタン: 右クリック</span>
+                                        <span>Xボタン: ダブルクリック</span>
+                                        <span>Yボタン: グリッドモード</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>左スティック/十字キー: 移動</span>
+                                        <span>Aボタン: 決定</span>
+                                        <span>Yボタン: マウス制御モード</span>
+                                        <span>+ボタン: 設定</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -206,6 +234,8 @@ const Home = () => {
                                 <span>移動</span>
                                 <span className="control-hints__key">Enter</span>
                                 <span>決定</span>
+                                <span className="control-hints__key">M</span>
+                                <span>マウス制御モード</span>
                             </div>
                             {isSupported && (
                                 <button
@@ -226,6 +256,22 @@ const Home = () => {
                 notifications={notifications}
             />
 
+            {/* Joy-Con マウス制御カーソル */}
+            <SimpleJoyConCursor
+                enabled={mouseControlMode && isConnected}
+                sensitivity={0.3}
+                showVisualCursor={true}
+                showDebugInfo={true}
+            />
+
+            {/* マウス制御モード表示 */}
+            {mouseControlMode && isConnected && (
+                <div className="mouse-control-hint">
+                    マウス制御モード - 左スティックでマウス移動、Aボタンでクリック
+                </div>
+            )}
+
+            {/* Joy-Con接続モーダル */}
             {showJoyConModal && (
                 <JoyConConnectionModal
                     onClose={() => setShowJoyConModal(false)}
@@ -233,14 +279,31 @@ const Home = () => {
                 />
             )}
 
+            {/* 設定バックドロップ */}
             {showSettings && (
-                <>
-                    <div
-                        className="settings-backdrop"
-                        onClick={handleCloseSettings}
-                    />
-                </>
+                <div
+                    className="settings-backdrop"
+                    onClick={handleCloseSettings}
+                />
             )}
+
+            <style jsx>{`
+                .mouse-control-hint {
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 0, 0, 0.9);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 25px;
+                    font-size: 13px;
+                    z-index: 9999;
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(46, 213, 115, 0.3);
+                    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+                }
+            `}</style>
         </div>
     );
 };

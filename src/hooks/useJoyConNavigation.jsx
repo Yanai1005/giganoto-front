@@ -10,6 +10,8 @@ export const useJoyConNavigation = ({
     onBack,
     onHome,
     onMenu,
+    onYButton,
+    onXButton,
     sensitivity = 0.7,
     deadzone = 0.3,
     enabled = true
@@ -19,22 +21,7 @@ export const useJoyConNavigation = ({
     const stickTimeoutRef = useRef(null);
     const lastStickInputRef = useRef({ x: 0, y: 0 });
 
-    // Handle button presses without rumble
-    const handleButtonPress = useCallback((button, action) => {
-        if (!enabled || !isConnected) return;
-
-        const currentPressed = inputState.buttons[button];
-        const wasPressed = lastInputRef.current[button];
-
-        if (currentPressed && !wasPressed) {
-            console.log(`Button pressed: ${button}`);
-            action?.();
-        }
-
-        lastInputRef.current[button] = currentPressed;
-    }, [inputState.buttons, enabled, isConnected]);
-
-    // Handle analog stick navigation without rumble
+    // Handle analog stick navigation
     const handleStickNavigation = useCallback(() => {
         if (!enabled || !isConnected) return;
 
@@ -76,7 +63,7 @@ export const useJoyConNavigation = ({
         }
     }, [inputState.leftStick, onUp, onDown, onLeft, onRight, sensitivity, deadzone, enabled, isConnected]);
 
-    // Input callback for real-time processing without rumble
+    // Input callback for real-time button processing
     const handleInput = useCallback((newInputState) => {
         if (!enabled) return;
 
@@ -105,6 +92,12 @@ export const useJoyConNavigation = ({
                     case 'b':
                         onBack?.();
                         break;
+                    case 'x':
+                        onXButton?.();
+                        break;
+                    case 'y':
+                        onYButton?.();
+                        break;
                     case 'home':
                         onHome?.();
                         break;
@@ -118,7 +111,7 @@ export const useJoyConNavigation = ({
             lastInputRef.current[button] = currentPressed;
         });
 
-    }, [enabled, onUp, onDown, onLeft, onRight, onSelect, onBack, onHome, onMenu]);
+    }, [enabled, onUp, onDown, onLeft, onRight, onSelect, onBack, onHome, onMenu, onYButton, onXButton]);
 
     // Register input callback
     useEffect(() => {
