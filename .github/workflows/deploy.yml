@@ -9,6 +9,9 @@ on:
       - 'Docs/**'
       - 'giganoto-infra/**'  
 
+permissions:
+  contents: read
+
 env:
   GCP_PROJECT_ID: giganoto-463603
   GCP_REGION: asia-northeast1
