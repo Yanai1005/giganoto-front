@@ -18,22 +18,27 @@ export default class GameScene extends Phaser.Scene {
   preload() {}
 
   create() {
-    this.textBox = this.add.text(50, 400, '', {
-      fontSize: '20px',
-      wordWrap: { width: 700 },
+   this.textBox = this.add.text(50, 450, '', {
+     fontSize: '20px',
+     color: '#ffffff',
+     wordWrap: { width: 700, useAdvancedWrap: true },
+     lineSpacing: 6,
+     padding: { top: 10, bottom: 10, left: 10, right: 10 },
     });
 
     this.choiceButtons = [];
     for (let i = 0; i < 2; i++) {
-      const btn = this.add.text(600, 100 + i * 40, '', {
+      const btn = this.add.text(600, 370 + i * 40, '', {
         fontSize: '18px',
         backgroundColor: '#333',
+        color: '#fff',
         padding: { x: 10, y: 5 },
       }).setInteractive().setVisible(false);
 
       btn.on('pointerdown', () => this.selectChoice(i));
       this.choiceButtons.push(btn);
     }
+
 
     this.input.keyboard.on('keydown-ONE', () => this.setPersonality('logic'));
     this.input.keyboard.on('keydown-TWO', () => this.setPersonality('impulse'));
