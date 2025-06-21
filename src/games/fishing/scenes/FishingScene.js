@@ -2,12 +2,15 @@ import Phaser from 'phaser';
 import * as THREE from 'three';
 import { FishDex } from '../utils/FishDex.js';
 import { UpgradeManager, UPGRADE_CONFIG } from '../utils/UpgradeManager.js';
+import { ScoreManager } from '../utils/ScoreManager.js';
 import { FISH_TYPES } from '../data/fishData.js';
 import { UIManager } from '../ui/UIManager.js';
 import { FishManager } from '../game/FishManager.js';
 import { MinigameManager } from '../game/MinigameManager.js';
 import { PlayerActionManager } from '../game/PlayerActionManager.js';
 import { WorldManager } from '../game/WorldManager.js';
+import { JoyConManager } from '../game/JoyConManager.js';
+import { JoyConHIDManager } from '../game/JoyConHIDManager.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -23,7 +26,7 @@ class GameScene extends Phaser.Scene {
       casting: false,
       reeling: false,
       catchingFish: false,
-      score: 0
+      score: 0 // 初期化時は0、create()で復元される
     };
     
     // Minigame State
@@ -72,6 +75,9 @@ class GameScene extends Phaser.Scene {
     FishDex.initialize(FISH_TYPES);
     this.fishDex = FishDex;
     UpgradeManager.initialize();
+    
+    // 保存されたスコアを復元
+    this.gameState.score = ScoreManager.loadScore();
 
     this.initThreeJS();
 
@@ -81,6 +87,8 @@ class GameScene extends Phaser.Scene {
     this.minigameManager = new MinigameManager(this);
     this.playerActionManager = new PlayerActionManager(this);
     this.worldManager = new WorldManager(this);
+    this.joyConManager = new JoyConManager(this);
+    this.jcHID = new JoyConHIDManager(this);
 
     // Setup World and Player
     this.worldManager.createWaterSurface();
@@ -133,7 +141,7 @@ class GameScene extends Phaser.Scene {
   onUpgradeAttempt(type) {
     const cost = UpgradeManager.attemptUpgrade(type, this.gameState.score);
     if (cost > 0) {
-      this.gameState.score -= cost;
+      this.gameState.score = ScoreManager.subtractScore(cost);
       this.ui.updateScoreUI();
       this.ui.updateUpgradePanel();
       this.ui.showMessage(`${UPGRADE_CONFIG[type].name}を強化した！`, 1500, false);
@@ -187,6 +195,7 @@ class GameScene extends Phaser.Scene {
     
     this.worldManager.updateWater(time);
     this.minigameManager.update(time);
+    this.joyConManager.update();
 
     if (!this.minigame.active) {
       this.fishManager.update(time);
@@ -219,9 +228,22 @@ class GameScene extends Phaser.Scene {
     this.minigameManager.onReelBtnMouseUp();
   }
 
+  async connectJoyCon() {
+    const result = await this.jcHID.connect();
+    if (result === 'already-connected') {
+      this.ui.showMessage('Joy-Conは既に接続されています', 1500, false);
+    } else if (result === 'connected') {
+      this.ui.showMessage('Joy-Conが接続されました', 1500, false);
+    } else if (result === 'error') {
+      this.ui.showMessage('Joy-Conの接続に失敗しました', 2000, false);
+    }
+  }
+
   shutdown() {
     window.removeEventListener('resize', this.onResize.bind(this));
     this.ui.cleanup();
+    this.joyConManager.destroy();
+    this.jcHID.destroy();
     if (this.threeRenderer) {
         this.threeRenderer.domElement.remove();
     }

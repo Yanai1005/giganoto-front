@@ -12,9 +12,33 @@ export class UIManager {
   }
 
   create() {
-    this.createScoreUI();
+    // Top Bar Container
+    const topBar = document.createElement('div');
+    topBar.id = 'top-bar-container';
+    topBar.classList.add('game-scene-ui');
+    topBar.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 24px 32px;
+        box-sizing: border-box;
+        z-index: 100;
+        pointer-events: none;
+    `;
+    this.gameContainer?.appendChild(topBar);
+
+    // Children for Top Bar
+    const scoreUI = this.createScoreUI();
+    const topRightButtons = this.createTopRightButtons();
+    topBar.appendChild(scoreUI);
+    topBar.appendChild(topRightButtons);
+
+    // Other UI elements
     this.createControlButtons();
-    this.createTopRightButtons();
     this.createAllMinigameUIs();
     this.createUpgradeUI();
   }
@@ -24,25 +48,23 @@ export class UIManager {
     if (!scoreDiv) {
       scoreDiv = document.createElement('div');
       scoreDiv.id = 'score-ui';
-      scoreDiv.classList.add('game-scene-ui');
-      this.gameContainer?.appendChild(scoreDiv);
     }
-    scoreDiv.style.position = 'absolute';
-    scoreDiv.style.top = '24px';
-    scoreDiv.style.left = '32px';
-    scoreDiv.style.zIndex = '100';
-    scoreDiv.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-    scoreDiv.style.color = '#fff';
-    scoreDiv.style.fontSize = '2.2rem';
-    scoreDiv.style.fontWeight = 'bold';
-    scoreDiv.style.padding = '12px 32px';
-    scoreDiv.style.borderRadius = '16px';
-    scoreDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
-    scoreDiv.style.letterSpacing = '0.05em';
-    scoreDiv.style.textShadow = '0 2px 8px #000a';
-    scoreDiv.style.userSelect = 'none';
+    scoreDiv.style.cssText = `
+        background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: bold;
+        padding: 12px 32px;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        letter-spacing: 0.05em;
+        text-shadow: 0 2px 8px #000a;
+        user-select: none;
+        pointer-events: auto;
+    `;
     this.scoreDiv = scoreDiv;
     this.updateScoreUI();
+    return scoreDiv;
   }
   
   _makeBtn(id, text, bg) {
@@ -82,6 +104,7 @@ export class UIManager {
   };
   
   createControlButtons(){
+    // 画面下のボタンエリアを作成（強化、Joy-Con接続、図鑑用）
     let btnArea = document.getElementById('btn-area');
     if (!btnArea) {
       btnArea = document.createElement('div');
@@ -92,52 +115,53 @@ export class UIManager {
     btnArea.style.position = 'absolute';
     btnArea.style.left = '50%';
     btnArea.style.transform = 'translateX(-50%)';
-    btnArea.style.width = 'auto'; // 幅を自動調整
+    btnArea.style.width = 'auto';
     btnArea.style.bottom = '24px';
     btnArea.style.display = 'flex';
     btnArea.style.justifyContent = 'center';
-    btnArea.style.gap = '32px';
+    btnArea.style.gap = '20px';
     btnArea.style.zIndex = '100';
 
-    const castBtn = this._makeBtn('cast-btn', 'キャスト', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)');
-    castBtn.onclick = () => this.scene.castLine();
- 
-    const reelBtn = this._makeBtn('reel-btn', 'リールを巻く', 'linear-gradient(135deg, #2980b9 0%, #2c3e50 100%)');
-    reelBtn.onmousedown = this.scene.onReelBtnMouseDown.bind(this.scene);
-    reelBtn.onmouseup = this.scene.onReelBtnMouseUp.bind(this.scene);
-    reelBtn.onmouseleave = () => { this.scene.isPlayerPulling = false; };
- 
-    const switchCamBtn = this._makeBtn('switch-cam-btn', '視点切替', 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)');
-    switchCamBtn.onclick = () => this.scene.switchCameraPerspective();
-    
-    btnArea.appendChild(castBtn);
-    btnArea.appendChild(reelBtn);
-    btnArea.appendChild(switchCamBtn);
+    // 強化ボタン
+    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
+    upgradeBtn.onclick = () => {
+        this.updateUpgradePanel();
+        const panel = document.getElementById('upgrade-panel');
+        if(panel) panel.style.display = 'block';
+    };
+    btnArea.appendChild(upgradeBtn);
+
+    // Joy-Con接続ボタン（WebHID APIが利用可能な場合のみ）
+    if ('hid' in navigator) {
+        const joyConBtn = this._makeBtn('joycon-btn', 'Joy-Con接続', 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)');
+        joyConBtn.onclick = () => this.scene.connectJoyCon();
+        btnArea.appendChild(joyConBtn);
+    }
+
+    // 図鑑ボタン
+    const dexBtn = this._makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
+    dexBtn.onclick = () => this.showDex(true);
+    btnArea.appendChild(dexBtn);
   }
 
   createTopRightButtons() {
+    // 右上にタイトルへボタンのみを配置
     let topUiArea = document.getElementById('top-ui-area');
     if(!topUiArea) {
         topUiArea = document.createElement('div');
         topUiArea.id = 'top-ui-area';
-        topUiArea.classList.add('game-scene-ui');
-        this.gameContainer?.appendChild(topUiArea);
     }
-    topUiArea.style.position = 'absolute';
-    topUiArea.style.top = '24px';
-    topUiArea.style.right = '32px';
-    topUiArea.style.zIndex = '100';
-    topUiArea.style.display = 'flex';
-    topUiArea.style.gap = '16px';
+    topUiArea.style.cssText = `
+        display: flex;
+        justify-content: flex-end;
+        pointer-events: auto;
+    `;
  
-    const dexBtn = this._makeBtn('dex-btn', '図鑑', 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)');
     const titleBtn = this._makeBtn('title-btn', 'タイトルへ', 'linear-gradient(135deg, #868f96 0%, #596164 100%)');
-    
-    dexBtn.onclick = () => this.showDex(true);
     titleBtn.onclick = () => this.scene.scene.start('TitleScene');
 
-    topUiArea.appendChild(dexBtn);
     topUiArea.appendChild(titleBtn);
+    return topUiArea;
   }
 
   createAllMinigameUIs() {
@@ -197,20 +221,6 @@ export class UIManager {
   }
 
   createUpgradeUI() {
-    const topUiArea = document.getElementById('top-ui-area');
-    const upgradeBtn = this._makeBtn('upgrade-btn', '強化', 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)');
-    
-    upgradeBtn.onmouseover = () => {
-        upgradeBtn.style.transform = 'scale(1.07)';
-        upgradeBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.28)';
-    };
-    upgradeBtn.onmouseout = () => {
-        upgradeBtn.style.transform = 'scale(1)';
-        upgradeBtn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-    };
-
-    topUiArea?.prepend(upgradeBtn);
-
     const panel = document.createElement('div');
     panel.id = 'upgrade-panel';
     panel.classList.add('game-scene-ui');
@@ -222,11 +232,6 @@ export class UIManager {
         border: 1px solid rgba(255,255,255,0.1);
     `;
     this.gameContainer?.appendChild(panel);
-
-    upgradeBtn.onclick = () => {
-      this.updateUpgradePanel();
-      panel.style.display = 'block';
-    };
 
     panel.innerHTML = `
         <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
@@ -424,13 +429,46 @@ export class UIManager {
 
       const dexData = FishDex.getDexData();
       
-      FISH_TYPES.forEach(fishType => {
+      // レアリティ順にソート
+      const sortedFishTypes = [...FISH_TYPES].sort((a, b) => a.rarity - b.rarity);
+      
+      // レアリティごとにグループ分け
+      const rarityGroups = {};
+      sortedFishTypes.forEach(fishType => {
+        if (!rarityGroups[fishType.rarity]) {
+          rarityGroups[fishType.rarity] = [];
+        }
+        rarityGroups[fishType.rarity].push(fishType);
+      });
+
+      // レアリティごとにセクションを作成
+      Object.keys(rarityGroups).sort((a, b) => a - b).forEach(rarity => {
+        const rarityInfo = this.getRarityInfo(parseInt(rarity));
+        
+        // セクションヘッダー
+        const sectionHeader = document.createElement('div');
+        sectionHeader.style.gridColumn = '1 / -1';
+        sectionHeader.style.margin = '20px 0 10px 0';
+        sectionHeader.style.padding = '10px 20px';
+        sectionHeader.style.background = `linear-gradient(135deg, ${rarityInfo.color}22, ${rarityInfo.color}44)`;
+        sectionHeader.style.borderRadius = '8px';
+        sectionHeader.style.borderLeft = `4px solid ${rarityInfo.color}`;
+        sectionHeader.innerHTML = `
+          <h3 style="margin: 0; color: ${rarityInfo.color}; font-size: 1.3rem;">
+            ${rarityInfo.label}
+          </h3>
+        `;
+        fishGrid.appendChild(sectionHeader);
+
+        // その レアリティの魚たち
+        rarityGroups[rarity].forEach(fishType => {
         const data = dexData[fishType.name];
         const card = document.createElement('div');
         card.style.background = 'rgba(50, 50, 50, 0.8)';
         card.style.borderRadius = '10px';
         card.style.padding = '15px';
         card.style.textAlign = 'center';
+          card.style.border = `2px solid ${rarityInfo.color}33`;
         
         if (data && data.caught) {
           card.innerHTML = `
@@ -449,15 +487,71 @@ export class UIManager {
           `;
         }
         fishGrid.appendChild(card);
+        });
       });
     }
   }
 
+  getRarityInfo(rarity) {
+    const rarityMap = {
+      1: { label: '★☆☆☆☆ コモン', color: '#6c757d' },
+      2: { label: '★★☆☆☆ アンコモン', color: '#28a745' },
+      3: { label: '★★★☆☆ レア', color: '#007bff' },
+      4: { label: '★★★★☆ エピック', color: '#6f42c1' },
+      5: { label: '★★★★★ レジェンダリー', color: '#fd7e14' }
+    };
+    return rarityMap[rarity] || { label: '不明', color: '#6c757d' };
+  }
+
   cleanup() {
+    // ゲームシーンで作成したUI要素を全て削除
     document.querySelectorAll('.game-scene-ui').forEach(el => el.remove());
+    
+    // ゲームシーンで追加したスタイルを削除
     const style = document.querySelector('style');
-    if (style) {
+    if (style && style.textContent.includes('.minigame-container')) {
         style.remove();
+    }
+  }
+
+  update() {
+    this.updateScoreUI();
+    this.updateUpgradePanel();
+  }
+
+  showMinigameUI(type) {
+    this.hideMinigameUI(); // Hide all first
+    const uiId = `minigame-ui-${type}`;
+    const uiElement = document.getElementById(uiId);
+    if (uiElement) {
+      uiElement.style.display = 'block';
+    }
+  }
+
+  hideMinigameUI() {
+    document.getElementById('minigame-ui-tension').style.display = 'none';
+    document.getElementById('minigame-ui-timing').style.display = 'none';
+  }
+
+  updateMinigameUI(minigame) {
+    if (!minigame.active) return;
+
+    if (minigame.type === 'tension') {
+        document.getElementById('tension-bar').style.width = `${minigame.tension.value}%`;
+        const safeZone = minigame.tension.safeZone;
+        const safeZoneEl = document.getElementById('tension-safe-zone');
+        safeZoneEl.style.left = `${safeZone.start}%`;
+        safeZoneEl.style.width = `${safeZone.end - safeZone.start}%`;
+        document.getElementById('tension-progress-bar').style.width = `${minigame.overallProgress * 100}%`;
+    } else { // 'timing'
+        const timingMarker = document.getElementById('timing-marker');
+        if (timingMarker) {
+          timingMarker.style.left = `${minigame.timing.markerPosition}%`;
+        }
+        const timingProgress = document.getElementById('timing-progress-bar');
+        if (timingProgress) {
+          timingProgress.style.width = `${minigame.overallProgress * 100}%`;
+        }
     }
   }
 } 
