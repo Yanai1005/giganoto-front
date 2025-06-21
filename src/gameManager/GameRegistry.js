@@ -213,7 +213,7 @@ class GameRegistry {
         this.debugLog('ゲームタイプ設定:', this.gameTypeConfig);
 
         // gamesDataの各ゲームを登録
-        gamesData.games.forEach((gameData, index) => {
+        gamesData.games.forEach((gameData) => {
             if (gameData.gameType) {
                 try {
                     this.register(gameData.gameType, {
@@ -229,9 +229,9 @@ class GameRegistry {
                 this.errorLog(`ゲームにgameTypeがありません:`, gameData);
             }
         });
-
         const registeredGames = this.getAllGames();
         this.debugLog(`ゲーム登録完了: ${registeredGames.length}個のゲーム`);
+
     }
 
     // 静的インポートを使用するローダー（Vite対応）
