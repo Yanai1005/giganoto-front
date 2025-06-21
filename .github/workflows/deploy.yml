@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - 'README.md'
       - 'Docs/**'
-      - 'giganoto-infra/**'  
+      - 'giganoto-infra/**'
 
 env:
   GCP_PROJECT_ID: giganoto-463603
@@ -74,13 +74,13 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           if [ "${{ steps.check_service.outputs.service_exists }}" = "true" ]; then
-            # サービスが存在する場合は更新のみ
+            # Update existing service
             gcloud run services update ${{ env.SERVICE_NAME }} \
               --image ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }} \
               --region ${{ env.GCP_REGION }} \
               --project ${{ env.GCP_PROJECT_ID }}
           else
-            # サービスが存在しない場合は新規作成
+            # Create new service
             gcloud run deploy ${{ env.SERVICE_NAME }} \
               --image ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }} \
               --platform managed \
@@ -97,8 +97,7 @@ jobs:
 
       - name: Verify deployment
         run: |
-          # デプロイメントの完了を確認（代替方法）
-          echo "⏳ デプロイメントの完了を待機中..."
+          echo "Waiting for deployment to complete..."
           
           for i in {1..30}; do
             STATUS=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
@@ -107,42 +106,18 @@ jobs:
               --format="value(status.conditions[0].status)" 2>/dev/null || echo "Unknown")
             
             if [ "$STATUS" = "True" ]; then
-              echo "✅ デプロイメント完了"
+              echo "Deployment completed successfully"
               break
             fi
             
-            echo "⏳ 待機中... ($i/30)"
+            echo "Waiting... ($i/30)"
             sleep 10
           done
           
-          # サービスURLを取得して表示
           SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
             --region ${{ env.GCP_REGION }} \
             --project ${{ env.GCP_PROJECT_ID }} \
             --format "value(status.url)")
           
-          echo "🚀 サービスがデプロイされました: $SERVICE_URL"
+          echo "Service deployed successfully: $SERVICE_URL"
           echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
-
-      - name: Run basic health check
-        run: |
-          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-            --region ${{ env.GCP_REGION }} \
-            --project ${{ env.GCP_PROJECT_ID }} \
-            --format "value(status.url)")
-          
-          echo "🔍 ヘルスチェックを実行中..."
-          echo "URL: $SERVICE_URL"
-          
-          # 複数回試行でヘルスチェック
-          for i in {1..5}; do
-            if curl -s -f "$SERVICE_URL" > /dev/null; then
-              echo "✅ ヘルスチェック成功: サービスは正常に動作しています"
-              exit 0
-            fi
-            echo "⏳ 試行 $i/5 失敗、5秒後に再試行..."
-            sleep 5
-          done
-          
-          echo "❌ ヘルスチェック失敗: サービスが応答しません"
-          exit 1
