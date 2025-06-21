@@ -11,7 +11,19 @@ export default class GameScene extends Phaser.Scene {
     this.currentLineIndex = 0;
     this.personality = 'logic'; 
     this.choicesVisible = false;
-  }
+    this.stats = {
+      logic_1: 0,
+      logic_2: 0,
+      impulse_1: 0,
+      impulse_2: 0,
+  };
+   this.choiceHistory = JSON.parse(localStorage.getItem('choiceHistory')) || {
+    logic_1: false,
+    logic_2: false,
+    impulse_1: false,
+    impulse_2: false,
+};
+}
 
   preload() {
     this.load.image('bg_hoom_morning', '/assets/bg_hoom_morning.jpg');
@@ -168,16 +180,28 @@ export default class GameScene extends Phaser.Scene {
   }
 
   selectChoice(index) {
-    const resultKey = `${this.personality}_${index + 1}`;
-    const resultLines = this.storyData.results[resultKey];
-    if (!resultLines) {
-      this.textBox.setText('分岐データが見つかりません');
-      return;
-    }
-    this.choiceButtons.forEach(btn => btn.setVisible(false));
-    this.showResult(resultLines);
+  const resultKey = `${this.personality}_${index + 1}`;
+  const resultLines = this.storyData.results[resultKey];
+
+  // カウント追加（今回のプレイ用）
+  if (this.stats.hasOwnProperty(resultKey)) {
+    this.stats[resultKey]++;
   }
 
+  // 履歴保存（通算用）
+  if (this.choiceHistory.hasOwnProperty(resultKey)) {
+    this.choiceHistory[resultKey] = true;
+    localStorage.setItem('choiceHistory', JSON.stringify(this.choiceHistory));
+  }
+
+  if (!resultLines) {
+    this.textBox.setText('分岐データが見つかりません');
+    return;
+  }
+
+  this.choiceButtons.forEach(btn => btn.setVisible(false));
+  this.showResult(resultLines);
+}
   showResult(lines) {
     let i = 0;
     const nextLine = () => {
@@ -191,7 +215,40 @@ export default class GameScene extends Phaser.Scene {
       }
     };
     nextLine();
+
+    const endingKey = this.determineEnding();
+this.scene.start('EndScene', { ending: endingKey });
   }
+
+  determineEnding() {
+  const {
+    logic_1, logic_2,
+    impulse_1, impulse_2
+  } = this.stats;
+
+  const logicTotal = logic_1 + logic_2;
+  const impulseTotal = impulse_1 + impulse_2;
+
+  // トゥルーエンド解放条件チェック
+  const allChosen = Object.values(this.choiceHistory).every(flag => flag);
+  if (allChosen) {
+    return 'true_ending';
+  }
+
+  // 理性優位 → 理性ルート
+  if (logicTotal > impulseTotal) {
+    return logic_1 > logic_2 ? 'logic_bad' : 'logic_good';
+  }
+
+  // 本能優位 → 本能ルート
+  if (impulseTotal > logicTotal) {
+    return impulse_1 > impulse_2 ? 'impulse_bad' : 'impulse_good';
+  }
+
+  // 同数の場合は、どちらのハッピー数が大きいかで判断
+  if (logic_2 > impulse_2) return 'logic_good';
+  else return 'impulse_good';
+}
 
   setPersonality(type) {
   this.personality = type;
