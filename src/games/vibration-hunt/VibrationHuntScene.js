@@ -654,8 +654,13 @@ class VibrationHuntScene extends Phaser.Scene {
         
         // デバッグUIを先に作成
         this.createJoyConDebugUI();
+        
+        // Dキーでデバッグ表示の切り替え
         this.input.keyboard.on('keydown-D', () => {
-          if (this.debugText) this.debugText.visible = !this.debugText.visible;
+          if (this.debugText) {
+            this.debugText.setVisible(!this.debugText.visible);
+            console.log('デバッグ表示切り替え:', this.debugText.visible ? '表示' : '非表示');
+          }
         });
         
         // ゲーム開始
@@ -762,7 +767,10 @@ class VibrationHuntScene extends Phaser.Scene {
     this.debugText.setDepth(2000); // より確実に最前面に表示
     this.debugText.setScrollFactor(0); // カメラの影響を受けない
     
-    console.log('デバッグUI作成完了');
+    // 最初は非表示に設定
+    this.debugText.setVisible(false);
+    
+    console.log('デバッグUI作成完了（初期状態: 非表示）');
     
     // Joy-Conの状態を定期的に更新
     if (this.joyConManager) {
@@ -777,6 +785,9 @@ class VibrationHuntScene extends Phaser.Scene {
 
   updateDebugInfo() {
     if (!this.debugText || !this.joyConManager) return;
+    
+    // デバッグUIが非表示の場合は更新をスキップ（パフォーマンス向上）
+    if (!this.debugText.visible) return;
     
     // JoyConHIDManagerの実際のプロパティを使用
     const device = this.joyConManager.device;

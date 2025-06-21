@@ -55,7 +55,7 @@
         "vibration-hunt": {
             "name": "強震動探し",
             "description": "Joy-Conの振動機能を使って隠された強震動ポイントを探すゲーム",
-            "controls": "マウスを動かして振動を感じ、クリックで決定。Joy-Con接続必須",
+            "controls": "マウスを動かして振動を感じ、Joy-ConのAボタンで決定。Joy-Con接続必須",
             "modulePath": "../games/vibration-hunt/game.js"
         }
     }

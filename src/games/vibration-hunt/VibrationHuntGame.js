@@ -1033,6 +1033,27 @@ export class VibrationHuntGame {
     });
   }
 
+  createEndGameDecorations() {
+    // シンプルで上品な装飾
+    // 中央上部に1つだけ美しい光のオーラ
+    const centerGlow = this.scene.add.graphics();
+    centerGlow.fillGradientStyle(0x00d4ff, 0x00d4ff, 0x00d4ff, 0x00d4ff, 0.3, 0.3, 0, 0);
+    centerGlow.fillCircle(400, 100, 60);
+    
+    this.scene.tweens.add({
+      targets: centerGlow,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      alpha: 0.1,
+      duration: 3000,
+      ease: 'Sine.easeInOut',
+      repeat: -1,
+      yoyo: true
+    });
+    
+    this.uiGroup.add(centerGlow);
+  }
+
   createSuccessEffect() {
     // 成功時のパーティクル効果
     for (let i = 0; i < 15; i++) {
@@ -1072,84 +1093,171 @@ export class VibrationHuntGame {
     // 新しいUIグループを作成して終了画面を表示
     this.uiGroup = this.scene.add.group();
     
-    // 美しいグラデーション背景
+    // 洗練されたグラデーション背景
     const bg = this.scene.add.graphics();
     bg.fillGradientStyle(
-      0x0a0a1a, 0x1a1a3a,
-      0x2a1a4a, 0x3a2a5a,
+      0x0f0f2f, 0x1a1a4a, // 深い青
+      0x252555, 0x2a2a5a, // 落ち着いた紫
       1
     );
     bg.fillRect(0, 0, 800, 600);
     this.uiGroup.add(bg);
     
+    // シンプルな装飾
+    this.createEndGameDecorations();
+    
+    // メインコンテナ
+    const containerX = 400;
+    const containerY = 300;
+    
+    // クリーンなメインパネル
+    const mainPanel = this.scene.add.graphics();
+    mainPanel.fillStyle(0x1e1e3e, 0.95);
+    mainPanel.fillRoundedRect(containerX - 300, containerY - 200, 600, 400, 20);
+    mainPanel.lineStyle(1, 0x3a3a6a, 0.8);
+    mainPanel.strokeRoundedRect(containerX - 300, containerY - 200, 600, 400, 20);
+    this.uiGroup.add(mainPanel);
+    
     // ゲーム終了タイトル
-    const gameOverTitle = this.scene.add.text(400, 150, 'ゲーム終了！', {
-      fontSize: '48px',
+    const gameOverTitle = this.scene.add.text(containerX, containerY - 140, 'ゲーム終了！', {
+      fontSize: '36px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
-      fontWeight: 'bold',
-      stroke: '#00d4aa',
-      strokeThickness: 3
+      fontWeight: 'bold'
     }).setOrigin(0.5);
     this.uiGroup.add(gameOverTitle);
     
     // 最終スコア表示
-    const finalScoreText = this.scene.add.text(400, 250, `最終スコア: ${this.score}点`, {
-      fontSize: '36px',
-      fill: '#ffff00',
+    const finalScoreText = this.scene.add.text(containerX, containerY - 80, `最終スコア: ${this.score}点`, {
+      fontSize: '28px',
+      fill: '#ffd700',
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'bold'
     }).setOrigin(0.5);
     this.uiGroup.add(finalScoreText);
     
-    // スコア評価
+    // スコア評価とランク表示
     let evaluation = '';
-    if (this.score >= 400) evaluation = '素晴らしい！';
-    else if (this.score >= 300) evaluation = 'とても良い！';
-    else if (this.score >= 200) evaluation = '良い！';
-    else if (this.score >= 100) evaluation = 'まずまず';
-    else evaluation = 'もう一度挑戦してみよう！';
+    let rank = '';
+    let evaluationColor = '';
     
-    const evaluationText = this.scene.add.text(400, 320, evaluation, {
+    if (this.score >= 400) {
+      evaluation = '素晴らしい！';
+      rank = 'S';
+      evaluationColor = '#ff6b6b';
+    } else if (this.score >= 300) {
+      evaluation = 'とても良い！';
+      rank = 'A';
+      evaluationColor = '#4ecdc4';
+    } else if (this.score >= 200) {
+      evaluation = '良い！';
+      rank = 'B';
+      evaluationColor = '#45b7d1';
+    } else if (this.score >= 100) {
+      evaluation = 'まずまず';
+      rank = 'C';
+      evaluationColor = '#f9ca24';
+    } else {
+      evaluation = 'もう一度挑戦してみよう！';
+      rank = 'D';
+      evaluationColor = '#6c5ce7';
+    }
+    
+    // シンプルなランク表示
+    const rankContainer = this.scene.add.container(containerX, containerY - 20);
+    
+    const rankCircle = this.scene.add.graphics();
+    rankCircle.fillStyle(0x2a2a3a, 1);
+    rankCircle.fillCircle(-60, 0, 25);
+    const colorHex = parseInt(evaluationColor.replace('#', ''), 16);
+    rankCircle.lineStyle(2, colorHex, 1);
+    rankCircle.strokeCircle(-60, 0, 25);
+    
+    const rankText = this.scene.add.text(-60, 0, rank, {
       fontSize: '24px',
-      fill: '#00ff88',
+      fill: evaluationColor,
       fontFamily: 'Arial, sans-serif',
-      fontStyle: 'italic'
+      fontWeight: 'bold'
     }).setOrigin(0.5);
-    this.uiGroup.add(evaluationText);
     
-    // ホームに戻るボタン
-    const homeButton = this.scene.add.graphics();
-    homeButton.fillStyle(0x4a9eff, 1);
-    homeButton.fillRoundedRect(-100, -25, 200, 50, 25);
-    homeButton.lineStyle(2, 0xffffff, 1);
-    homeButton.strokeRoundedRect(-100, -25, 200, 50, 25);
-    homeButton.x = 400;
-    homeButton.y = 450;
-    homeButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
-    this.uiGroup.add(homeButton);
-    
-    const homeButtonText = this.scene.add.text(400, 450, 'ホームに戻る', {
+    const evaluationText = this.scene.add.text(30, 0, evaluation, {
       fontSize: '20px',
+      fill: evaluationColor,
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold'
+    }).setOrigin(0.5);
+    
+    rankContainer.add([rankCircle, rankText, evaluationText]);
+    this.uiGroup.add(rankContainer);
+    
+    // クリーンなボタンエリア
+    const buttonY = containerY + 80;
+    
+    // タイトルに戻るボタン
+    const titleButton = this.scene.add.graphics();
+    titleButton.fillStyle(0x4a7aff, 1);
+    titleButton.fillRoundedRect(-100, -25, 200, 50, 25);
+    titleButton.lineStyle(1, 0x6a9aff, 1);
+    titleButton.strokeRoundedRect(-100, -25, 200, 50, 25);
+    titleButton.x = containerX - 120;
+    titleButton.y = buttonY;
+    titleButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
+    this.uiGroup.add(titleButton);
+    
+    const titleButtonText = this.scene.add.text(containerX - 120, buttonY, 'タイトルに戻る', {
+      fontSize: '18px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'bold'
     }).setOrigin(0.5);
-    this.uiGroup.add(homeButtonText);
+    this.uiGroup.add(titleButtonText);
     
-    // ホームボタンのクリックイベント
-    homeButton.on('pointerdown', () => {
-      console.log('ホームに戻るボタンがクリックされました');
-      window.location.href = '/';
+    // もう一度遊ぶボタン
+    const retryButton = this.scene.add.graphics();
+    retryButton.fillStyle(0x00cc66, 1);
+    retryButton.fillRoundedRect(-100, -25, 200, 50, 25);
+    retryButton.lineStyle(1, 0x00ee88, 1);
+    retryButton.strokeRoundedRect(-100, -25, 200, 50, 25);
+    retryButton.x = containerX + 120;
+    retryButton.y = buttonY;
+    retryButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
+    this.uiGroup.add(retryButton);
+    
+    const retryButtonText = this.scene.add.text(containerX + 120, buttonY, 'もう一度遊ぶ', {
+      fontSize: '18px',
+      fill: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold'
+    }).setOrigin(0.5);
+    this.uiGroup.add(retryButtonText);
+    
+    // タイトルボタンのクリックイベント
+    titleButton.on('pointerdown', () => {
+      console.log('タイトルに戻るボタンがクリックされました');
+      this.destroy();
+      // VibrationHuntSceneのタイトル画面に戻る
+      this.scene.transitionToTitle();
     });
     
-    // マウス操作の説明
-    const instructionText = this.scene.add.text(400, 520, 'Joy-Conスティックで操作、Aボタンで決定', {
-      fontSize: '16px',
-      fill: '#888888',
+    // リトライボタンのクリックイベント
+    retryButton.on('pointerdown', () => {
+      console.log('もう一度遊ぶボタンがクリックされました');
+      this.destroy();
+      // ゲームを最初からやり直し
+      const newGame = new VibrationHuntGame(this.scene, this.jc);
+      newGame.startGame();
+    });
+    
+    // Joy-Con操作の説明
+    const instructionText = this.scene.add.text(containerX, containerY + 150, 'Joy-Con左右で選択、Aボタンで決定', {
+      fontSize: '14px',
+      fill: '#999999',
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(instructionText);
+    
+    // Joy-Con操作でのボタン選択機能
+    this.setupEndGameJoyConInput(titleButton, retryButton, titleButtonText, retryButtonText);
     
     // 入力監視を停止
     if (this.inputUpdateInterval) {
@@ -1161,6 +1269,107 @@ export class VibrationHuntGame {
       this.jc.rumble(0, 0, 0, 0);
     }
   }
+  
+  setupEndGameJoyConInput(titleButton, retryButton, titleButtonText, retryButtonText) {
+    if (!this.jc) return;
+    
+    this.selectedButton = 0; // 0: タイトル, 1: リトライ
+    this.endGameButtons = [
+      { button: titleButton, text: titleButtonText, action: 'title' },
+      { button: retryButton, text: retryButtonText, action: 'retry' }
+    ];
+    
+    // 初期選択状態を設定
+    this.updateButtonSelection();
+    
+    // Joy-Con入力監視
+    this.endGameInputInterval = setInterval(() => {
+      if (!this.jc) return;
+      
+      try {
+        const inputState = this.jc.getInputState();
+        if (!inputState) return;
+        
+        // 左右で選択切り替え
+        if (inputState.buttons.left && !this.leftPressed) {
+          this.leftPressed = true;
+          this.selectedButton = (this.selectedButton - 1 + this.endGameButtons.length) % this.endGameButtons.length;
+          this.updateButtonSelection();
+        } else if (!inputState.buttons.left) {
+          this.leftPressed = false;
+        }
+        
+        if (inputState.buttons.right && !this.rightPressed) {
+          this.rightPressed = true;
+          this.selectedButton = (this.selectedButton + 1) % this.endGameButtons.length;
+          this.updateButtonSelection();
+        } else if (!inputState.buttons.right) {
+          this.rightPressed = false;
+        }
+        
+        // Aボタンで決定
+        if (inputState.buttons.a && !this.aButtonPressed) {
+          this.aButtonPressed = true;
+          this.executeSelectedAction();
+        } else if (!inputState.buttons.a) {
+          this.aButtonPressed = false;
+        }
+        
+      } catch (error) {
+        console.error('終了画面Joy-Con入力エラー:', error);
+      }
+    }, 16);
+  }
+  
+  updateButtonSelection() {
+    this.endGameButtons.forEach((btn, index) => {
+      if (index === this.selectedButton) {
+        // 選択中のボタンを強調
+        btn.button.clear();
+        btn.button.fillStyle(index === 0 ? 0x6ab9ff : 0x33ff99, 1);
+        btn.button.fillRoundedRect(-100, -25, 200, 50, 25);
+        btn.button.lineStyle(3, 0xffffff, 1);
+        btn.button.strokeRoundedRect(-100, -25, 200, 50, 25);
+        
+        btn.text.setStyle({
+          fontSize: '20px',
+          fill: '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontWeight: 'bold'
+        });
+      } else {
+        // 非選択のボタンを通常表示
+        btn.button.clear();
+        btn.button.fillStyle(index === 0 ? 0x4a9eff : 0x00ff88, 1);
+        btn.button.fillRoundedRect(-100, -25, 200, 50, 25);
+        btn.button.lineStyle(2, 0xffffff, 1);
+        btn.button.strokeRoundedRect(-100, -25, 200, 50, 25);
+        
+        btn.text.setStyle({
+          fontSize: '18px',
+          fill: '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontWeight: 'bold'
+        });
+      }
+    });
+  }
+  
+  executeSelectedAction() {
+    const selectedBtn = this.endGameButtons[this.selectedButton];
+    
+    if (selectedBtn.action === 'title') {
+      console.log('Joy-Con: タイトルに戻る');
+      this.destroy();
+      // VibrationHuntSceneのタイトル画面に戻る
+      this.scene.transitionToTitle();
+    } else if (selectedBtn.action === 'retry') {
+      console.log('Joy-Con: もう一度遊ぶ');
+      this.destroy();
+      const newGame = new VibrationHuntGame(this.scene, this.jc);
+      newGame.startGame();
+    }
+  }
 
   destroy() {
     this.gameActive = false;
@@ -1169,6 +1378,12 @@ export class VibrationHuntGame {
     if (this.inputUpdateInterval) {
       clearInterval(this.inputUpdateInterval);
       this.inputUpdateInterval = null;
+    }
+    
+    // 終了画面の入力監視も停止
+    if (this.endGameInputInterval) {
+      clearInterval(this.endGameInputInterval);
+      this.endGameInputInterval = null;
     }
     
     if (this.jc) {
