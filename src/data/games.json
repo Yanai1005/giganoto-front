@@ -31,6 +31,14 @@
       "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
       "path": "/game",
       "gameType": "runner"
+    },
+    {
+      "id": 8,
+      "title": "強震動探し",
+      "description": "Joy-Conの振動で隠された場所を見つけよう！Nintendo Switch 2のひみつ展風ゲーム",
+      "image": "/assets/vibration_hunt.png",
+      "path": "/game",
+      "gameType": "vibration-hunt"
     }
   ],
   "gameTypes": {
@@ -57,6 +65,12 @@
       "description": "謎を解いて部屋から脱出するゲーム",
       "controls": "スペースで調べ、二人を同時操作しながら謎を解いて脱出しよう",
       "modulePath": "../games/escape/game.js"
+    },
+    "vibration-hunt": {
+      "name": "強震動探し",
+      "description": "Joy-Conの振動機能を使って隠された強震動ポイントを探すゲーム",
+      "controls": "マウスを動かして振動を感じ、Joy-ConのAボタンで決定。Joy-Con接続必須",
+      "modulePath": "../games/vibration-hunt/game.js"
     }
   }
 }

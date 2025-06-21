@@ -85,7 +85,7 @@ class GameRegistry {
         // ゲームタイプ設定を保存
         this.gameTypeConfig = gamesData.gameTypes || {};
         // gamesDataの各ゲームを登録
-        gamesData.games.forEach((gameData, index) => {
+        gamesData.games.forEach((gameData) => {
             if (gameData.gameType) {
                 try {
                     this.register(gameData.gameType, {
@@ -101,8 +101,6 @@ class GameRegistry {
                 this.errorLog(`ゲームにgameTypeがありません:`, gameData);
             }
         });
-
-        const registeredGames = this.getAllGames();
     }
 
     static getDynamicLoader(gameType) {
