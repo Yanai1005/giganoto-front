@@ -1,0 +1,129 @@
+name: Deploy Frontend to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'Docs/**'
+      - 'giganoto-infra/**'  # インフラ変更では再デプロイしない
+
+env:
+  GCP_PROJECT_ID: giganoto-463603
+  GCP_REGION: asia-northeast1
+  IMAGE_NAME: asia-northeast1-docker.pkg.dev/giganoto-463603/giganoto-repo/giganoto-frontend
+  SERVICE_NAME: giganoto-frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive 
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: 'latest'
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker to use gcloud as credential helper
+        run: |
+          gcloud auth configure-docker asia-northeast1-docker.pkg.dev --quiet
+
+      - name: Generate build metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }} \
+            --tag ${{ env.IMAGE_NAME }}:latest \
+            .
+
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+      - name: Check if Cloud Run service exists
+        id: check_service
+        run: |
+          if gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }} \
+            --quiet >/dev/null 2>&1; then
+            echo "service_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "service_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Cloud Run
+        run: |
+          if [ "${{ steps.check_service.outputs.service_exists }}" = "true" ]; then
+            # サービスが存在する場合は更新のみ
+            gcloud run services update ${{ env.SERVICE_NAME }} \
+              --image ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }} \
+              --region ${{ env.GCP_REGION }} \
+              --project ${{ env.GCP_PROJECT_ID }}
+          else
+            # サービスが存在しない場合は新規作成
+            gcloud run deploy ${{ env.SERVICE_NAME }} \
+              --image ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }} \
+              --platform managed \
+              --region ${{ env.GCP_REGION }} \
+              --project ${{ env.GCP_PROJECT_ID }} \
+              --allow-unauthenticated \
+              --port 8080 \
+              --memory 512Mi \
+              --cpu 1 \
+              --max-instances 10 \
+              --min-instances 0 \
+              --execution-environment gen2
+          fi
+
+      - name: Verify deployment
+        run: |
+          # デプロイメントが完了するまで待機
+          gcloud run services wait ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }}
+          
+          # サービスURLを取得して表示
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }} \
+            --format "value(status.url)")
+          
+          echo "🚀 サービスがデプロイされました: $SERVICE_URL"
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
+
+      - name: Run basic health check
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }} \
+            --format "value(status.url)")
+          
+          echo "🔍 ヘルスチェックを実行中..."
+          
+          # 基本的なHTTPヘルスチェック
+          if curl -s -f "$SERVICE_URL" > /dev/null; then
+            echo "✅ ヘルスチェック成功: サービスは正常に動作しています"
+          else
+            echo "❌ ヘルスチェック失敗: サービスが応答しません"
+            exit 1
+          fi
