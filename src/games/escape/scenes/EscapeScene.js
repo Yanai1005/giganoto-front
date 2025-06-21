@@ -24,7 +24,7 @@ const alllevels = [
   {
     //index1
     map: [
-      "WWWWWWWWWWFWfWWWWWWWWWWW",
+      "WWWWWWWWWFFWffWWWWWWWWWW",
       "W        LlWrR  S      W",
       "W S      LlWrR         W",
       "W        LlWrR         W",
@@ -32,7 +32,7 @@ const alllevels = [
       "W   T      W           W",
       "W     S    W  S        W",
       "W          W   S       W",
-      "W     a    W     b     W",
+      "W          W           W",
       "W   S      W        S  W",
       "W    S     W     P     W",
       "W          W           W",
@@ -82,6 +82,9 @@ class EscapeScene extends Phaser.Scene {
     this.currentLevelIndex = data.levelIndex || 0;
     this.isGameCleared = false;
     this.canTeleport = true;
+
+    this.initialPlayer1Pos = data.player1_startPos || null;
+    this.initialPlayer2Pos = data.player2_startPos || null;
   }
   preload() {
     // ダミーファイルをロード
@@ -313,7 +316,12 @@ class EscapeScene extends Phaser.Scene {
       .setDepth(11);
 
     this.createButton(centerX - 120, centerY + 100, "次のステージ", () => {
-      this.scene.restart({ levelIndex: this.currentLevelIndex + 1 });
+      const nextStageData = {
+        levelIndex: this.currentLevelIndex + 1,
+        player1_startPos: { x: this.player1.x, y: this.player1.y },
+        player2_startPos: { x: this.player2.x, y: this.player2.y },
+      };
+      this.scene.restart(nextStageData);
     });
 
     this.createButton(centerX + 120, centerY + 100, "ホームに戻る", () => {
@@ -511,16 +519,20 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createPlayer1() {
-    this.player1 = this.physics.add.sprite(
-      this.player1Start.x,
-      this.player1Start.y,
-      "p1_down_1"
-    );
+    let startX, startY;
+    if (this.initialPlayer1Pos) {
+      startX = this.initialPlayer1Pos.x;
+      startY = this.initialPlayer1Pos.y;
+    } else {
+      startX = this.player1Start.x;
+      startY = this.player1Start.y;
+    }
+    this.player1 = this.physics.add.sprite(startX, startY, "p1_down_1");
     this.player1.setCollideWorldBounds(true);
     this.player1.setBounce(0.2);
     this.player1.setVelocity(0, 0);
     if (this.currentLevelIndex === 2) {
-      this.player1.setDrag(20);
+      this.player1.setDrag(0);
     } else {
       this.player1.setDrag(2000);
     }
@@ -529,16 +541,21 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createPlayer2() {
-    this.player2 = this.physics.add.sprite(
-      this.player2Start.x,
-      this.player2Start.y,
-      "p2_down_1"
-    );
+    let startX, startY;
+    if (this.initialPlayer2Pos) {
+      startX = this.initialPlayer2Pos.x;
+      startY = this.initialPlayer2Pos.y;
+    } else {
+      startX = this.player2Start.x;
+      startY = this.player2Start.y;
+    }
+    this.player2 = this.physics.add.sprite(startX, startY, "p2_down_1");
+
     this.player2.setCollideWorldBounds(true);
     this.player2.setBounce(0.2);
     this.player2.setVelocity(0, 0);
     if (this.currentLevelIndex === 2) {
-      this.player2.setDrag(20);
+      this.player2.setDrag(0);
     } else {
       this.player2.setDrag(2000);
     }
