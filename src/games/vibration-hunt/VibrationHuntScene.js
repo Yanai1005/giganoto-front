@@ -103,7 +103,7 @@ class VibrationHuntScene extends Phaser.Scene {
     this.createParticleEffect();
 
     // 操作説明
-    this.add.text(400, 560, 'マウス/Joy-Conで操作、クリック/Aボタンで決定', {
+    this.add.text(400, 560, 'マウスで操作、クリックで決定', {
       fontSize: '14px',
       fill: '#6677aa',
       fontFamily: 'Arial, sans-serif'
@@ -206,10 +206,10 @@ class VibrationHuntScene extends Phaser.Scene {
     circle3.fillCircle(700, 120, 60);
 
     // Joy-Conアイコンの作成（シンプルな図形で表現）
-    this.createJoyConIcon(400, 100);
+    this.joyconIcon = this.createJoyConIcon(400, 100);
 
     // メインタイトル（グロー効果付き）
-    this.add.text(400, 160, 'Joy-Con接続', {
+    this.titleText = this.add.text(400, 160, 'Joy-Con接続', {
       fontSize: '32px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
@@ -219,19 +219,19 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // 接続手順カード
-    this.createInstructionCard();
+    this.instructionBox = this.createInstructionCard();
 
     // スタイリッシュな接続ボタン
-    const connectButton = this.createStylishButton(400, 440, 'Joy-Con接続', '#00d4aa', '#00b899');
+    this.connectButton = this.createStylishButton(400, 440, 'Joy-Con接続', '#00d4aa', '#00b899');
     
-    connectButton.on('pointerdown', async () => {
-      await this.connectJoyCon(connectButton);
+    this.connectButton.on('pointerdown', async () => {
+      await this.connectJoyCon(this.connectButton);
     });
 
     // 戻るボタン
-    const backButton = this.createStylishButton(400, 500, 'タイトルに戻る', '#4a9eff', '#3a8eef');
+    this.backButton = this.createStylishButton(400, 500, 'タイトルに戻る', '#4a9eff', '#3a8eef');
     
-    backButton.on('pointerdown', () => {
+    this.backButton.on('pointerdown', () => {
       this.transitionToTitle();
     });
 
@@ -252,6 +252,14 @@ class VibrationHuntScene extends Phaser.Scene {
 
     // パーティクル効果
     this.createParticleEffect();
+    
+    // 操作説明（画面下部）
+    this.add.text(400, 580, 'マウスで操作、クリックで決定', {
+      fontSize: '12px',
+      fill: '#8899bb',
+      fontFamily: 'Arial, sans-serif',
+      fontStyle: 'italic'
+    }).setOrigin(0.5);
   }
 
   transitionToTitle() {
@@ -275,25 +283,53 @@ class VibrationHuntScene extends Phaser.Scene {
     });
   }
 
+  // ゲーム終了時にタイトル画面に戻るためのメソッド
+  returnToTitleFromGame() {
+    console.log('ゲームからタイトルに戻る処理開始');
+    
+    // 全てのイベントハンドラーをクリア
+    this.clearAllEventHandlers();
+    
+    // 現在のゲームを停止
+    if (this.vibrationHuntGame) {
+      this.vibrationHuntGame.destroy();
+      this.vibrationHuntGame = null;
+    }
+    
+    // 画面をクリア
+    this.children.removeAll();
+    
+    // タイトル画面を表示
+    this.createTitleScreen();
+    
+    console.log('タイトル画面に戻る処理完了');
+  }
+
   createJoyConIcon(x, y) {
     // Joy-Con (R) のシンプルなアイコン
     const joyconGraphics = this.add.graphics();
     
     // メイン部分
     joyconGraphics.fillStyle(0x00d4aa, 1);
-    joyconGraphics.fillRoundedRect(x - 25, y - 30, 50, 60, 8);
+    joyconGraphics.fillRoundedRect(-25, -30, 50, 60, 8);
     
     // ボタン部分
     joyconGraphics.fillStyle(0x4a9eff, 1);
-    joyconGraphics.fillCircle(x, y - 10, 6);
-    joyconGraphics.fillCircle(x + 10, y, 4);
-    joyconGraphics.fillCircle(x - 10, y, 4);
-    joyconGraphics.fillCircle(x, y + 10, 4);
+    joyconGraphics.fillCircle(0, -10, 6);
+    joyconGraphics.fillCircle(10, 0, 4);
+    joyconGraphics.fillCircle(-10, 0, 4);
+    joyconGraphics.fillCircle(0, 10, 4);
     
     // グロー効果
     const glowGraphics = this.add.graphics();
     glowGraphics.fillStyle(0x00d4aa, 0.3);
-    glowGraphics.fillCircle(x, y, 40);
+    glowGraphics.fillCircle(0, 0, 40);
+    
+    // コンテナとして返すために両方の要素をまとめる
+    const iconContainer = this.add.container(x, y);
+    iconContainer.add([joyconGraphics, glowGraphics]);
+    
+    return iconContainer;
   }
 
   createInstructionCard() {
@@ -317,7 +353,7 @@ class VibrationHuntScene extends Phaser.Scene {
     cardGraphics.strokeRoundedRect(120, 240, 560, 140, 20);
 
     // カードタイトル
-    this.add.text(400, 260, '接続手順', {
+    const cardTitle = this.add.text(400, 260, '接続手順', {
       fontSize: '20px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
@@ -333,6 +369,7 @@ class VibrationHuntScene extends Phaser.Scene {
       '下の「Joy-Con接続」ボタンをクリック'
     ];
 
+    const stepElements = [];
     steps.forEach((step, index) => {
       // ステップ番号の装飾（より美しく）
       const stepBg = this.add.graphics();
@@ -341,7 +378,7 @@ class VibrationHuntScene extends Phaser.Scene {
       stepBg.lineStyle(2, 0xffffff, 1);
       stepBg.strokeCircle(150, 295 + index * 30, 12);
       
-      this.add.text(150, 295 + index * 30, (index + 1).toString(), {
+      const stepNumber = this.add.text(150, 295 + index * 30, (index + 1).toString(), {
         fontSize: '14px',
         fill: '#ffffff',
         fontFamily: 'Arial, sans-serif',
@@ -349,12 +386,20 @@ class VibrationHuntScene extends Phaser.Scene {
       }).setOrigin(0.5);
 
       // ステップテキスト
-      this.add.text(180, 295 + index * 30, step, {
+      const stepText = this.add.text(180, 295 + index * 30, step, {
         fontSize: '16px',
         fill: '#c8d6ff',
         fontFamily: 'Arial, sans-serif'
       }).setOrigin(0, 0.5);
+      
+      stepElements.push(stepBg, stepNumber, stepText);
     });
+    
+    // コンテナとして返すために全ての要素をまとめる
+    const cardContainer = this.add.container(0, 0);
+    cardContainer.add([cardGraphics, cardTitle, ...stepElements]);
+    
+    return cardContainer;
   }
 
   createStylishButton(x, y, text, primaryColor, hoverColor) {
@@ -575,7 +620,16 @@ class VibrationHuntScene extends Phaser.Scene {
   }
 
   startGame() {
+    console.log('VibrationHuntScene: ゲーム開始処理開始');
+    
+    // 画面状態をゲームに設定
     this.currentScreen = 'game';
+    
+    // 既存のイベントハンドラーをクリア
+    this.clearAllEventHandlers();
+    
+    // パーティクル効果を停止
+    this.stopParticleEffect();
     
     // フェードアウト効果でゲーム開始
     const fadeGraphics = this.add.graphics();
@@ -587,15 +641,166 @@ class VibrationHuntScene extends Phaser.Scene {
       alpha: 1,
       duration: 1000,
       ease: 'Power2',
-      onComplete: () => {
-        // 接続画面をクリア
-        this.children.removeAll();
+      onComplete: async () => {
+        // 接続画面の要素のみを個別に削除（デバッグUIは残す）
+        console.log('接続画面の要素を削除開始');
+        
+        // 接続画面の要素を個別に削除
+        if (this.joyconIcon) this.joyconIcon.destroy();
+        if (this.titleText) this.titleText.destroy();
+        if (this.instructionBox) this.instructionBox.destroy();
+        if (this.connectButton) this.connectButton.destroy();
+        if (this.backButton) this.backButton.destroy();
+        
+        // デバッグUIを先に作成
+        this.createJoyConDebugUI();
+        this.input.keyboard.on('keydown-D', () => {
+          if (this.debugText) this.debugText.visible = !this.debugText.visible;
+        });
         
         // ゲーム開始
-        this.vibrationHuntGame = new VibrationHuntGame(this, this.joyConManager);
-        this.vibrationHuntGame.startGame();
+        console.log('VibrationHuntGame インスタンス作成開始');
+        
+        try {
+          console.log('VibrationHuntGameクラスをインポート中...');
+          const { VibrationHuntGame } = await import('./VibrationHuntGame.js');
+          console.log('VibrationHuntGameクラスのインポート完了');
+          
+          console.log('VibrationHuntGameインスタンス作成中...');
+          this.vibrationHuntGame = new VibrationHuntGame(this, this.joyConManager);
+          console.log('VibrationHuntGameインスタンス作成完了');
+          
+          console.log('VibrationHuntGame.startGame()実行中...');
+          await this.vibrationHuntGame.startGame();
+          console.log('VibrationHuntGame.startGame()実行完了');
+          
+          // ゲーム開始後にデバッグUIを再作成（確実に表示するため）
+          console.log('ゲーム開始後のデバッグUI再作成開始');
+          if (!this.debugText || this.debugText.scene === null) {
+            this.createJoyConDebugUI();
+            console.log('デバッグUIを再作成しました');
+          } else {
+            // 既存のデバッグUIを最前面に移動
+            this.debugText.setDepth(2000);
+            console.log('既存のデバッグUIを最前面に移動しました');
+          }
+          
+        } catch (error) {
+          console.error('VibrationHuntGame作成・開始エラー:', error);
+          console.error('エラースタック:', error.stack);
+          
+          // エラー表示
+          this.add.text(400, 300, 'ゲーム開始エラーが発生しました', {
+            fontSize: '24px',
+            fill: '#ff4444',
+            fontFamily: 'Arial, sans-serif'
+          }).setOrigin(0.5);
+          
+          this.add.text(400, 340, 'コンソールを確認してください', {
+            fontSize: '16px',
+            fill: '#ff8888',
+            fontFamily: 'Arial, sans-serif'
+          }).setOrigin(0.5);
+          
+          // 戻るボタンを表示
+          const errorBackButton = this.createStylishButton(400, 400, 'タイトルに戻る', '#ff4444', '#ff6666');
+          errorBackButton.on('pointerdown', () => {
+            this.transitionToTitle();
+          });
+        }
+        
+        console.log('VibrationHuntScene: ゲーム開始処理完了');
       }
     });
+  }
+
+  clearAllEventHandlers() {
+    // シーンの全てのイベントハンドラーをクリア
+    console.log('VibrationHuntScene: 全てのイベントハンドラーをクリア開始');
+    
+    // シーンレベルの入力イベントをクリア
+    this.input.removeAllListeners();
+    console.log('シーンレベルの入力イベントをクリア');
+    
+    // 全ての子オブジェクトのイベントハンドラーをクリア
+    let clearedCount = 0;
+    this.children.each((child) => {
+      if (child.input && child.input.enabled) {
+        child.removeAllListeners();
+        child.disableInteractive();
+        clearedCount++;
+        console.log('子オブジェクトのイベントハンドラーを削除:', child.constructor.name);
+      }
+    });
+    
+    console.log(`合計 ${clearedCount} 個の子オブジェクトのイベントハンドラーをクリア`);
+    
+    // パーティクル効果のTweenをクリア
+    if (this.particleTweens) {
+      this.particleTweens.forEach(tween => {
+        if (tween) tween.remove();
+      });
+      this.particleTweens = [];
+      console.log('パーティクルTweenをクリア');
+    }
+    
+    console.log('VibrationHuntScene: 全てのイベントハンドラーをクリア完了');
+  }
+
+  createJoyConDebugUI() {
+    console.log('デバッグUI作成開始');
+    
+    // デバッグ情報表示用のテキスト
+    this.debugText = this.add.text(10, 10, 'Joy-Con Debug Info (Dキーで切替)\n接続状態: 確認中...\nマネージャー: ' + (this.joyConManager ? '有効' : '無効'), {
+      fontSize: '14px',
+      fill: '#00ff00',
+      fontFamily: 'Courier, monospace',
+      backgroundColor: '#000000',
+      padding: { x: 10, y: 10 }
+    });
+    
+    this.debugText.setDepth(2000); // より確実に最前面に表示
+    this.debugText.setScrollFactor(0); // カメラの影響を受けない
+    
+    console.log('デバッグUI作成完了');
+    
+    // Joy-Conの状態を定期的に更新
+    if (this.joyConManager) {
+      this.debugUpdateTimer = this.time.addEvent({
+        delay: 100, // 100ms間隔
+        callback: this.updateDebugInfo,
+        callbackScope: this,
+        loop: true
+      });
+    }
+  }
+
+  updateDebugInfo() {
+    if (!this.debugText || !this.joyConManager) return;
+    
+    // JoyConHIDManagerの実際のプロパティを使用
+    const device = this.joyConManager.device;
+    const inputState = this.joyConManager.inputState;
+    
+    if (!device || !device.opened) {
+      this.debugText.setText('Joy-Con Debug Info (Dキーで切替)\n接続状態: 未接続\nデバイス: ' + (device ? '存在するが未接続' : '存在しない'));
+      return;
+    }
+    
+    const debugInfo = [
+      'Joy-Con Debug Info (Dキーで切替)',
+      `接続状態: 接続済み (${device.productName})`,
+      `デバイスID: ${device.productId.toString(16)}`,
+      `スティックX: ${inputState.rightStick.x.toFixed(3)}`,
+      `スティックY: ${inputState.rightStick.y.toFixed(3)}`,
+      `生データ byte3: ${inputState.rawButtons.byte3.toString(2).padStart(8,'0')}`,
+      `生データ byte4: ${inputState.rawButtons.byte4.toString(2).padStart(8,'0')}`,
+      `生データ byte5: ${inputState.rawButtons.byte5.toString(2).padStart(8,'0')}`,
+      `Aボタン: ${inputState.buttons.a ? 'ON' : 'OFF'}`,
+      `レポート数: ${this.joyConManager.reportCount || 0}`
+    ];
+    
+    this.debugText.setText(debugInfo.join('\n'));
   }
 
   destroy() {
@@ -604,6 +809,9 @@ class VibrationHuntScene extends Phaser.Scene {
     }
     if (this.joyConManager) {
       this.joyConManager.destroy();
+    }
+    if (this.debugUpdateTimer) {
+      this.debugUpdateTimer.destroy();
     }
   }
 }

@@ -9,18 +9,26 @@ export class JoyConHIDManager {
     this.inputState = {
       rightStick: { x: 0, y: 0 },
       buttons: {
-        a: true, b: false, x: false, y: false,
+        a: false, b: false, x: false, y: false,
         l: false, r: false, zl: false, zr: false,
         sl: false, sr: false,
         minus: false, plus: false, home: false, capture: false
-      }
+      },
+      rawButtons: { byte3: 0, byte4: 0, byte5: 0 } // 生のボタンデータを保持
     };
+    
+    // ボタンの基本状態を記録（キャリブレーション用）
+    this.buttonBaseline = null;
+    this.buttonCalibrated = false;
     
     // 振動探しゲーム専用のキャリブレーション設定
     this.stickCalibration = null;
     this.calibrationTimer = null;
     this.lastAz = 0;
     this.motionCooldown = false;
+    this.lastDebugOutput = null;
+    this.lastFullDebug = null;
+    this.lastXButtonState = false;
   }
 
   async connect() {
@@ -45,7 +53,8 @@ export class JoyConHIDManager {
       }
 
       this.device = devices[0];
-      console.log('Joy-Con選択:', this.device.productName);
+      this.isRightJoyCon = this.device.productId === 0x2007;
+      console.log('Joy-Con選択:', this.device.productName, this.isRightJoyCon ? '(Right)' : '(Left)');
 
       if (this.device.opened) {
         console.log('Joy-Conは既に接続済みです');
@@ -58,18 +67,32 @@ export class JoyConHIDManager {
       // 振動探しゲーム専用の設定
       const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
       
-      // IMUを有効化
-      await this.#sendSubCommand(0x40, [0x01]);
-      await sleep(50);
+      console.log('Joy-Con初期化開始...');
       
-      // 標準レポートモードに設定
+      // 標準フルモードを有効化
+      console.log('標準フルモードを有効化中...');
       await this.#sendSubCommand(0x03, [0x30]);
-      await sleep(50);
+      await sleep(100);
+      
+      // IMUを有効化
+      console.log('IMUモードを有効化中...');
+      await this.#sendSubCommand(0x40, [0x01]);
+      await sleep(100);
+      
+      // 振動を有効化
+      console.log('振動モードを有効化中...');
+      await this.#sendSubCommand(0x48, [0x01]);
+      await sleep(100);
+      
+      // プレイヤーライトを設定（接続確認用）
+      console.log('プレイヤーライトを設定中...');
+      await this.#sendSubCommand(0x30, [0x01]); // Player 1 light
+      await sleep(100);
 
       // イベントリスナー設定
       this.device.addEventListener('inputreport', (e) => this.#onReport(e));
 
-      console.log('Joy-Con設定完了 - 振動探しゲーム用');
+      console.log('Joy-Con初期化完了 - 振動探しゲーム用');
       return 'connected';
     } catch (error) {
       console.error('Joy-Con接続エラー:', error);
@@ -79,6 +102,17 @@ export class JoyConHIDManager {
 
   // 振動探しゲーム専用の入力状態取得
   getInputState() {
+    // Xボタンが押された場合、手動キャリブレーションを実行
+    if (this.inputState.buttons.x && !this.lastXButtonState) {
+      console.log('Xボタンが押されました - 手動キャリブレーションを実行');
+      this.stickCalibration = null; // キャリブレーションをリセット
+      if (this.calibrationTimer) {
+        clearTimeout(this.calibrationTimer);
+        this.calibrationTimer = null;
+      }
+    }
+    this.lastXButtonState = this.inputState.buttons.x;
+
     return this.inputState;
   }
 
@@ -162,96 +196,218 @@ export class JoyConHIDManager {
     this.reportCount++;
     
     if (e.reportId !== 0x30) {
+      console.log(`[REPORT] 予期しないレポートID: ${e.reportId.toString(16)}`);
       return;
     }
     const d = new DataView(e.data.buffer);
+    
+    // レポート全体をデバッグ出力（全バイト）
+    const reportBytes = [];
+    for (let i = 0; i < e.data.byteLength; i++) {
+      reportBytes.push(d.getUint8(i).toString(16).padStart(2, '0'));
+    }
+    
+    // 10回に1回だけ全データを出力（ログを減らすため）
+    if (this.reportCount % 10 === 0) {
+      console.log(`[REPORT DATA] ${reportBytes.join(' ')}`);
+      console.log(`[REPORT LENGTH] ${e.data.byteLength} bytes`);
+    }
+    
+    // ---------------- ボタン解析 ----------------
+    const buttons1 = d.getUint8(3); // 標準位置1
+    const buttons2 = d.getUint8(4); // 標準位置2
+    const buttons3 = d.getUint8(5); // 標準位置3
+    
+    // 他の可能性のある位置もチェック
+    const altButtons1 = d.getUint8(1); // 代替位置1
+    const altButtons2 = d.getUint8(2); // 代替位置2
+    const altButtons3 = d.getUint8(12); // 代替位置3
+    const altButtons4 = d.getUint8(13); // 代替位置4
 
-    // ボタン入力の解析（Joy-Con R用）
-    const buttons1 = d.getUint8(3);
-    const buttons2 = d.getUint8(4);
-
-    // 振動探しゲーム用のボタンマッピング
-    this.inputState.buttons.a = !!(buttons1 & 0x01);
-    this.inputState.buttons.b = !!(buttons1 & 0x02);
-    this.inputState.buttons.x = !!(buttons1 & 0x04);
-    this.inputState.buttons.y = !!(buttons1 & 0x08);
-    this.inputState.buttons.sl = !!(buttons1 & 0x10);
-    this.inputState.buttons.sr = !!(buttons1 & 0x20);
-    this.inputState.buttons.r = !!(buttons1 & 0x40);
-    this.inputState.buttons.zr = !!(buttons1 & 0x80);
-
-    this.inputState.buttons.minus = !!(buttons2 & 0x01);
-    this.inputState.buttons.plus = !!(buttons2 & 0x02);
-    this.inputState.buttons.home = !!(buttons2 & 0x10);
-
-    // 右スティック（Joy-Con R）の入力解析
-    const rightStickRaw = [
-      d.getUint8(9),
-      d.getUint8(10),
-      d.getUint8(11)
-    ];
-
-    const rightStickX = rightStickRaw[0] | ((rightStickRaw[1] & 0x0F) << 8);
-    const rightStickY = (rightStickRaw[1] >> 4) | (rightStickRaw[2] << 4);
-
-    // 振動探しゲーム専用のキャリブレーション（改良版）
-    if (!this.stickCalibration) {
-      this.stickCalibration = {
-        centerX: rightStickX,
-        centerY: rightStickY,
-        calibrated: false,
-        sampleCount: 1,
-        samples: []
+    // 実際のボタンデータが存在する位置を使用
+    // コンソールログから、代替位置にデータがあることが判明
+    const actualButtons1 = altButtons1; // byte1にメインボタンデータ
+    const actualButtons2 = altButtons2; // byte2に追加ボタンデータ
+    const actualButtons3 = altButtons3; // byte12に追加データ
+    
+    // ボタンの基本状態をキャリブレーション（初回のみ）
+    if (!this.buttonCalibrated && this.reportCount > 10) {
+      // 10回レポートを受信した後に基本状態を記録
+      this.buttonBaseline = {
+        byte1: actualButtons1,
+        byte2: actualButtons2,
+        byte12: actualButtons3
       };
-      console.log(`振動探しゲーム - スティック初期値: X=${rightStickX}, Y=${rightStickY}`);
+      this.buttonCalibrated = true;
+      console.log('[BTN CALIBRATION] ボタン基本状態を記録:', {
+        byte1: actualButtons1.toString(2).padStart(8,'0'),
+        byte2: actualButtons2.toString(2).padStart(8,'0'),
+        byte12: actualButtons3.toString(2).padStart(8,'0')
+      });
+    }
+    
+    // キャリブレーション完了後は、基本状態からの変化のみを検出
+    let buttonPressed1 = 0;
+    let buttonPressed2 = 0;
+    
+    if (this.buttonCalibrated && this.buttonBaseline) {
+      // 基本状態から変化したビットのみを検出（XOR演算）
+      buttonPressed1 = actualButtons1 ^ this.buttonBaseline.byte1;
+      buttonPressed2 = actualButtons2 ^ this.buttonBaseline.byte2;
+      
+      // さらに、現在の値が基本状態より大きい場合のみ「押された」と判定
+      buttonPressed1 = buttonPressed1 & actualButtons1;
+      buttonPressed2 = buttonPressed2 & actualButtons2;
+    } else {
+      // キャリブレーション前は全て false
+      buttonPressed1 = 0;
+      buttonPressed2 = 0;
+    }
+    
+    // 生データを保持（デバッグ用）
+    this.inputState.rawButtons.byte3 = buttonPressed1;
+    this.inputState.rawButtons.byte4 = buttonPressed2;
+    this.inputState.rawButtons.byte5 = actualButtons3;
+
+    // ボタンが押されている可能性のあるバイトを全て確認
+    if (buttons1 !== 0 || buttons2 !== 0 || buttons3 !== 0 || 
+        altButtons1 !== 0 || altButtons2 !== 0 || altButtons3 !== 0 || altButtons4 !== 0) {
+      console.log('[BTN DEBUG] 標準位置 - byte3=', buttons1.toString(2).padStart(8,'0'), 
+                  'byte4=', buttons2.toString(2).padStart(8,'0'),
+                  'byte5=', buttons3.toString(2).padStart(8,'0'));
+      console.log('[BTN DEBUG] 代替位置 - byte1=', altButtons1.toString(2).padStart(8,'0'),
+                  'byte2=', altButtons2.toString(2).padStart(8,'0'),
+                  'byte12=', altButtons3.toString(2).padStart(8,'0'),
+                  'byte13=', altButtons4.toString(2).padStart(8,'0'));
     }
 
-    if (!this.stickCalibration.calibrated) {
-      // より多くのサンプルを収集してより正確な中央値を計算
-      this.stickCalibration.samples.push({ x: rightStickX, y: rightStickY });
-      this.stickCalibration.sampleCount++;
+    if (this.isRightJoyCon) {
+      // 実際のレポートデータに基づくボタンマッピング
+      // キャリブレーション後の変化データからボタンを読み取り
+      this.inputState.buttons.y      = !!(buttonPressed1 & 0x01); // bit 0
+      this.inputState.buttons.x      = !!(buttonPressed1 & 0x02); // bit 1
+      this.inputState.buttons.b      = !!(buttonPressed1 & 0x04); // bit 2
+      this.inputState.buttons.a      = !!(buttonPressed2 & 0x01) || !!(buttonPressed2 & 0x02) || 
+                                       !!(buttonPressed2 & 0x04) || !!(buttonPressed2 & 0x08) ||
+                                       !!(buttonPressed2 & 0x10) || !!(buttonPressed2 & 0x20) ||
+                                       !!(buttonPressed2 & 0x40) || !!(buttonPressed2 & 0x80); // byte2の任意のビット
+      this.inputState.buttons.sr     = !!(buttonPressed1 & 0x10); // bit 4
+      this.inputState.buttons.sl     = !!(buttonPressed1 & 0x20); // bit 5
+      this.inputState.buttons.r      = !!(buttonPressed1 & 0x40); // bit 6
+      this.inputState.buttons.zr     = !!(buttonPressed1 & 0x80); // bit 7
       
-      // 移動平均で中央値を更新
-      const recentSamples = this.stickCalibration.samples.slice(-50); // 最新50サンプル
-      const avgX = recentSamples.reduce((sum, s) => sum + s.x, 0) / recentSamples.length;
-      const avgY = recentSamples.reduce((sum, s) => sum + s.y, 0) / recentSamples.length;
-      
-      this.stickCalibration.centerX = avgX;
-      this.stickCalibration.centerY = avgY;
-      
-      if (!this.calibrationTimer) {
-        this.calibrationTimer = setTimeout(() => {
-          this.stickCalibration.calibrated = true;
-          console.log(`振動探しゲーム - キャリブレーション完了: 中央値 X=${this.stickCalibration.centerX.toFixed(0)}, Y=${this.stickCalibration.centerY.toFixed(0)} (${this.stickCalibration.sampleCount}サンプル)`);
-        }, 5000); // 5秒間キャリブレーション
+      // byte2 からシステムボタンを読み取り
+      this.inputState.buttons.minus  = !!(buttonPressed2 & 0x01);
+      this.inputState.buttons.plus   = !!(buttonPressed2 & 0x02);
+      this.inputState.buttons.home   = !!(buttonPressed2 & 0x10);
+      this.inputState.buttons.capture = !!(buttonPressed2 & 0x20);
+
+      // 未使用のボタンは false にリセット
+      this.inputState.buttons.l  = false;
+      this.inputState.buttons.zl = false;
+
+      // Aボタンデバッグ（押されている時のみ）
+      if (this.inputState.buttons.a) {
+        console.log('[BTN] A button pressed!');
       }
+      
+      // 全てのボタン状態をデバッグ出力（ボタンが押されている時のみ）
+      if (buttonPressed1 !== 0 || buttonPressed2 !== 0) {
+        console.log('[BTN] Button states:', {
+          y: this.inputState.buttons.y,
+          x: this.inputState.buttons.x,
+          b: this.inputState.buttons.b,
+          a: this.inputState.buttons.a,
+          sr: this.inputState.buttons.sr,
+          sl: this.inputState.buttons.sl,
+          r: this.inputState.buttons.r,
+          zr: this.inputState.buttons.zr
+        });
+        console.log('[BTN] Raw pressed data:', {
+          buttonPressed1: buttonPressed1.toString(2).padStart(8,'0'),
+          buttonPressed2: buttonPressed2.toString(2).padStart(8,'0')
+        });
+        
+        // Aボタン専用の詳細デバッグ
+        if (buttonPressed2 !== 0) {
+          console.log('[A-BTN DEBUG] byte4変化検出:', {
+            'bit0(0x01)': !!(buttonPressed2 & 0x01),
+            'bit1(0x02)': !!(buttonPressed2 & 0x02),
+            'bit2(0x04)': !!(buttonPressed2 & 0x04),
+            'bit3(0x08)': !!(buttonPressed2 & 0x08),
+            'bit4(0x10)': !!(buttonPressed2 & 0x10),
+            'bit5(0x20)': !!(buttonPressed2 & 0x20),
+            'bit6(0x40)': !!(buttonPressed2 & 0x40),
+            'bit7(0x80)': !!(buttonPressed2 & 0x80)
+          });
+        }
+      }
+    } else {
+      // Joy-Con L（未使用だが初期化）
+      this.inputState.buttons.a = false;
     }
 
-    // 振動探しゲーム専用の正規化設定
+    // ---------------- スティック解析 ----------------
+    let stickX, stickY;
+    if (this.isRightJoyCon) {
+      // Joy-Con R: bytes 9-11 に12bitずつ格納
+      const byte9 = d.getUint8(9);
+      const byte10 = d.getUint8(10);  
+      const byte11 = d.getUint8(11);
+      
+      stickX = byte9 | ((byte10 & 0x0f) << 8);
+      stickY = (byte10 >> 4) | (byte11 << 4);
+      
+      // デバッグ用：生のバイト値を表示
+      console.log(`[RAW BYTES] byte9=${byte9} byte10=${byte10} byte11=${byte11} | stickX=${stickX} stickY=${stickY}`);
+    } else {
+      // Joy-Con L: bytes 6-8
+      stickX = d.getUint8(6) | ((d.getUint8(7) & 0x0f) << 8);
+      stickY = (d.getUint8(7) >> 4) | (d.getUint8(8) << 4);
+    }
+
+    // ----------- 動的キャリブレーション -----------
+    if (!this.stickCalibration) {
+      // 初回読み取り値を中央値として採用。一瞬でキャリブレーション完了させる。
+      this.stickCalibration = {
+        centerX: stickX,
+        centerY: stickY,
+        calibrated: true
+      };
+      console.log(`[JoyCon] 即時キャリブレーション: centerX=${stickX}, centerY=${stickY}`);
+    }
+
     const centerX = this.stickCalibration.centerX;
     const centerY = this.stickCalibration.centerY;
+    // Joy-Con縦持ち時の軸マッピング
+    // 物理X軸（左右）→ 画面の上下方向
+    // 物理Y軸（上下）→ 画面の左右方向
     const range = 1800;
 
-    const normalizedX = Math.max(-1, Math.min(1, (rightStickX - centerX) / range));
-    const normalizedY = Math.max(-1, Math.min(1, (rightStickY - centerY) / range));
+    // 物理X軸を画面の上下方向に、物理Y軸を画面の左右方向にマッピング
+    let screenY = (stickX - centerX) / range;
+    let screenX = (stickY - centerY) / range;
 
-    this.inputState.rightStick.x = normalizedX;
-    this.inputState.rightStick.y = normalizedY;
+    // 範囲をクランプ
+    screenX = Math.max(-1, Math.min(1, screenX));
+    screenY = Math.max(-1, Math.min(1, screenY));
 
-    // 振動探しゲーム専用のデッドゾーン（安定性最優先）
-    const deadzone = 0.25; // デッドゾーンをさらに大きくして確実に意図しない移動を防止
-    if (Math.abs(this.inputState.rightStick.x) < deadzone) {
-      this.inputState.rightStick.x = 0;
+    // デッドゾーン
+    const deadzone = 0.05;
+    if (Math.abs(screenX) < deadzone) screenX = 0;
+    if (Math.abs(screenY) < deadzone) screenY = 0;
+
+    this.inputState.rightStick.x = screenX;  // 画面左右
+    this.inputState.rightStick.y = screenY;  // 画面上下
+
+    // デバッグ
+    if (this.reportCount % 50 === 0) { // 50回に1回だけ出力（ログを減らすため）
+      console.log(`[JoyCon] Stick raw X=${stickX} Y=${stickY} | center X=${centerX} Y=${centerY} | screenX=${screenX.toFixed(3)} screenY=${screenY.toFixed(3)}`);
     }
-    if (Math.abs(this.inputState.rightStick.y) < deadzone) {
-      this.inputState.rightStick.y = 0;
-    }
-
-    // デバッグ情報（振動探しゲーム用）- キャリブレーション問題の診断
-    if (Math.abs(this.inputState.rightStick.x) > 0.01 || Math.abs(this.inputState.rightStick.y) > 0.01) {
-      console.log(`[DEBUG] 生データ: rawX=${rightStickX}, rawY=${rightStickY}, 中央値: centerX=${this.stickCalibration.centerX.toFixed(0)}, centerY=${this.stickCalibration.centerY.toFixed(0)}`);
-      console.log(`[DEBUG] 正規化後: normalizedX=${normalizedX.toFixed(3)}, normalizedY=${normalizedY.toFixed(3)}`);
-      console.log(`[DEBUG] 最終値: X=${this.inputState.rightStick.x.toFixed(3)}, Y=${this.inputState.rightStick.y.toFixed(3)}`);
+    
+    // Y軸の詳細デバッグ
+    if (Math.abs(stickY - centerY) > 100 && this.reportCount % 10 === 0) {
+      console.log(`[Y軸詳細] stickY=${stickY}, centerY=${centerY}, diff=${stickY - centerY}, screenY=${screenY.toFixed(3)}`);
     }
   }
 } 
