@@ -687,14 +687,17 @@ export class VibrationHuntGame {
   createBeautifulResultScreen(distance, roundScore) {
     // 半透明の背景オーバーレイ
     const overlay = this.scene.add.graphics();
-    overlay.fillStyle(0x000000, 0.7);
+    overlay.fillStyle(0x000000, 0.8);
     overlay.fillRect(0, 0, 800, 600);
     this.uiGroup.add(overlay);
     
-    // メインの結果パネル
-    const panelWidth = 500;
-    const panelHeight = 350;
-    const panelX = 400;
+    // 左側に位置表示パネルを作成
+    this.createPositionPanel(distance);
+    
+    // メインの結果パネル（右側に配置）
+    const panelWidth = 320;
+    const panelHeight = 400;
+    const panelX = 600;
     const panelY = 300;
     
     // グラデーション背景パネル
@@ -707,33 +710,9 @@ export class VibrationHuntGame {
     panel.strokeRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
     this.uiGroup.add(panel);
     
-    // 正解位置を美しく表示
-    const correctCircle = this.scene.add.graphics();
-    correctCircle.fillStyle(0x00ff88, 0.9);
-    correctCircle.fillCircle(this.targetPosition.x, this.targetPosition.y, 18);
-    
-    // 正解位置の外側リング
-    correctCircle.lineStyle(4, 0xffffff, 0.8);
-    correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 18);
-    correctCircle.lineStyle(2, 0x00ff88, 1);
-    correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 25);
-    this.uiGroup.add(correctCircle);
-    
-    // 正解位置のパルスアニメーション
-    this.scene.tweens.add({
-      targets: correctCircle,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      alpha: 0.7,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-    
     // タイトル「結果発表」
-    const titleText = this.scene.add.text(panelX, panelY - 120, '結果発表', {
-      fontSize: '32px',
+    const titleText = this.scene.add.text(panelX, panelY - 160, '結果発表', {
+      fontSize: '28px',
       fill: '#00d4ff',
       fontWeight: 'bold',
       fontFamily: 'Arial, sans-serif'
@@ -760,8 +739,8 @@ export class VibrationHuntGame {
       accuracyColor = '#ff4444';
     }
     
-    const accuracyText = this.scene.add.text(panelX, panelY - 60, accuracyRating, {
-      fontSize: '28px',
+    const accuracyText = this.scene.add.text(panelX, panelY - 100, accuracyRating, {
+      fontSize: '24px',
       fill: accuracyColor,
       fontWeight: 'bold',
       fontFamily: 'Arial, sans-serif'
@@ -771,13 +750,13 @@ export class VibrationHuntGame {
     // 誤差表示（スタイリッシュ）
     const errorContainer = this.scene.add.graphics();
     errorContainer.fillStyle(0x2a2a2a, 0.8);
-    errorContainer.fillRoundedRect(panelX - 120, panelY - 20, 240, 40, 8);
+    errorContainer.fillRoundedRect(panelX - 120, panelY - 50, 240, 35, 8);
     errorContainer.lineStyle(2, 0x00d4ff, 0.6);
-    errorContainer.strokeRoundedRect(panelX - 120, panelY - 20, 240, 40, 8);
+    errorContainer.strokeRoundedRect(panelX - 120, panelY - 50, 240, 35, 8);
     this.uiGroup.add(errorContainer);
     
-    const errorText = this.scene.add.text(panelX, panelY, `誤差: ${distance.toFixed(0)}px`, {
-      fontSize: '18px',
+    const errorText = this.scene.add.text(panelX, panelY - 32, `誤差: ${distance.toFixed(0)}px`, {
+      fontSize: '16px',
       fill: '#ffffff',
       fontWeight: 'bold',
       fontFamily: 'Arial, sans-serif'
@@ -787,13 +766,13 @@ export class VibrationHuntGame {
     // スコア表示（輝くエフェクト付き）
     const scoreContainer = this.scene.add.graphics();
     scoreContainer.fillStyle(0x4a4a00, 0.9);
-    scoreContainer.fillRoundedRect(panelX - 150, panelY + 40, 300, 50, 12);
+    scoreContainer.fillRoundedRect(panelX - 130, panelY + 10, 260, 45, 12);
     scoreContainer.lineStyle(3, 0xffff00, 0.8);
-    scoreContainer.strokeRoundedRect(panelX - 150, panelY + 40, 300, 50, 12);
+    scoreContainer.strokeRoundedRect(panelX - 130, panelY + 10, 260, 45, 12);
     this.uiGroup.add(scoreContainer);
     
-    const scoreText = this.scene.add.text(panelX, panelY + 65, `獲得スコア: ${roundScore}点`, {
-      fontSize: '22px',
+    const scoreText = this.scene.add.text(panelX, panelY + 32, `獲得スコア: ${roundScore}点`, {
+      fontSize: '18px',
       fill: '#ffff00',
       fontWeight: 'bold',
       fontFamily: 'Arial, sans-serif',
@@ -801,6 +780,39 @@ export class VibrationHuntGame {
       strokeThickness: 2
     }).setOrigin(0.5);
     this.uiGroup.add(scoreText);
+    
+    // 現在のラウンド情報
+    const roundInfo = this.scene.add.text(panelX, panelY + 80, `ラウンド ${this.round}/${this.maxRounds}`, {
+      fontSize: '16px',
+      fill: '#aaaaaa',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(roundInfo);
+    
+    // 総スコア表示
+    const totalScoreText = this.scene.add.text(panelX, panelY + 105, `総スコア: ${this.score}点`, {
+      fontSize: '16px',
+      fill: '#88ccff',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(totalScoreText);
+    
+    // 次のラウンドまたは終了の案内
+    let nextText = '';
+    if (this.round < this.maxRounds) {
+      nextText = `次のラウンド ${this.round + 1}/${this.maxRounds} へ...`;
+    } else {
+      nextText = 'ゲーム終了！最終結果を表示します...';
+    }
+    
+    const nextRoundText = this.scene.add.text(panelX, panelY + 140, nextText, {
+      fontSize: '14px',
+      fill: '#aaaaaa',
+      fontStyle: 'italic',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(nextRoundText);
     
     // スコアのキラキラエフェクト
     this.scene.tweens.add({
@@ -813,22 +825,6 @@ export class VibrationHuntGame {
       ease: 'Back.easeInOut'
     });
     
-    // 次のラウンドまたは終了の案内
-    let nextText = '';
-    if (this.round < this.maxRounds) {
-      nextText = `次のラウンド ${this.round + 1}/${this.maxRounds} へ...`;
-    } else {
-      nextText = 'ゲーム終了！最終結果を表示します...';
-    }
-    
-    const nextRoundText = this.scene.add.text(panelX, panelY + 120, nextText, {
-      fontSize: '16px',
-      fill: '#aaaaaa',
-      fontStyle: 'italic',
-      fontFamily: 'Arial, sans-serif'
-    }).setOrigin(0.5);
-    this.uiGroup.add(nextRoundText);
-    
     // パネル全体のフェードインアニメーション
     panel.setAlpha(0);
     titleText.setAlpha(0);
@@ -837,13 +833,202 @@ export class VibrationHuntGame {
     errorText.setAlpha(0);
     scoreContainer.setAlpha(0);
     scoreText.setAlpha(0);
+    roundInfo.setAlpha(0);
+    totalScoreText.setAlpha(0);
     nextRoundText.setAlpha(0);
     
     this.scene.tweens.add({
-      targets: [panel, titleText, accuracyText, errorContainer, errorText, scoreContainer, scoreText, nextRoundText],
+      targets: [panel, titleText, accuracyText, errorContainer, errorText, scoreContainer, scoreText, roundInfo, totalScoreText, nextRoundText],
       alpha: 1,
       duration: 800,
-      delay: this.scene.tweens.stagger(100),
+      delay: this.scene.tweens.stagger(80),
+      ease: 'Power2'
+    });
+  }
+  
+  createPositionPanel(distance) {
+    // 左側パネルの設定
+    const panelWidth = 300;
+    const panelHeight = 400;
+    const panelX = 200;
+    const panelY = 300;
+    
+    // 左側パネルの背景
+    const leftPanel = this.scene.add.graphics();
+    leftPanel.fillGradientStyle(0x1a1a2e, 0x16213e, 0x0f3460, 0x533483);
+    leftPanel.fillRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    leftPanel.lineStyle(3, 0x00d4ff, 0.8);
+    leftPanel.strokeRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    this.uiGroup.add(leftPanel);
+    
+    // パネルタイトル
+    const panelTitle = this.scene.add.text(panelX, panelY - 160, '位置比較', {
+      fontSize: '24px',
+      fill: '#00d4ff',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(panelTitle);
+    
+    // ミニマップエリアの設定
+    const mapWidth = 240;
+    const mapHeight = 180;
+    const mapX = panelX;
+    const mapY = panelY - 40;
+    
+    // ミニマップの背景
+    const mapBg = this.scene.add.graphics();
+    mapBg.fillStyle(0x0a0a1a, 0.8);
+    mapBg.fillRoundedRect(mapX - mapWidth/2, mapY - mapHeight/2, mapWidth, mapHeight, 10);
+    mapBg.lineStyle(2, 0x333366, 0.8);
+    mapBg.strokeRoundedRect(mapX - mapWidth/2, mapY - mapHeight/2, mapWidth, mapHeight, 10);
+    this.uiGroup.add(mapBg);
+    
+    // ゲームエリアの境界を取得
+    const bounds = this.GAME_AREA_BOUNDS;
+    const gameAreaWidth = bounds.right - bounds.left;
+    const gameAreaHeight = bounds.bottom - bounds.top;
+    
+    // 座標変換関数（ゲーム座標 → ミニマップ座標）
+    const toMapX = (gameX) => {
+      const ratio = (gameX - bounds.left) / gameAreaWidth;
+      return mapX - mapWidth/2 + ratio * mapWidth;
+    };
+    
+    const toMapY = (gameY) => {
+      const ratio = (gameY - bounds.top) / gameAreaHeight;
+      return mapY - mapHeight/2 + ratio * mapHeight;
+    };
+    
+    // 正解位置をミニマップに表示
+    const correctMapX = toMapX(this.targetPosition.x);
+    const correctMapY = toMapY(this.targetPosition.y);
+    
+    const correctCircle = this.scene.add.graphics();
+    correctCircle.fillStyle(0x00ff88, 1);
+    correctCircle.fillCircle(correctMapX, correctMapY, 6);
+    correctCircle.lineStyle(2, 0xffffff, 1);
+    correctCircle.strokeCircle(correctMapX, correctMapY, 6);
+    this.uiGroup.add(correctCircle);
+    
+    // 正解位置の光る効果（位置は固定）
+    const correctGlow = this.scene.add.graphics();
+    correctGlow.fillStyle(0x00ff88, 0.3);
+    correctGlow.fillCircle(correctMapX, correctMapY, 12);
+    this.uiGroup.add(correctGlow);
+    
+    // 回答位置をミニマップに表示
+    const answerMapX = toMapX(this.currentPosition.x);
+    const answerMapY = toMapY(this.currentPosition.y);
+    
+    const answerCircle = this.scene.add.graphics();
+    answerCircle.fillStyle(0xff4444, 1);
+    answerCircle.fillCircle(answerMapX, answerMapY, 5);
+    answerCircle.lineStyle(2, 0xffffff, 1);
+    answerCircle.strokeCircle(answerMapX, answerMapY, 5);
+    this.uiGroup.add(answerCircle);
+    
+    // 回答位置の光る効果（位置は固定）
+    const answerGlow = this.scene.add.graphics();
+    answerGlow.fillStyle(0xff4444, 0.3);
+    answerGlow.fillCircle(answerMapX, answerMapY, 10);
+    this.uiGroup.add(answerGlow);
+    
+    // 正解位置と回答位置を結ぶ線
+    const connectionLine = this.scene.add.graphics();
+    connectionLine.lineStyle(2, 0xffffff, 0.6);
+    connectionLine.moveTo(answerMapX, answerMapY);
+    connectionLine.lineTo(correctMapX, correctMapY);
+    connectionLine.strokePath();
+    this.uiGroup.add(connectionLine);
+    
+    // 凡例
+    const legendY = panelY + 80;
+    
+    // 正解の凡例
+    const correctLegendCircle = this.scene.add.graphics();
+    correctLegendCircle.fillStyle(0x00ff88, 0.9);
+    correctLegendCircle.fillCircle(panelX - 80, legendY, 8);
+    correctLegendCircle.lineStyle(2, 0xffffff, 0.9);
+    correctLegendCircle.strokeCircle(panelX - 80, legendY, 8);
+    this.uiGroup.add(correctLegendCircle);
+    
+    const correctLegendText = this.scene.add.text(panelX - 60, legendY, '正解位置', {
+      fontSize: '14px',
+      fill: '#00ff88',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0, 0.5);
+    this.uiGroup.add(correctLegendText);
+    
+    // 回答の凡例
+    const answerLegendCircle = this.scene.add.graphics();
+    answerLegendCircle.fillStyle(0xff4444, 0.8);
+    answerLegendCircle.fillCircle(panelX - 80, legendY + 30, 8);
+    answerLegendCircle.lineStyle(2, 0xffffff, 0.9);
+    answerLegendCircle.strokeCircle(panelX - 80, legendY + 30, 8);
+    this.uiGroup.add(answerLegendCircle);
+    
+    const answerLegendText = this.scene.add.text(panelX - 60, legendY + 30, 'あなたの回答', {
+      fontSize: '14px',
+      fill: '#ff8888',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0, 0.5);
+    this.uiGroup.add(answerLegendText);
+    
+    // 距離情報
+    const distanceText = this.scene.add.text(panelX, legendY + 70, `距離: ${distance.toFixed(0)}px`, {
+      fontSize: '16px',
+      fill: '#ffffff',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(distanceText);
+    
+    // アニメーション（グロー効果のみ、位置マーカーは固定）
+    this.scene.tweens.add({
+      targets: correctGlow,
+      alpha: 0.1,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 1500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    
+    this.scene.tweens.add({
+      targets: answerGlow,
+      alpha: 0.1,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    
+    // パネル要素のフェードイン
+    leftPanel.setAlpha(0);
+    panelTitle.setAlpha(0);
+    mapBg.setAlpha(0);
+    correctCircle.setAlpha(0);
+    correctGlow.setAlpha(0);
+    answerCircle.setAlpha(0);
+    answerGlow.setAlpha(0);
+    connectionLine.setAlpha(0);
+    correctLegendCircle.setAlpha(0);
+    correctLegendText.setAlpha(0);
+    answerLegendCircle.setAlpha(0);
+    answerLegendText.setAlpha(0);
+    distanceText.setAlpha(0);
+    
+    this.scene.tweens.add({
+      targets: [leftPanel, panelTitle, mapBg, correctCircle, correctGlow, answerCircle, answerGlow, connectionLine, correctLegendCircle, correctLegendText, answerLegendCircle, answerLegendText, distanceText],
+      alpha: 1,
+      duration: 800,
+      delay: this.scene.tweens.stagger(60),
       ease: 'Power2'
     });
   }
