@@ -20,9 +20,8 @@ export default class GameDataManager {
   }
 
   outputInitialConsoleMessages() {
-    console.log('🔍 Developer Detective - レベル1');
-    console.log('隠されたコード: 1337');
-    console.log('💡 これがレベル1の答えです！');
+    // 初期化完了のログのみ出力
+    console.log('🎮 Developer Detective - ゲームデータ初期化完了');
   }
 
   getSecretKey() {

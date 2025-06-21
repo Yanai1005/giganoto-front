@@ -4,9 +4,13 @@ export default class Level1 extends BaseLevel {
   constructor(uiManager, levelManager) {
     super(uiManager, levelManager);
     this.correctAnswer = 'DEBUG';
-    this.hintStep = 0;
-    this.hintTimer = null;
-    this.maxHints = 4;
+    this.currentHintIndex = 0;
+    this.hints = [
+      '💡 ヒント1: 数字は何かの位置を表しているようです...',
+      '💡 ヒント2: アルファベットの順番と関係があるかもしれません（A=1, B=2...）',
+      '💡 ヒント3: 4番目の文字は何でしょうか？ 21番目の文字は？',
+      '💡 ヒント4: 開発者が使う重要な機能の名前です'
+    ];
   }
 
   setupLevel() {
@@ -25,15 +29,75 @@ export default class Level1 extends BaseLevel {
       () => this.handleSubmit()
     );
 
+    // ヒントボタンを作成
+    const hintButton = this.createHintButton();
+
     this.uiManager.updateInputArea('');
     const inputArea = document.getElementById('input-area');
     inputArea.appendChild(inputGroup);
+    inputArea.appendChild(hintButton);
 
     // 暗号化されたエラーメッセージを出力
     this.outputEncryptedError();
-    
-    // 段階的ヒントを開始
-    this.startProgressiveHints();
+  }
+
+  createHintButton() {
+    const hintButtonContainer = document.createElement('div');
+    hintButtonContainer.className = 'hint-button-container';
+    hintButtonContainer.style.cssText = `
+      margin-top: 15px;
+      text-align: center;
+    `;
+
+    const hintButton = document.createElement('button');
+    hintButton.id = 'hint-button';
+    hintButton.textContent = `💡 ヒントを見る (${this.currentHintIndex}/${this.hints.length})`;
+    hintButton.style.cssText = `
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    `;
+
+    hintButton.addEventListener('mouseenter', () => {
+      hintButton.style.transform = 'translateY(-2px)';
+      hintButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+    });
+
+    hintButton.addEventListener('mouseleave', () => {
+      hintButton.style.transform = 'translateY(0)';
+      hintButton.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+    });
+
+    hintButton.addEventListener('click', () => this.showNextHint());
+
+    hintButtonContainer.appendChild(hintButton);
+    return hintButtonContainer;
+  }
+
+  showNextHint() {
+    if (this.currentHintIndex < this.hints.length) {
+      console.log(this.hints[this.currentHintIndex]);
+      this.currentHintIndex++;
+      
+      const hintButton = document.getElementById('hint-button');
+      if (hintButton) {
+        if (this.currentHintIndex >= this.hints.length) {
+          hintButton.textContent = '💡 全てのヒントを表示済み';
+          hintButton.disabled = true;
+          hintButton.style.opacity = '0.6';
+          hintButton.style.cursor = 'not-allowed';
+        } else {
+          hintButton.textContent = `💡 ヒントを見る (${this.currentHintIndex}/${this.hints.length})`;
+        }
+      }
+    }
   }
 
   outputEncryptedError() {
@@ -41,36 +105,7 @@ export default class Level1 extends BaseLevel {
     console.log('Error Code: CIPHER_UNKNOWN');
     console.log('Status: ENCRYPTED_MESSAGE_DETECTED');
     console.log('解読が必要です...');
-  }
-
-  startProgressiveHints() {
-    this.hintStep = 0;
-    this.hintTimer = setInterval(() => {
-      this.showProgressiveHint();
-    }, 8000); // 8秒ごとにヒント
-  }
-
-  showProgressiveHint() {
-    const hints = [
-      '💡 ヒント1: 数字は何かの位置を表しているようです...',
-      '💡 ヒント2: アルファベットの順番と関係があるかもしれません（A=1, B=2...）',
-      '💡 ヒント3: 4番目の文字は何でしょうか？ 21番目の文字は？',
-      '💡 ヒント4: 開発者が使う重要な機能の名前です'
-    ];
-
-    if (this.hintStep < this.maxHints) {
-      console.log(hints[this.hintStep]);
-      this.hintStep++;
-    } else {
-      this.clearHintTimer();
-    }
-  }
-
-  clearHintTimer() {
-    if (this.hintTimer) {
-      clearInterval(this.hintTimer);
-      this.hintTimer = null;
-    }
+    console.log('💡 ヒントが必要な場合は「ヒントを見る」ボタンをクリックしてください');
   }
 
   handleSubmit() {
@@ -83,7 +118,6 @@ export default class Level1 extends BaseLevel {
 
   checkAnswer(userAnswer, correctAnswer) {
     if (userAnswer === correctAnswer) {
-      this.clearHintTimer();
       console.log('🎉 正解！ 4-5-2-21-7 = D-E-B-U-G = DEBUG');
       console.log('暗号解読完了！開発者ツールの基本機能「DEBUG」でした！');
       super.checkAnswer(userAnswer, correctAnswer);
@@ -107,7 +141,7 @@ export default class Level1 extends BaseLevel {
   }
 
   cleanup() {
-    this.clearHintTimer();
+    // ヒントボタンのクリーンアップは親クラスで処理される
     super.cleanup();
   }
 } 
