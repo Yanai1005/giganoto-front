@@ -30,13 +30,12 @@ const Home = () => {
     const [cursorMode, setCursorMode] = useState(false); // カーソルモードの状態
     const [isTogglingMode, setIsTogglingMode] = useState(false); // モード切り替え中の状態
 
-    // Use the hook version for cursor control with improved settings
     const cursorControl = useJoyConCursor({
         enabled: isConnected && !showJoyConModal && !showSettings && !showCalibrationUI && cursorMode && !isTogglingMode,
-        sensitivity: 0.3, // 感度を下げて制御しやすく
-        deadzone: 0.15, // デッドゾーンを小さくして応答性向上
+        sensitivity: 0.02,
+        deadzone: 0.03,
         showCursor: cursorMode && !isTogglingMode,
-        autoCalibrate: false, // 自動キャリブレーションを無効化
+        autoCalibrate: false,
         calibrationTime: 0
     });
 
@@ -130,18 +129,21 @@ const Home = () => {
         if (isTogglingMode) return;
 
         setIsTogglingMode(true);
+        setIsTogglingMode(true);
         setCursorMode(prev => {
             const newMode = !prev;
             console.log(`モード切り替え: ${prev ? 'カーソル' : 'ナビ'} → ${newMode ? 'カーソル' : 'ナビ'}`);
             if (newMode) {
-                console.log('カーソルモード開始: 現在のスティック位置をニュートラルに設定');
-                // カーソルモードに切り替え時、現在のスティック値を自動でキャリブレーション
+                console.log('カーソルモード開始: 強化キャリブレーション実行中...');
+                // カーソルモードに切り替え時、強化キャリブレーションを実行
                 setTimeout(() => {
                     if (cursorControl && cursorControl.recalibrate) {
                         cursorControl.recalibrate();
-                        console.log('自動キャリブレーション実行完了');
+                        console.log('強化自動キャリブレーション実行完了');
                     }
-                }, 100);
+                }, 200); // より長い待機時間で安定性を確保
+            } else {
+                console.log('ナビゲーションモードに戻ります');
             }
             return newMode;
         });
@@ -274,7 +276,7 @@ const Home = () => {
                                         </>
                                     ) : cursorMode && !isTogglingMode ? (
                                         <>
-                                            <span>左スティック: カーソル移動</span>
+                                            <span>右スティック: カーソル移動</span>
                                             <span>Aボタン: クリック</span>
                                         </>
                                     ) : null}

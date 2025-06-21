@@ -26,13 +26,13 @@ export const useJoyConCursor = ({
     const calibrationValuesRef = useRef([]);
     const calibrationTimerRef = useRef(null);
 
-    // Safe getter for left stick with null checks
-    const getLeftStick = useCallback(() => {
-        if (!inputState || !inputState.leftStick) {
+    // Safe getter for right stick with null checks
+    const getRightStick = useCallback(() => {
+        if (!inputState || !inputState.rightStick) {
             return { x: 0, y: 0 };
         }
 
-        const stick = inputState.leftStick;
+        const stick = inputState.rightStick;
         return {
             x: parseFloat(stick.x) || 0,
             y: parseFloat(stick.y) || 0
@@ -59,14 +59,14 @@ export const useJoyConCursor = ({
     const startAutoCalibration = useCallback(() => {
         if (!enabled || !isConnected || !autoCalibrate) return;
 
-        console.log('🎯 Joy-Con自動キャリブレーション開始...');
+        console.log('🎯 右スティックJoy-Con自動キャリブレーション開始...');
         setIsCalibrating(true);
         setIsCalibrated(false);
         calibrationValuesRef.current = [];
 
         // キャリブレーション期間中に値を収集
         const collectCalibrationData = () => {
-            const stick = getLeftStick();
+            const stick = getRightStick();
             calibrationValuesRef.current.push({ x: stick.x, y: stick.y });
 
             if (calibrationValuesRef.current.length < calibrationTime / 100) {
@@ -78,7 +78,7 @@ export const useJoyConCursor = ({
         };
 
         calibrationTimerRef.current = setTimeout(collectCalibrationData, 500);
-    }, [enabled, isConnected, autoCalibrate, calibrationTime, getLeftStick]);
+    }, [enabled, isConnected, autoCalibrate, calibrationTime, getRightStick]);
 
     // キャリブレーション完了処理
     const finishCalibration = useCallback(() => {
@@ -102,21 +102,46 @@ export const useJoyConCursor = ({
         setIsCalibrating(false);
         setIsCalibrated(true);
 
-        console.log('✅ Joy-Conキャリブレーション完了');
+        console.log('✅ 右スティックJoy-Conキャリブレーション完了');
         console.log(`📊 収集データ数: ${values.length}`);
         console.log(`🎯 オフセット値: x=${newOffset.x.toFixed(3)}, y=${newOffset.y.toFixed(3)}`);
         console.log(`📈 X値範囲: ${Math.min(...xValues).toFixed(3)} ~ ${Math.max(...xValues).toFixed(3)}`);
         console.log(`📈 Y値範囲: ${Math.min(...yValues).toFixed(3)} ~ ${Math.max(...yValues).toFixed(3)}`);
     }, []);
 
-    // 手動キャリブレーション
+    // 手動キャリブレーション（強化版）
     const manualCalibrate = useCallback(() => {
-        const stick = getLeftStick();
-        setCalibrationOffset({ x: stick.x, y: stick.y });
-        setIsCalibrated(true);
-        velocityRef.current = { x: 0, y: 0 };
-        console.log('🔧 手動キャリブレーション完了:', stick);
-    }, [getLeftStick]);
+        const stick = getRightStick();
+
+        // 複数回サンプリングして安定した値を取得
+        const samples = [];
+        const sampleCount = 10;
+
+        const collectSamples = (count) => {
+            if (count > 0) {
+                const currentStick = getRightStick();
+                samples.push({ x: currentStick.x, y: currentStick.y });
+                setTimeout(() => collectSamples(count - 1), 50);
+            } else {
+                // 平均値を計算
+                const avgX = samples.reduce((sum, s) => sum + s.x, 0) / samples.length;
+                const avgY = samples.reduce((sum, s) => sum + s.y, 0) / samples.length;
+
+                setCalibrationOffset({ x: avgX, y: avgY });
+                setIsCalibrated(true);
+                velocityRef.current = { x: 0, y: 0 };
+
+                console.log('🔧 右スティック強化手動キャリブレーション完了:');
+                console.log(`📊 サンプル数: ${samples.length}`);
+                console.log(`🎯 平均オフセット: x=${avgX.toFixed(3)}, y=${avgY.toFixed(3)}`);
+                console.log(`📈 X範囲: ${Math.min(...samples.map(s => s.x)).toFixed(3)} ~ ${Math.max(...samples.map(s => s.x)).toFixed(3)}`);
+                console.log(`📈 Y範囲: ${Math.min(...samples.map(s => s.y)).toFixed(3)} ~ ${Math.max(...samples.map(s => s.y)).toFixed(3)}`);
+            }
+        };
+
+        console.log('🔧 右スティック手動キャリブレーション開始 - 右スティックを離してください...');
+        collectSamples(sampleCount);
+    }, [getRightStick]);
 
     // 接続時の自動キャリブレーション
     useEffect(() => {
@@ -214,59 +239,54 @@ export const useJoyConCursor = ({
         return element;
     }, []);
 
-    // より厳格な正規化処理
+    // シンプルな正規化処理（動作確認用）
     const normalizeStickInput = useCallback((stick) => {
-        if (!stick || !isCalibrated) return { x: 0, y: 0 };
+        if (!stick) return { x: 0, y: 0 };
 
-        // キャリブレーションオフセットを適用
-        let adjustedX = stick.x - calibrationOffset.x;
-        let adjustedY = stick.y - calibrationOffset.y;
+        // 一時的にキャリブレーションを無効にして生の値を使用
+        let adjustedX = stick.x; // - calibrationOffset.x;
+        let adjustedY = stick.y; // - calibrationOffset.y;
 
-        // より厳しいデッドゾーン適用
+        // 最小限のデッドゾーン適用
         const magnitude = Math.sqrt(adjustedX ** 2 + adjustedY ** 2);
         if (magnitude < deadzone) {
             return { x: 0, y: 0 };
         }
 
-        // デッドゾーン外の値を再スケール
-        const scaleFactor = (magnitude - deadzone) / (1.5 - deadzone); // 最大値を1.5と仮定
-        const normalizedMagnitude = Math.min(1, scaleFactor);
-
+        // シンプルな正規化（複雑な処理を一時的に削除）
+        const normalizedMagnitude = Math.min(1, magnitude);
         const angle = Math.atan2(adjustedY, adjustedX);
         const normalizedX = Math.cos(angle) * normalizedMagnitude;
         const normalizedY = Math.sin(angle) * normalizedMagnitude;
 
-        // デバッグ情報（移動が発生する場合のみ）
-        if (normalizedMagnitude > 0.1) {
-            console.log('🎮 Stick movement:', {
-                raw: { x: stick.x.toFixed(3), y: stick.y.toFixed(3) },
-                offset: { x: calibrationOffset.x.toFixed(3), y: calibrationOffset.y.toFixed(3) },
-                adjusted: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
-                magnitude: magnitude.toFixed(3),
-                deadzone: deadzone,
-                normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) }
-            });
-        }
+        // デバッグ情報（常に表示して動作確認）
+        console.log('🎮 Stage 3 - Very slow (かなり遅く):', {
+            raw: { x: stick.x.toFixed(3), y: stick.y.toFixed(3) },
+            adjusted: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
+            magnitude: magnitude.toFixed(3),
+            deadzone: deadzone,
+            normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) }
+        });
 
         return { x: normalizedX, y: normalizedY };
-    }, [calibrationOffset, deadzone, isCalibrated]);
+    }, [deadzone]);
 
     // Update mouse position based on stick input
     const updateMousePosition = useCallback(() => {
-        if (!enabled || !isConnected || isCalibrating || !isCalibrated) return;
+        if (!enabled || !isConnected || isCalibrating) return; // isCalibrated条件を一時的に削除
 
-        const stick = getLeftStick();
+        const stick = getRightStick();
         const normalizedStick = normalizeStickInput(stick);
         const magnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2);
 
-        if (magnitude > 0.05) { // より小さい閾値
-            // 速度計算
-            const targetVelocityX = normalizedStick.x * sensitivity * 20;
-            const targetVelocityY = normalizedStick.y * sensitivity * 20;
+        if (magnitude > 0.01) { // 閾値を緩めて反応しやすく
+            // 速度計算（段階3: かなり遅く）
+            const targetVelocityX = normalizedStick.x * sensitivity * 0.5; // 1.0 → 0.5に半減
+            const targetVelocityY = normalizedStick.y * sensitivity * 0.5;
 
-            // スムーズな速度変化
-            velocityRef.current.x = velocityRef.current.x * 0.8 + targetVelocityX * 0.2;
-            velocityRef.current.y = velocityRef.current.y * 0.8 + targetVelocityY * 0.2;
+            // シンプルな速度更新（複雑な慣性を一時的に削除）
+            velocityRef.current.x = targetVelocityX;
+            velocityRef.current.y = targetVelocityY;
 
             // 位置更新
             setMousePosition(prev => {
@@ -275,20 +295,24 @@ export const useJoyConCursor = ({
                 const newY = Math.max(0, Math.min(window.innerHeight - 1,
                     prev.y + velocityRef.current.y));
 
-                if (Math.abs(newX - prev.x) > 1 || Math.abs(newY - prev.y) > 1) {
+                if (Math.abs(newX - prev.x) > 0.01 || Math.abs(newY - prev.y) > 0.01) {
                     fireMouseEvent('mousemove', newX, newY);
                 }
 
                 return { x: newX, y: newY };
             });
         } else {
-            // 速度減衰
+            // 適度な速度減衰（完全停止は避けて操作性を保つ）
             velocityRef.current.x *= 0.1;
             velocityRef.current.y *= 0.1;
+
+            // 極小値は完全にゼロにする
+            if (Math.abs(velocityRef.current.x) < 0.01) velocityRef.current.x = 0;
+            if (Math.abs(velocityRef.current.y) < 0.01) velocityRef.current.y = 0;
         }
 
         animationFrameRef.current = requestAnimationFrame(updateMousePosition);
-    }, [enabled, isConnected, isCalibrating, isCalibrated, getLeftStick, normalizeStickInput, sensitivity, fireMouseEvent]);
+    }, [enabled, isConnected, isCalibrating, getRightStick, normalizeStickInput, sensitivity, fireMouseEvent]);
 
     // Handle button presses
     useEffect(() => {
@@ -357,14 +381,24 @@ export const useJoyConCursor = ({
 
     }, [enabled, isConnected, isCalibrating, isCalibrated, getButtons, mousePosition, fireMouseEvent, manualCalibrate, startAutoCalibration]);
 
-    // Animation loop
+    // フレームレート制限付きアニメーションループ
     useEffect(() => {
-        if (enabled && isConnected && !isCalibrating) {
-            animationFrameRef.current = requestAnimationFrame(updateMousePosition);
-        } else {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
+        let lastFrameTime = 0;
+        const targetFPS = 60; // 60FPSに上げてスムーズに
+        const frameInterval = 1000 / targetFPS;
+
+        const animate = (currentTime) => {
+            if (currentTime - lastFrameTime >= frameInterval) {
+                if (enabled && isConnected && !isCalibrating) {
+                    updateMousePosition();
+                }
+                lastFrameTime = currentTime;
             }
+            animationFrameRef.current = requestAnimationFrame(animate);
+        };
+
+        if (enabled && isConnected) {
+            animationFrameRef.current = requestAnimationFrame(animate);
         }
 
         return () => {
