@@ -22,7 +22,26 @@ export class FishManager {
     const sizeBiasExponent = 1 - (levelFactor * 0.8);
 
     for (let i = 0; i < 30; i++) {
-      const fishType = FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
+      // 竿レベルに応じてレアな魚が出現しやすくなる
+      const rarityBonus = rodLevel > 1 ? (rodLevel - 1) * 0.1 : 0; // レベル10で+0.9の確率ボーナス
+      let selectedFishType;
+      
+      // レアリティに基づく重み付き選択
+      const random = Math.random();
+      if (random < 0.1 + rarityBonus) {
+        // 高レアリティ魚を優先選択（レアリティ4-5）
+        const rareTypes = FISH_TYPES.filter(fish => fish.rarity >= 4);
+        selectedFishType = rareTypes.length > 0 ? rareTypes[Math.floor(Math.random() * rareTypes.length)] : FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
+      } else if (random < 0.3 + rarityBonus * 0.5) {
+        // 中レアリティ魚を選択（レアリティ2-3）
+        const mediumTypes = FISH_TYPES.filter(fish => fish.rarity >= 2 && fish.rarity <= 3);
+        selectedFishType = mediumTypes.length > 0 ? mediumTypes[Math.floor(Math.random() * mediumTypes.length)] : FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
+      } else {
+        // 通常通りランダム選択
+        selectedFishType = FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
+      }
+      
+      const fishType = selectedFishType;
       
       const randomFactor = Math.pow(Math.random(), sizeBiasExponent);
       const sizeRange = fishType.maxSize - fishType.minSize;

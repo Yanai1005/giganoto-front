@@ -112,7 +112,7 @@ export class PlayerActionManager {
         y: rodTipPosition.y,
         z: rodTipPosition.z,
         ease: 'Quad.in',
-        duration: 1000,
+        duration: 500,
         onUpdate: () => {
             this.updateFishingLine();
         },
