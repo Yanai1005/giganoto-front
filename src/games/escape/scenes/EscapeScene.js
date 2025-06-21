@@ -87,22 +87,64 @@ const alllevels = [
   {
     //index4
     map: [
-      "WWWWWWWWWWWWWWWWWWWWWW",
-      "W     W   W   S       W",
-      "W     W  T  W       B  W",
-      "W    t W   W  S        W",
-      "W   WS     W       p   W",
-      "W          WWWWWWWWWWWWW",
-      "W     S    W    S      W",
-      "W   S      W    S      W",
-      "W       S  W        A  W",
-      "W   T      W    S      W",
-      "WWWWWW         W  WWWWWW",
-      "W    S   W        P    W",
-      "W          W  S        W",
+      "WWWWWWWWWWWWWWWWWWWWWWW",
+      "W     W   D W  S       W",
+      "W     W  T  W       A  W",
+      "W    tSW   W  S  g  S  W",
+      "W   SSS   W        p SSW",
+      "W         WWWWWWWWWWWWWW",
+      "W    SS    W    S      W",
+      "WSSSS      W    S  G   W",
+      "W       S  W        B  W",
+      "W          W    S      W",
+      "WWWWWW         S  WWWWWW",
+      "W    S   S W      P    W",
+      "W      d   W  S        W",
       "W  S    WWWWWWW        W",
-      "Wb   WWW       WWWW   aW",
-      "WWWWW              WWWWW",
+      "Wb   WWWxxxxxxxWWWW   aW",
+      "WWWWWxxxxxxxxxxxxxxWWWWW",
+    ],
+  },
+  {
+    //index5
+    map: [
+      "WffWWWWWWWWWWWWWWWWWWWW",
+      "WrR   W   D W  S       W",
+      "WrR   W  T  W          W",
+      "W    tSW   W  S  g  S  W",
+      "W   SSS   W        p SSW",
+      "W         WWWWWWWWWWWFFW",
+      "W    SS    W    S    LlW",
+      "WSSSS      W    S  G LlW",
+      "W       S  W           W",
+      "W          W    S      W",
+      "WWWWWW         S  WWWWWW",
+      "W    S   S W      P    W",
+      "W      d   W  S        W",
+      "W  S    WWWWWWW        W",
+      "Wb   WWWxxxxxxxWWWW   aW",
+      "WWWWWxxxxxxxxxxxxxxWWWWW",
+    ],
+  },
+  {
+    //index6
+    map: [
+      "WWWWWWWWWWWWWWWWWW",
+      "W           i     W",
+      "W                  WW",
+      "WT      i     AG    WW",
+      "W   iiid             aWW",
+      "W                   WWWW",
+      "W     i         i  W",
+      "WWWWWWWWWWWWWWWWWWW",
+      "WDg     i   t      W",
+      "W              iB   W",
+      "W            P WWWWW",
+      "W    i   i    WWW",
+      "W        p   W",
+      "W  i       WW",
+      "Wb   WWWWWW",
+      "WWWWW",
     ],
   },
 ];
@@ -196,13 +238,17 @@ class EscapeScene extends Phaser.Scene {
         const x = colIndex * tileSize + tileSize / 2 + offsetX;
         const y = rowIndex * tileSize + tileSize / 2 + offsetY;
 
-        const isTrigger = /^[Tt]/.test(tile);
-        const isDestination = /^[Pp]/.test(tile);
+        const isTrigger = /^[TtGg]/.test(tile);
+        const isDestination = /^[PpDd]/.test(tile);
         const isBarrier = /^[Si]/.test(tile);
         const isGoal = /^[AB]/.test(tile);
 
         let floorSpriteKey = "floorSprite"; // デフォルトは通常の床
-        if (this.currentLevelIndex === 2 || this.currentLevelIndex === 3) {
+        if (
+          this.currentLevelIndex === 2 ||
+          this.currentLevelIndex === 3 ||
+          this.currentLevelIndex === 6
+        ) {
           floorSpriteKey = "icefloorSprite"; // ステージ2なら氷の床
         }
 
@@ -241,9 +287,12 @@ class EscapeScene extends Phaser.Scene {
         } else if (tile === "b") {
           this.player2Start = { x: x, y: y };
         } else if (isTrigger) {
-          const destinationKey = tile.replace(/^[Tt]/, (match) =>
-            match === "T" ? "P" : "p"
-          );
+          const destinationKey = tile.replace(/^[TtGg]/, (match) => {
+            if (match === "T") return "P";
+            if (match === "t") return "p";
+            if (match === "G") return "D";
+            if (match === "g") return "d";
+          });
           const triggerSprite = this.teleportTriggers.create(
             x,
             y,
@@ -571,13 +620,21 @@ class EscapeScene extends Phaser.Scene {
     }
     this.player1 = this.physics.add.sprite(startX, startY, "p1_down_1");
     this.player1.setCollideWorldBounds(true);
-    if (this.currentLevelIndex === 2 || this.currentLevelIndex === 3) {
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
       this.player1.setBounce(0);
     } else {
       this.player1.setBounce(0.2);
     }
     this.player1.setVelocity(0, 0);
-    if (this.currentLevelIndex === 2 || this.currentLevelIndex === 3) {
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
       this.player1.setDrag(0);
     } else {
       this.player1.setDrag(2000);
@@ -598,13 +655,21 @@ class EscapeScene extends Phaser.Scene {
     this.player2 = this.physics.add.sprite(startX, startY, "p2_down_1");
 
     this.player2.setCollideWorldBounds(true);
-    if (this.currentLevelIndex === 2 || this.currentLevelIndex === 3) {
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
       this.player1.setBounce(0);
     } else {
       this.player1.setBounce(0.2);
     }
     this.player2.setVelocity(0, 0);
-    if (this.currentLevelIndex === 2 || this.currentLevelIndex === 3) {
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
       this.player2.setDrag(0);
     } else {
       this.player2.setDrag(2000);
@@ -701,7 +766,11 @@ class EscapeScene extends Phaser.Scene {
       this.player1.setVelocityX(this.player1Speed);
       this.player1.anims.play("p1_right_anim", true);
     } else {
-      if (this.currentLevelIndex !== 2 && this.currentLevelIndex !== 3) {
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
         this.player1.setVelocityX(0);
       }
     }
@@ -712,7 +781,11 @@ class EscapeScene extends Phaser.Scene {
       this.player1.setVelocityY(this.player1Speed);
       this.player1.anims.play("p1_down_anim", true);
     } else {
-      if (this.currentLevelIndex !== 2 && this.currentLevelIndex !== 3) {
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
         this.player1.setVelocityY(0);
       }
     }
@@ -734,7 +807,11 @@ class EscapeScene extends Phaser.Scene {
       this.player2.setVelocityX(this.player2Speed);
       this.player2.anims.play("p2_right_anim", true);
     } else {
-      if (this.currentLevelIndex !== 2 && this.currentLevelIndex !== 3) {
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
         this.player2.setVelocityX(0);
       }
     }
@@ -745,7 +822,11 @@ class EscapeScene extends Phaser.Scene {
       this.player2.setVelocityY(this.player2Speed);
       this.player2.anims.play("p2_down_anim", true);
     } else {
-      if (this.currentLevelIndex !== 2 && this.currentLevelIndex !== 3) {
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
         this.player2.setVelocityY(0);
       }
     }
