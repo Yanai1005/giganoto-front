@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { VibrationHuntGame } from './VibrationHuntGame.js';
 
 class VibrationHuntScene extends Phaser.Scene {
@@ -41,7 +42,7 @@ class VibrationHuntScene extends Phaser.Scene {
     this.createVibrationIcon(400, 150);
 
     // メインタイトル
-    const mainTitle = this.add.text(400, 250, '強震動探し', {
+    const mainTitle = this.add.text(400, 220, '強震動探し', {
       fontSize: '48px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
@@ -51,22 +52,22 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // サブタイトル
-    const subtitle = this.add.text(400, 300, 'Vibration Hunt', {
-      fontSize: '24px',
-      fill: '#00d4aa',
+    this.add.text(400, 280, 'HD振動で隠された宝を見つけよう', {
+      fontSize: '18px',
+      fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif',
       fontStyle: 'italic'
     }).setOrigin(0.5);
 
     // ゲーム説明
-    const description = this.add.text(400, 350, 'Joy-Conの振動を頼りに隠された宝を見つけよう！', {
+    this.add.text(400, 320, 'Joy-Conの振動を頼りに隠された宝を見つけよう！', {
       fontSize: '16px',
       fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
 
     // Nintendo Switch 2のひみつ展風の説明
-    const inspired = this.add.text(400, 380, 'Nintendo Switch 2のひみつ展にインスパイアされたゲーム', {
+    this.add.text(400, 350, 'Nintendo Switch 2のひみつ展にインスパイアされたゲーム', {
       fontSize: '12px',
       fill: '#8899bb',
       fontFamily: 'Arial, sans-serif',
@@ -74,14 +75,14 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // スタートボタン
-    const startButton = this.createStylishButton(400, 450, 'ゲームスタート', '#00d4aa', '#00b899');
+    const startButton = this.createStylishButton(400, 420, 'ゲームスタート', '#00d4aa', '#00b899');
     
     startButton.on('pointerdown', () => {
       this.transitionToConnection();
     });
 
     // 戻るボタン
-    const backButton = this.createStylishButton(400, 520, 'ホームに戻る', '#4a9eff', '#3a8eef');
+    const backButton = this.createStylishButton(400, 490, 'ホームに戻る', '#4a9eff', '#3a8eef');
     
     backButton.on('pointerdown', () => {
       window.location.href = '/';
@@ -102,7 +103,7 @@ class VibrationHuntScene extends Phaser.Scene {
     this.createParticleEffect();
 
     // 操作説明
-    const controlsText = this.add.text(400, 570, 'マウスで移動、クリックで決定', {
+    this.add.text(400, 560, 'マウス/Joy-Conで操作、クリック/Aボタンで決定', {
       fontSize: '14px',
       fill: '#6677aa',
       fontFamily: 'Arial, sans-serif'
@@ -208,8 +209,8 @@ class VibrationHuntScene extends Phaser.Scene {
     this.createJoyConIcon(400, 120);
 
     // メインタイトル（グロー効果付き）
-    const title = this.add.text(400, 180, 'Joy-Con接続', {
-      fontSize: '36px',
+    this.add.text(400, 180, 'Joy-Con接続', {
+      fontSize: '32px',
       fill: '#ffffff',
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'bold',
@@ -218,7 +219,7 @@ class VibrationHuntScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // サブタイトル
-    const subtitle = this.add.text(400, 220, 'HD振動で隠された宝を見つけよう', {
+    this.add.text(400, 220, 'HD振動で隠された宝を見つけよう', {
       fontSize: '18px',
       fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif',
@@ -319,7 +320,7 @@ class VibrationHuntScene extends Phaser.Scene {
     ];
 
     steps.forEach((step, index) => {
-      const stepText = this.add.text(170, 295 + index * 25, step, {
+      this.add.text(170, 295 + index * 25, step, {
         fontSize: '14px',
         fill: '#c8d6ff',
         fontFamily: 'Arial, sans-serif'
@@ -330,7 +331,7 @@ class VibrationHuntScene extends Phaser.Scene {
       stepCircle.fillStyle(0x4a9eff, 1);
       stepCircle.fillCircle(160, 302 + index * 25, 8);
       
-      const stepNumber = this.add.text(160, 302 + index * 25, (index + 1).toString(), {
+      this.add.text(160, 302 + index * 25, (index + 1).toString(), {
         fontSize: '12px',
         fill: '#ffffff',
         fontFamily: 'Arial, sans-serif',
@@ -345,18 +346,21 @@ class VibrationHuntScene extends Phaser.Scene {
 
     // ボタン背景（グラデーション効果）
     const buttonBg = this.add.graphics();
+    const primaryColorInt = parseInt(primaryColor.replace('#', ''), 16);
+    const hoverColorInt = parseInt(hoverColor.replace('#', ''), 16);
+    
     buttonBg.fillGradientStyle(
-      Phaser.Display.Color.HexStringToColor(primaryColor).color,
-      Phaser.Display.Color.HexStringToColor(primaryColor).color,
-      Phaser.Display.Color.HexStringToColor(hoverColor).color,
-      Phaser.Display.Color.HexStringToColor(hoverColor).color,
+      primaryColorInt,
+      primaryColorInt,
+      hoverColorInt,
+      hoverColorInt,
       1
     );
     buttonBg.fillRoundedRect(-120, -25, 240, 50, 25);
 
     // ボタンのグロー効果
     const glowBg = this.add.graphics();
-    glowBg.fillStyle(Phaser.Display.Color.HexStringToColor(primaryColor).color, 0.3);
+    glowBg.fillStyle(primaryColorInt, 0.3);
     glowBg.fillRoundedRect(-125, -30, 250, 60, 30);
 
     // ボタンテキスト
@@ -456,8 +460,8 @@ class VibrationHuntScene extends Phaser.Scene {
         ease: 'Linear'
       });
 
-      // Joy-ConHIDManagerを正しいパスでインポート
-      const { JoyConHIDManager } = await import('../fishing/game/JoyConHIDManager.js');
+      // 振動探しゲーム専用のJoyConHIDManagerをインポート
+      const { JoyConHIDManager } = await import('./JoyConHIDManager.js');
       
       this.joyConManager = new JoyConHIDManager(this);
       const result = await this.joyConManager.connect();
