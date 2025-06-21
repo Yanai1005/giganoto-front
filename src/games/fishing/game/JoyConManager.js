@@ -6,8 +6,12 @@ export class JoyConManager {
     this.prevAxes = {};
     this.motionCooldownUntil = 0;
 
-    window.addEventListener('gamepadconnected', this.handleGamepadConnected.bind(this));
-    window.addEventListener('gamepaddisconnected', this.handleGamepadDisconnected.bind(this));
+    // バインドされた関数を保存
+    this.boundHandleGamepadConnected = this.handleGamepadConnected.bind(this);
+    this.boundHandleGamepadDisconnected = this.handleGamepadDisconnected.bind(this);
+
+    window.addEventListener('gamepadconnected', this.boundHandleGamepadConnected);
+    window.addEventListener('gamepaddisconnected', this.boundHandleGamepadDisconnected);
   }
 
   handleGamepadConnected(e) {
@@ -128,7 +132,7 @@ export class JoyConManager {
   }
 
   destroy() {
-    window.removeEventListener('gamepadconnected', this.handleGamepadConnected.bind(this));
-    window.removeEventListener('gamepaddisconnected', this.handleGamepadDisconnected.bind(this));
+            window.removeEventListener('gamepadconnected', this.boundHandleGamepadConnected);
+        window.removeEventListener('gamepaddisconnected', this.boundHandleGamepadDisconnected);
   }
 } 
