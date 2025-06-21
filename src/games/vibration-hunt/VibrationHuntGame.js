@@ -297,16 +297,23 @@ export class VibrationHuntGame {
     );
     this.uiGroup.add(gameAreaFrame);
 
-    // カーソル
+    // 宝探しの雰囲気を演出する要素を追加
+    this.addAtmosphericElements();
+    
+    // より魅力的なカーソル
     this.cursor = this.scene.add.graphics();
-    this.cursor.fillStyle(0xff0000, 0.9);
-    this.cursor.fillCircle(0, 0, 8);
+    this.cursor.fillStyle(0xff4444, 1);
+    this.cursor.fillCircle(0, 0, 10);
+    this.cursor.lineStyle(3, 0xffffff, 0.9);
+    this.cursor.strokeCircle(0, 0, 10);
+    this.cursor.lineStyle(1, 0xff8888, 0.7);
+    this.cursor.strokeCircle(0, 0, 15);
     this.uiGroup.add(this.cursor);
     
     // カーソルのグロー効果
     this.cursorGlow = this.scene.add.graphics();
-    this.cursorGlow.fillStyle(0xff0000, 0.3);
-    this.cursorGlow.fillCircle(0, 0, 16);
+    this.cursorGlow.fillStyle(0xff4444, 0.3);
+    this.cursorGlow.fillCircle(0, 0, 20);
     this.uiGroup.add(this.cursorGlow);
     
     // 初期位置設定
@@ -316,8 +323,129 @@ export class VibrationHuntGame {
     // カーソルをインタラクティブにしてマウス操作を有効化
     this.cursor.setInteractive();
     
+    // カーソルの微細な動きアニメーション
+    this.scene.tweens.add({
+      targets: this.cursor,
+      scaleX: 1.1,
+      scaleY: 1.1,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    
     console.log('=== updateUI完了 ===');
   }
+  
+  addAtmosphericElements() {
+    // 宝探しの雰囲気を演出する要素
+    
+    // 1. ランダムに配置された光る粒子
+    this.createFloatingParticles();
+    
+    // 2. 神秘的な光のオーラ
+    this.createMysticalAura();
+    
+    // 3. 宝の手がかりとなるサーチライン
+    this.createSearchGrid();
+  }
+  
+  createFloatingParticles() {
+    // ゲームエリア内にランダムに配置された光る粒子
+    const bounds = this.GAME_AREA_BOUNDS;
+    const particleCount = 15;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = this.scene.add.graphics();
+      const x = Math.random() * (bounds.right - bounds.left) + bounds.left;
+      const y = Math.random() * (bounds.bottom - bounds.top) + bounds.top;
+      
+      particle.fillStyle(0x88ddff, 0.3);
+      particle.fillCircle(0, 0, 2);
+      particle.setPosition(x, y);
+      this.uiGroup.add(particle);
+      
+      // ふわふわと浮遊するアニメーション
+      this.scene.tweens.add({
+        targets: particle,
+        y: y - 20 + Math.random() * 40,
+        alpha: 0.1 + Math.random() * 0.4,
+        duration: 2000 + Math.random() * 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+      
+      // 回転アニメーション
+      this.scene.tweens.add({
+        targets: particle,
+        scaleX: 0.5 + Math.random() * 0.8,
+        scaleY: 0.5 + Math.random() * 0.8,
+        duration: 1500 + Math.random() * 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Power2'
+      });
+    }
+  }
+  
+  createMysticalAura() {
+    // ゲームエリアの周囲に神秘的な光のオーラ
+    const bounds = this.GAME_AREA_BOUNDS;
+    
+    const aura = this.scene.add.graphics();
+    aura.lineStyle(2, 0x44aaff, 0.3);
+    aura.strokeRoundedRect(
+      bounds.left - 10, bounds.top - 10,
+      bounds.right - bounds.left + 20, bounds.bottom - bounds.top + 20,
+      10
+    );
+    
+    aura.lineStyle(1, 0x88ccff, 0.2);
+    aura.strokeRoundedRect(
+      bounds.left - 25, bounds.top - 25,
+      bounds.right - bounds.left + 50, bounds.bottom - bounds.top + 50,
+      15
+    );
+    
+    this.uiGroup.add(aura);
+    
+    // パルスアニメーション
+    this.scene.tweens.add({
+      targets: aura,
+      alpha: 0.1,
+      duration: 2000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+  }
+  
+  createSearchGrid() {
+    // 微細な探索グリッド（宝探しの雰囲気）
+    const bounds = this.GAME_AREA_BOUNDS;
+    const gridSize = 50;
+    
+    const grid = this.scene.add.graphics();
+    grid.lineStyle(1, 0x333366, 0.15);
+    
+    // 縦線
+    for (let x = bounds.left; x <= bounds.right; x += gridSize) {
+      grid.moveTo(x, bounds.top);
+      grid.lineTo(x, bounds.bottom);
+    }
+    
+    // 横線
+    for (let y = bounds.top; y <= bounds.bottom; y += gridSize) {
+      grid.moveTo(bounds.left, y);
+      grid.lineTo(bounds.right, y);
+    }
+    
+    grid.strokePath();
+    this.uiGroup.add(grid);
+  }
+  
+
 
   setupJoyConInput() {
     // マウス操作は常に有効
@@ -441,11 +569,38 @@ export class VibrationHuntGame {
   updateCursorGlow(strength) {
     // 振動の強さに応じてカーソルのグロー効果を変更
     const alpha = Math.max(0.2, strength);
-    const scale = 1 + strength * 0.5;
+    const scale = 1 + strength * 0.8;
     
     this.cursorGlow.clear();
-    this.cursorGlow.fillStyle(0xff4444, alpha);
-    this.cursorGlow.fillCircle(0, 0, 20 * scale);
+    
+    // 複層のグロー効果
+    // 外側のグロー
+    this.cursorGlow.fillStyle(0xff4444, alpha * 0.3);
+    this.cursorGlow.fillCircle(0, 0, 35 * scale);
+    
+    // 中間のグロー
+    this.cursorGlow.fillStyle(0xff6666, alpha * 0.5);
+    this.cursorGlow.fillCircle(0, 0, 25 * scale);
+    
+    // 内側のグロー
+    this.cursorGlow.fillStyle(0xff8888, alpha * 0.7);
+    this.cursorGlow.fillCircle(0, 0, 15 * scale);
+    
+    // 宝に非常に近い場合の特別効果
+    if (strength > 0.8) {
+      this.cursorGlow.lineStyle(2, 0xffff00, alpha);
+      this.cursorGlow.strokeCircle(0, 0, 40 * scale);
+      
+      // パルス効果
+      this.scene.tweens.add({
+        targets: this.cursorGlow,
+        scaleX: 1.2,
+        scaleY: 1.2,
+        duration: 200,
+        yoyo: true,
+        ease: 'Power2'
+      });
+    }
   }
 
   getDistance(pos1, pos2) {
@@ -504,34 +659,8 @@ export class VibrationHuntGame {
     
     this.score += roundScore;
     
-    // 正解位置を表示（美しいエフェクト付き）
-    const correctCircle = this.scene.add.graphics();
-    correctCircle.fillStyle(0x00ff00, 0.8);
-    correctCircle.fillCircle(this.targetPosition.x, this.targetPosition.y, 15);
-    correctCircle.lineStyle(3, 0xffffff, 1);
-    correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 15);
-    this.uiGroup.add(correctCircle);
-    
-    const correctText = this.scene.add.text(this.targetPosition.x, this.targetPosition.y - 35, '正解！', {
-      fontSize: '18px',
-      fill: '#00ff00',
-      fontWeight: 'bold'
-    }).setOrigin(0.5);
-    this.uiGroup.add(correctText);
-    
-    // 結果表示
-    const errorText = this.scene.add.text(400, 450, `誤差: ${distance.toFixed(0)}px`, {
-      fontSize: '20px',
-      fill: '#ffffff'
-    }).setOrigin(0.5);
-    this.uiGroup.add(errorText);
-    
-    // 結果表示
-    const scoreText = this.scene.add.text(400, 480, `獲得スコア: ${roundScore}点`, {
-      fontSize: '20px',
-      fill: '#ffff00'
-    }).setOrigin(0.5);
-    this.uiGroup.add(scoreText);
+    // 美しい結果画面を作成
+    this.createBeautifulResultScreen(distance, roundScore);
     
     // 成功エフェクト
     if (distance < 50) {
@@ -553,6 +682,170 @@ export class VibrationHuntGame {
         this.endGame();
       }
     }, 3000);
+  }
+
+  createBeautifulResultScreen(distance, roundScore) {
+    // 半透明の背景オーバーレイ
+    const overlay = this.scene.add.graphics();
+    overlay.fillStyle(0x000000, 0.7);
+    overlay.fillRect(0, 0, 800, 600);
+    this.uiGroup.add(overlay);
+    
+    // メインの結果パネル
+    const panelWidth = 500;
+    const panelHeight = 350;
+    const panelX = 400;
+    const panelY = 300;
+    
+    // グラデーション背景パネル
+    const panel = this.scene.add.graphics();
+    panel.fillGradientStyle(0x1a1a2e, 0x16213e, 0x0f3460, 0x533483);
+    panel.fillRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    
+    // パネルの枠線
+    panel.lineStyle(3, 0x00d4ff, 0.8);
+    panel.strokeRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    this.uiGroup.add(panel);
+    
+    // 正解位置を美しく表示
+    const correctCircle = this.scene.add.graphics();
+    correctCircle.fillStyle(0x00ff88, 0.9);
+    correctCircle.fillCircle(this.targetPosition.x, this.targetPosition.y, 18);
+    
+    // 正解位置の外側リング
+    correctCircle.lineStyle(4, 0xffffff, 0.8);
+    correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 18);
+    correctCircle.lineStyle(2, 0x00ff88, 1);
+    correctCircle.strokeCircle(this.targetPosition.x, this.targetPosition.y, 25);
+    this.uiGroup.add(correctCircle);
+    
+    // 正解位置のパルスアニメーション
+    this.scene.tweens.add({
+      targets: correctCircle,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      alpha: 0.7,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    
+    // タイトル「結果発表」
+    const titleText = this.scene.add.text(panelX, panelY - 120, '結果発表', {
+      fontSize: '32px',
+      fill: '#00d4ff',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(titleText);
+    
+    // 精度評価
+    let accuracyRating = '';
+    let accuracyColor = '';
+    if (distance <= 20) {
+      accuracyRating = '完璧！';
+      accuracyColor = '#00ff88';
+    } else if (distance <= 50) {
+      accuracyRating = '素晴らしい！';
+      accuracyColor = '#00ff88';
+    } else if (distance <= 100) {
+      accuracyRating = '良い！';
+      accuracyColor = '#ffff00';
+    } else if (distance <= 150) {
+      accuracyRating = 'まずまず';
+      accuracyColor = '#ff8800';
+    } else {
+      accuracyRating = 'もう少し！';
+      accuracyColor = '#ff4444';
+    }
+    
+    const accuracyText = this.scene.add.text(panelX, panelY - 60, accuracyRating, {
+      fontSize: '28px',
+      fill: accuracyColor,
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(accuracyText);
+    
+    // 誤差表示（スタイリッシュ）
+    const errorContainer = this.scene.add.graphics();
+    errorContainer.fillStyle(0x2a2a2a, 0.8);
+    errorContainer.fillRoundedRect(panelX - 120, panelY - 20, 240, 40, 8);
+    errorContainer.lineStyle(2, 0x00d4ff, 0.6);
+    errorContainer.strokeRoundedRect(panelX - 120, panelY - 20, 240, 40, 8);
+    this.uiGroup.add(errorContainer);
+    
+    const errorText = this.scene.add.text(panelX, panelY, `誤差: ${distance.toFixed(0)}px`, {
+      fontSize: '18px',
+      fill: '#ffffff',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(errorText);
+    
+    // スコア表示（輝くエフェクト付き）
+    const scoreContainer = this.scene.add.graphics();
+    scoreContainer.fillStyle(0x4a4a00, 0.9);
+    scoreContainer.fillRoundedRect(panelX - 150, panelY + 40, 300, 50, 12);
+    scoreContainer.lineStyle(3, 0xffff00, 0.8);
+    scoreContainer.strokeRoundedRect(panelX - 150, panelY + 40, 300, 50, 12);
+    this.uiGroup.add(scoreContainer);
+    
+    const scoreText = this.scene.add.text(panelX, panelY + 65, `獲得スコア: ${roundScore}点`, {
+      fontSize: '22px',
+      fill: '#ffff00',
+      fontWeight: 'bold',
+      fontFamily: 'Arial, sans-serif',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    this.uiGroup.add(scoreText);
+    
+    // スコアのキラキラエフェクト
+    this.scene.tweens.add({
+      targets: scoreText,
+      scaleX: 1.1,
+      scaleY: 1.1,
+      duration: 600,
+      yoyo: true,
+      repeat: 2,
+      ease: 'Back.easeInOut'
+    });
+    
+    // 次のラウンドまたは終了の案内
+    let nextText = '';
+    if (this.round < this.maxRounds) {
+      nextText = `次のラウンド ${this.round + 1}/${this.maxRounds} へ...`;
+    } else {
+      nextText = 'ゲーム終了！最終結果を表示します...';
+    }
+    
+    const nextRoundText = this.scene.add.text(panelX, panelY + 120, nextText, {
+      fontSize: '16px',
+      fill: '#aaaaaa',
+      fontStyle: 'italic',
+      fontFamily: 'Arial, sans-serif'
+    }).setOrigin(0.5);
+    this.uiGroup.add(nextRoundText);
+    
+    // パネル全体のフェードインアニメーション
+    panel.setAlpha(0);
+    titleText.setAlpha(0);
+    accuracyText.setAlpha(0);
+    errorContainer.setAlpha(0);
+    errorText.setAlpha(0);
+    scoreContainer.setAlpha(0);
+    scoreText.setAlpha(0);
+    nextRoundText.setAlpha(0);
+    
+    this.scene.tweens.add({
+      targets: [panel, titleText, accuracyText, errorContainer, errorText, scoreContainer, scoreText, nextRoundText],
+      alpha: 1,
+      duration: 800,
+      delay: this.scene.tweens.stagger(100),
+      ease: 'Power2'
+    });
   }
 
   createSuccessEffect() {
