@@ -48,15 +48,15 @@ const alllevels = [
       "WWWWWWWWWWWWWWWWWWWWWWWW",
       "W          W   i       W",
       "W  B       W           W",
-      "W          W  i        W",
-      "W    i     W           W",
+      "W        p W  i        W",
+      "W    i     W       t   W",
       "W          W           W",
       "W     i    W    i      W",
-      "W          W    iii    W",
-      "W          W    A      W",
-      "W          W    i      W",
+      "W   i      W    iii    W",
+      "W       i  W    A      W",
+      "W   T      W    i      W",
       "W          W           W",
-      "W    iii   W           W",
+      "W    iii   W        P  W",
       "W          W  i        W",
       "W  ii      W           W",
       "W         aWb  i       W",
@@ -529,7 +529,11 @@ class EscapeScene extends Phaser.Scene {
     }
     this.player1 = this.physics.add.sprite(startX, startY, "p1_down_1");
     this.player1.setCollideWorldBounds(true);
-    this.player1.setBounce(0.2);
+    if (this.currentLevelIndex === 2) {
+      this.player1.setBounce(0);
+    } else {
+      this.player1.setBounce(0.2);
+    }
     this.player1.setVelocity(0, 0);
     if (this.currentLevelIndex === 2) {
       this.player1.setDrag(0);
@@ -552,7 +556,11 @@ class EscapeScene extends Phaser.Scene {
     this.player2 = this.physics.add.sprite(startX, startY, "p2_down_1");
 
     this.player2.setCollideWorldBounds(true);
-    this.player2.setBounce(0.2);
+    if (this.currentLevelIndex === 2) {
+      this.player1.setBounce(0);
+    } else {
+      this.player1.setBounce(0.2);
+    }
     this.player2.setVelocity(0, 0);
     if (this.currentLevelIndex === 2) {
       this.player2.setDrag(0);
@@ -651,7 +659,9 @@ class EscapeScene extends Phaser.Scene {
       this.player1.setVelocityX(this.player1Speed);
       this.player1.anims.play("p1_right_anim", true);
     } else {
-      this.player1.setVelocityX(0);
+      if (this.currentLevelIndex !== 2) {
+        this.player1.setVelocityX(0);
+      }
     }
     if (this.keys.up) {
       this.player1.setVelocityY(-this.player1Speed);
@@ -660,7 +670,9 @@ class EscapeScene extends Phaser.Scene {
       this.player1.setVelocityY(this.player1Speed);
       this.player1.anims.play("p1_down_anim", true);
     } else {
-      this.player1.setVelocityY(0);
+      if (this.currentLevelIndex !== 2) {
+        this.player1.setVelocityY(0);
+      }
     }
     if (
       !this.keys.left &&
@@ -680,7 +692,9 @@ class EscapeScene extends Phaser.Scene {
       this.player2.setVelocityX(this.player2Speed);
       this.player2.anims.play("p2_right_anim", true);
     } else {
-      this.player2.setVelocityX(0);
+      if (this.currentLevelIndex !== 2) {
+        this.player2.setVelocityX(0);
+      }
     }
     if (this.keys.up) {
       this.player2.setVelocityY(-this.player2Speed);
@@ -689,7 +703,9 @@ class EscapeScene extends Phaser.Scene {
       this.player2.setVelocityY(this.player2Speed);
       this.player2.anims.play("p2_down_anim", true);
     } else {
-      this.player2.setVelocityY(0);
+      if (this.currentLevelIndex !== 2) {
+        this.player2.setVelocityY(0);
+      }
     }
     if (
       !this.keys.left &&
