@@ -503,6 +503,13 @@ export class VibrationHuntGame {
     if (!this.gameActive || !this.jc) return;
     
     try {
+      // Joy-Conデバイスの接続状態をチェック
+      if (!this.jc.device || !this.jc.device.opened) {
+        console.warn('Joy-Conが切断されました - ゲームを継続（マウス操作のみ）');
+        this.handleJoyConDisconnection();
+        return;
+      }
+      
       const inputState = this.jc.getInputState();
       if (!inputState) return;
       
@@ -537,6 +544,48 @@ export class VibrationHuntGame {
       }
     } catch (error) {
       console.error('Joy-Con入力エラー:', error);
+      this.handleJoyConError(error);
+    }
+  }
+
+  handleJoyConDisconnection() {
+    console.log('Joy-Con切断を検出 - ゲームを継続');
+    
+    // Joy-Conマネージャーをnullに設定
+    this.jc = null;
+    
+    // 振動を停止
+    // this.jc.rumble(0, 0, 0, 0); // 既にnullなので呼べない
+    
+    // ユーザーに通知（簡単なメッセージ）
+    if (this.uiGroup) {
+      const disconnectMessage = this.scene.add.text(400, 50, 'Joy-Con切断 - マウス操作で継続', {
+        fontSize: '18px',
+        fill: '#ff6666',
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 'bold',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+      }).setOrigin(0.5);
+      
+      this.uiGroup.add(disconnectMessage);
+      
+      // 3秒後にメッセージを削除
+      setTimeout(() => {
+        if (disconnectMessage) disconnectMessage.destroy();
+      }, 3000);
+    }
+  }
+
+  handleJoyConError(error) {
+    console.error('Joy-Conエラー詳細:', error);
+    
+    // 特定のエラータイプに応じた処理
+    if (error.message && error.message.includes('device not open')) {
+      this.handleJoyConDisconnection();
+    } else {
+      // その他のエラーの場合はログ出力のみ
+      console.warn('Joy-Conエラーが発生しましたが、ゲームを継続します');
     }
   }
 
@@ -559,7 +608,13 @@ export class VibrationHuntGame {
     
     // Joy-Conが接続されている場合のみ振動
     if (this.jc) {
-      this.playVibration(vibrationStrength);
+      try {
+        this.playVibration(vibrationStrength);
+      } catch (error) {
+        console.warn('振動送信エラー:', error);
+        // エラーが発生した場合はJoy-Conを切断として扱う
+        this.handleJoyConDisconnection();
+      }
     }
     
     // カーソルのグロー効果を振動の強さに応じて変更
@@ -621,20 +676,28 @@ export class VibrationHuntGame {
   }
 
   playVibration(strength) {
-    if (strength <= 0) {
-      this.jc.rumble(0, 0, 0, 0);
-      return;
+    if (!this.jc) return; // Joy-Conが切断されている場合は何もしない
+    
+    try {
+      if (strength <= 0) {
+        this.jc.rumble(0, 0, 0, 0);
+        return;
+      }
+      
+      const { baseFreq } = this.vibrationSettings;
+      const freqMultiplier = 1 + strength;
+      
+      const lowFreq = baseFreq.low * freqMultiplier;
+      const highFreq = baseFreq.high * freqMultiplier;
+      const lowAmp = strength * 0.7;
+      const highAmp = strength;
+      
+      this.jc.rumble(lowFreq, highFreq, lowAmp, highAmp);
+    } catch (error) {
+      console.warn('振動コマンド送信エラー:', error);
+      // エラーが発生した場合は例外を上位に投げる
+      throw error;
     }
-    
-    const { baseFreq } = this.vibrationSettings;
-    const freqMultiplier = 1 + strength;
-    
-    const lowFreq = baseFreq.low * freqMultiplier;
-    const highFreq = baseFreq.high * freqMultiplier;
-    const lowAmp = strength * 0.7;
-    const highAmp = strength;
-    
-    this.jc.rumble(lowFreq, highFreq, lowAmp, highAmp);
   }
 
   submitAnswer() {
@@ -1054,6 +1117,82 @@ export class VibrationHuntGame {
     this.uiGroup.add(centerGlow);
   }
 
+  createStylishEndGameButton(x, y, text, primaryColor, hoverColor) {
+    // ボタンのコンテナ
+    const buttonContainer = this.scene.add.container(x, y);
+
+    // ボタン背景（グラデーション効果）
+    const buttonBg = this.scene.add.graphics();
+    const primaryColorInt = parseInt(primaryColor.replace('#', ''), 16);
+    const hoverColorInt = parseInt(hoverColor.replace('#', ''), 16);
+    
+    buttonBg.fillGradientStyle(
+      primaryColorInt,
+      primaryColorInt,
+      hoverColorInt,
+      hoverColorInt,
+      1
+    );
+    buttonBg.fillRoundedRect(-120, -25, 240, 50, 25);
+
+    // ボタンのグロー効果
+    const glowBg = this.scene.add.graphics();
+    glowBg.fillStyle(primaryColorInt, 0.3);
+    glowBg.fillRoundedRect(-125, -30, 250, 60, 30);
+
+    // ボタンテキスト
+    const buttonText = this.scene.add.text(0, 0, text, {
+      fontSize: '18px',
+      fill: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold'
+    }).setOrigin(0.5);
+
+    // コンテナに追加
+    buttonContainer.add([glowBg, buttonBg, buttonText]);
+    buttonContainer.setSize(240, 50);
+    buttonContainer.setInteractive();
+
+    // ホバー効果
+    buttonContainer.on('pointerover', () => {
+      buttonContainer.setScale(1.05);
+      this.scene.tweens.add({
+        targets: glowBg,
+        alpha: 0.5,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    buttonContainer.on('pointerout', () => {
+      buttonContainer.setScale(1);
+      this.scene.tweens.add({
+        targets: glowBg,
+        alpha: 0.3,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    // クリック効果
+    buttonContainer.on('pointerdown', () => {
+      buttonContainer.setScale(0.95);
+    });
+
+    buttonContainer.on('pointerup', () => {
+      buttonContainer.setScale(1.05);
+    });
+
+    // 参照用にテキストオブジェクトを保存
+    buttonContainer.buttonText = buttonText;
+    buttonContainer.buttonBg = buttonBg;
+
+    // UIグループに追加
+    this.uiGroup.add(buttonContainer);
+
+    return buttonContainer;
+  }
+
   createSuccessEffect() {
     // 成功時のパーティクル効果
     for (let i = 0; i < 15; i++) {
@@ -1190,46 +1329,14 @@ export class VibrationHuntGame {
     rankContainer.add([rankCircle, rankText, evaluationText]);
     this.uiGroup.add(rankContainer);
     
-    // クリーンなボタンエリア
+    // スタイリッシュなボタンエリア
     const buttonY = containerY + 80;
     
-    // タイトルに戻るボタン
-    const titleButton = this.scene.add.graphics();
-    titleButton.fillStyle(0x4a7aff, 1);
-    titleButton.fillRoundedRect(-100, -25, 200, 50, 25);
-    titleButton.lineStyle(1, 0x6a9aff, 1);
-    titleButton.strokeRoundedRect(-100, -25, 200, 50, 25);
-    titleButton.x = containerX - 120;
-    titleButton.y = buttonY;
-    titleButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
-    this.uiGroup.add(titleButton);
+    // タイトルに戻るボタン（タイトル画面と同じスタイル）
+    const titleButton = this.createStylishEndGameButton(containerX - 120, buttonY, 'タイトルに戻る', '#4a9eff', '#3a8eef');
     
-    const titleButtonText = this.scene.add.text(containerX - 120, buttonY, 'タイトルに戻る', {
-      fontSize: '18px',
-      fill: '#ffffff',
-      fontFamily: 'Arial, sans-serif',
-      fontWeight: 'bold'
-    }).setOrigin(0.5);
-    this.uiGroup.add(titleButtonText);
-    
-    // もう一度遊ぶボタン
-    const retryButton = this.scene.add.graphics();
-    retryButton.fillStyle(0x00cc66, 1);
-    retryButton.fillRoundedRect(-100, -25, 200, 50, 25);
-    retryButton.lineStyle(1, 0x00ee88, 1);
-    retryButton.strokeRoundedRect(-100, -25, 200, 50, 25);
-    retryButton.x = containerX + 120;
-    retryButton.y = buttonY;
-    retryButton.setInteractive(new Phaser.Geom.Rectangle(-100, -25, 200, 50), Phaser.Geom.Rectangle.Contains);
-    this.uiGroup.add(retryButton);
-    
-    const retryButtonText = this.scene.add.text(containerX + 120, buttonY, 'もう一度遊ぶ', {
-      fontSize: '18px',
-      fill: '#ffffff',
-      fontFamily: 'Arial, sans-serif',
-      fontWeight: 'bold'
-    }).setOrigin(0.5);
-    this.uiGroup.add(retryButtonText);
+    // もう一度遊ぶボタン（タイトル画面と同じスタイル）
+    const retryButton = this.createStylishEndGameButton(containerX + 120, buttonY, 'もう一度遊ぶ', '#00d4aa', '#00b899');
     
     // タイトルボタンのクリックイベント
     titleButton.on('pointerdown', () => {
@@ -1257,7 +1364,7 @@ export class VibrationHuntGame {
     this.uiGroup.add(instructionText);
     
     // Joy-Con操作でのボタン選択機能
-    this.setupEndGameJoyConInput(titleButton, retryButton, titleButtonText, retryButtonText);
+    this.setupEndGameJoyConInput(titleButton, retryButton, titleButton.buttonText, retryButton.buttonText);
     
     // 入力監視を停止
     if (this.inputUpdateInterval) {
@@ -1324,13 +1431,8 @@ export class VibrationHuntGame {
   updateButtonSelection() {
     this.endGameButtons.forEach((btn, index) => {
       if (index === this.selectedButton) {
-        // 選択中のボタンを強調
-        btn.button.clear();
-        btn.button.fillStyle(index === 0 ? 0x6ab9ff : 0x33ff99, 1);
-        btn.button.fillRoundedRect(-100, -25, 200, 50, 25);
-        btn.button.lineStyle(3, 0xffffff, 1);
-        btn.button.strokeRoundedRect(-100, -25, 200, 50, 25);
-        
+        // 選択中のボタンを強調（スケール効果）
+        btn.button.setScale(1.1);
         btn.text.setStyle({
           fontSize: '20px',
           fill: '#ffffff',
@@ -1339,12 +1441,7 @@ export class VibrationHuntGame {
         });
       } else {
         // 非選択のボタンを通常表示
-        btn.button.clear();
-        btn.button.fillStyle(index === 0 ? 0x4a9eff : 0x00ff88, 1);
-        btn.button.fillRoundedRect(-100, -25, 200, 50, 25);
-        btn.button.lineStyle(2, 0xffffff, 1);
-        btn.button.strokeRoundedRect(-100, -25, 200, 50, 25);
-        
+        btn.button.setScale(1.0);
         btn.text.setStyle({
           fontSize: '18px',
           fill: '#ffffff',

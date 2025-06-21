@@ -91,6 +91,12 @@ export class JoyConHIDManager {
 
       // イベントリスナー設定
       this.device.addEventListener('inputreport', (e) => this.#onReport(e));
+      
+      // 切断検出のためのイベントリスナー
+      this.device.addEventListener('disconnect', () => {
+        console.warn('Joy-Con切断イベントを検出');
+        this.#handleDisconnection();
+      });
 
       console.log('Joy-Con初期化完了 - 振動探しゲーム用');
       return 'connected';
@@ -146,7 +152,8 @@ export class JoyConHIDManager {
   }
 
   async rumble(low_freq, high_freq, low_amp, high_amp) {
-    if (!this.device) {
+    if (!this.device || !this.device.opened) {
+      console.warn('Joy-Con切断済み - 振動コマンドをスキップ');
       return;
     }
 
@@ -185,6 +192,32 @@ export class JoyConHIDManager {
     if (this.device) {
       this.device.close();
     }
+  }
+
+  #handleDisconnection() {
+    console.log('Joy-Con切断処理を実行');
+    
+    // デバイスを無効化
+    this.device = null;
+    
+    // キャリブレーションタイマーをクリア
+    if (this.calibrationTimer) {
+      clearTimeout(this.calibrationTimer);
+      this.calibrationTimer = null;
+    }
+    
+    // 入力状態をリセット
+    this.inputState = {
+      buttons: {
+        a: false, b: false, x: false, y: false,
+        l: false, r: false, zl: false, zr: false,
+        plus: false, minus: false, home: false, capture: false,
+        sl: false, sr: false, left: false, right: false, up: false, down: false
+      },
+      rightStick: { x: 0, y: 0 },
+      leftStick: { x: 0, y: 0 },
+      rawButtons: { byte1: 0, byte2: 0, byte3: 0, byte4: 0, byte5: 0 }
+    };
   }
 
   // --- Private ---------------------------------------------------------------
