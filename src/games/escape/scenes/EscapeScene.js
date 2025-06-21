@@ -169,6 +169,8 @@ class EscapeScene extends Phaser.Scene {
 
     this.initialPlayer1Pos = data.player1_startPos || null;
     this.initialPlayer2Pos = data.player2_startPos || null;
+
+    this.initialTime = data.startTime || 0;
   }
   preload() {
     // ダミーファイルをロード
@@ -362,7 +364,11 @@ class EscapeScene extends Phaser.Scene {
   handleNextStageTrigger(player, fakewall) {
     if (this.isGameCleared) return;
     console.log("次のステージへ移動します");
-    this.scene.restart({ levelIndex: this.currentLevelIndex + 1 });
+    const nextStageData = {
+      levelIndex: this.currentLevelIndex + 1,
+      startTime: this.timeElapsed,
+    };
+    this.scene.restart(nextStageData);
   }
   gameClear() {
     if (this.isGameCleared) return;
@@ -395,7 +401,7 @@ class EscapeScene extends Phaser.Scene {
 
     // クリアタイム
     this.add
-      .text(centerX, centerY, `クリアタイム: ${this.timeElapsed} 秒`, {
+      .text(centerX, centerY, `ステージクリアタイム: ${this.timeElapsed} 秒`, {
         fontSize: "32px",
         fill: "#ffffff",
         fontFamily: "Arial",
@@ -406,7 +412,7 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(11);
 
-    this.createButton(centerX - 120, centerY + 100, "次のステージ", () => {
+    this.createButton(centerX - 120, centerY + 100, "次へ進む", () => {
       const nextStageData = {
         levelIndex: this.currentLevelIndex + 1,
         player1_startPos: { x: this.player1.x, y: this.player1.y },
@@ -472,6 +478,9 @@ class EscapeScene extends Phaser.Scene {
     this.setupInput();
     this.setupGameplay();
     this.createAnimations();
+    if (this.currentLevelIndex > 0) {
+      this.startTimer();
+    }
 
     this.physics.add.collider(this.player1, this.player2);
     this.physics.add.collider(this.player1, this.collidableGroup);
@@ -660,9 +669,9 @@ class EscapeScene extends Phaser.Scene {
       this.currentLevelIndex === 3 ||
       this.currentLevelIndex === 6
     ) {
-      this.player1.setBounce(0);
+      this.player2.setBounce(0);
     } else {
-      this.player1.setBounce(0.2);
+      this.player2.setBounce(0.2);
     }
     this.player2.setVelocity(0, 0);
     if (
@@ -739,13 +748,18 @@ class EscapeScene extends Phaser.Scene {
   }
 
   setupGameplay() {
-    //経過タイマー
-
-    this.timeText.setText("タイム: 0");
-    this.timeElapsed = 0;
+    this.initialTime = this.initialTime || 0; // initで設定された値を使う
+    this.timeElapsed = this.initialTime;
+    this.timeText.setText(`タイム: ${this.timeElapsed}`);
+    this.timerStarted = false;
+  }
+  startTimer() {
+    if (this.timerStarted) {
+      return;
+    }
+    this.timerStarted = true;
     this.timeEvent = this.time.addEvent({
       delay: 1000,
-
       callback: () => {
         this.timeElapsed += 1;
         this.timeText.setText(`タイム: ${this.timeElapsed}`);
@@ -762,9 +776,11 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.left) {
       this.player1.setVelocityX(-this.player1Speed);
       this.player1.anims.play("p1_left_anim", true);
+      this.startTimer();
     } else if (this.keys.right) {
       this.player1.setVelocityX(this.player1Speed);
       this.player1.anims.play("p1_right_anim", true);
+      this.startTimer();
     } else {
       if (
         this.currentLevelIndex !== 2 &&
@@ -777,9 +793,11 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.up) {
       this.player1.setVelocityY(-this.player1Speed);
       this.player1.anims.play("p1_up_anim", true);
+      this.startTimer();
     } else if (this.keys.down) {
       this.player1.setVelocityY(this.player1Speed);
       this.player1.anims.play("p1_down_anim", true);
+      this.startTimer();
     } else {
       if (
         this.currentLevelIndex !== 2 &&
@@ -803,9 +821,11 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.left) {
       this.player2.setVelocityX(-this.player2Speed);
       this.player2.anims.play("p2_left_anim", true);
+      this.startTimer();
     } else if (this.keys.right) {
       this.player2.setVelocityX(this.player2Speed);
       this.player2.anims.play("p2_right_anim", true);
+      this.startTimer();
     } else {
       if (
         this.currentLevelIndex !== 2 &&
@@ -818,9 +838,11 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.up) {
       this.player2.setVelocityY(-this.player2Speed);
       this.player2.anims.play("p2_up_anim", true);
+      this.startTimer();
     } else if (this.keys.down) {
       this.player2.setVelocityY(this.player2Speed);
       this.player2.anims.play("p2_down_anim", true);
+      this.startTimer();
     } else {
       if (
         this.currentLevelIndex !== 2 &&
