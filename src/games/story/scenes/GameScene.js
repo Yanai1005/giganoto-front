@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import Chapter1 from './Chapters/Chapter1.js';
 import Chapter2 from './Chapters/Chapter2.js';
 import Chapter3 from './Chapters/Chapter3.js';
+import Chapter4 from './Chapters/Chapter4.js';
+import Chapter5 from './Chapters/Chapter5.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -45,6 +47,7 @@ export default class GameScene extends Phaser.Scene {
     this.textBox = this.add.text(50, 450, '', {
       fontSize: '20px',
       color: '#ffffff',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       wordWrap: { width: 700, useAdvancedWrap: true },
       lineSpacing: 6,
       padding: { top: 10, bottom: 10, left: 10, right: 10 },
@@ -52,7 +55,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.choiceButtons = [];
     for (let i = 0; i < 2; i++) {
-      const btn = this.add.text(600, 370 + i * 40, '', {
+      const btn = this.add.text(550, 370 + i * 40, '', {
         fontSize: '18px',
         backgroundColor: '#333',
         color: '#fff',
@@ -62,6 +65,14 @@ export default class GameScene extends Phaser.Scene {
       btn.on('pointerdown', () => this.selectChoice(i));
       this.choiceButtons.push(btn);
     }
+
+    this.chapterTitle = this.add.text(20, 20, '', {
+      fontSize: '22px',
+      fontFamily: 'sans-serif',
+      color: '#ffffff',
+      backgroundColor: '#00000088', // 半透明の黒背景
+      padding: { x: 10, y: 5 }
+    }).setAlpha(1);
 
     this.statusPrefix = this.add.text(50, 420, '人格を ', {
       fontSize: '16px',
@@ -122,14 +133,57 @@ export default class GameScene extends Phaser.Scene {
       case 3:
         this.storyData = Chapter3;
         break;
+      case 4:
+        this.storyData = Chapter4;
+        break;
+      case 5:
+        this.storyData = Chapter5;
+        break;  
       default:
         this.endGame();
         return;
     }
+
+    let title = '';
+    switch (this.chapterIndex) {
+      case 1:
+        this.storyData = Chapter1;
+        title = '第1章';
+        break;
+      case 2:
+        this.storyData = Chapter2;
+        title = '第2章';
+        break;
+      case 3:
+        this.storyData = Chapter3;
+        title = '第3章';
+        break;
+      case 4:
+        this.storyData = Chapter4;
+        title = '第4章';
+        break;
+      case 5:
+        this.storyData = Chapter5;
+        title = '第5章';
+        break;
+      default:
+        this.textBox.setText('終章です。ゲームを終了します。');
+        return;
+    }
+    this.chapterTitle.setText(title);
+    this.chapterTitle.setAlpha(1);
     this.currentLineIndex = 0;
     this.choicesVisible = false;
     this.textBox.setText('');
     this.showNextLine();
+
+    this.tweens.add({
+      targets: this.chapterTitle,
+      alpha: 0,
+      delay: 3000, // 3秒後に開始
+      duration: 1000, // フェードアウトに1秒
+      ease: 'Linear'
+    });
   }
 
   showNextLine() {
@@ -195,7 +249,7 @@ export default class GameScene extends Phaser.Scene {
         i++;
         this.input.keyboard.once('keydown-SPACE', nextLine);
       } else {
-        if (this.chapterIndex >= 3) {
+        if (this.chapterIndex >= 5) {
           const endingKey = this.determineEnding();
           this.scene.start('EndScene', { endingKey });
         } else {
