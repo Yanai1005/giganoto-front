@@ -4,7 +4,7 @@ import { useJoyConContext } from '../contexts/JoyConContext';
 export const useJoyConCursor = ({
     enabled = true,
     sensitivity = 0.3,
-    deadzone = 0.18, // デッドゾーンを0.12から0.18に拡大してより安定化
+    deadzone = 0.08, // デッドゾーンを0.18から0.08に下げてより敏感に
     showCursor = true,
     autoCalibrate = false, // キャリブレーション機能を無効化
     calibrationTime = 3000
@@ -14,14 +14,17 @@ export const useJoyConCursor = ({
     // デバッグ用：JoyConの接続状態とinputStateを定期的にログ出力
     useEffect(() => {
         const debugInterval = setInterval(() => {
-            console.log('🎮 JoyCon Debug Status (LEFT STICK MODE):', {
-                enabled,
-                isConnected,
-                hasInputState: !!inputState,
-                hasLeftStick: !!(inputState?.leftStick),
-                leftStickValues: inputState?.leftStick
-            });
-        }, 5000); // 5秒ごと
+            // デバッグログの頻度を減らしてパフォーマンス向上
+            if (enabled && isConnected) {
+                console.log('🎮 JoyCon Status (NATURAL CURSOR MODE):', {
+                    enabled,
+                    isConnected,
+                    hasInputState: !!inputState,
+                    hasLeftStick: !!(inputState?.leftStick),
+                    leftStickValues: inputState?.leftStick
+                });
+            }
+        }, 10000); // 5秒ごと → 10秒ごとに変更
 
         return () => clearInterval(debugInterval);
     }, [enabled, isConnected, inputState]);
@@ -175,16 +178,19 @@ export const useJoyConCursor = ({
         const cursor = document.createElement('div');
         cursor.style.cssText = `
             position: fixed;
-            width: 20px;
-            height: 20px;
-            background: rgba(0, 255, 0, 0.8);
-            border: 2px solid white;
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle, rgba(0, 255, 100, 0.9) 0%, rgba(0, 200, 80, 0.7) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             pointer-events: none;
             z-index: 10000;
             transform: translate(-50%, -50%);
-            transition: all 0.2s ease;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s ease-out;
+            box-shadow: 
+                0 0 8px rgba(0, 255, 100, 0.4),
+                0 2px 6px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(1px);
         `;
 
         cursor.id = 'joy-con-cursor';
@@ -204,8 +210,10 @@ export const useJoyConCursor = ({
             cursorRef.current.style.left = `${mousePosition.x}px`;
             cursorRef.current.style.top = `${mousePosition.y}px`;
             cursorRef.current.style.opacity = enabled && isConnected ? '1' : '0.3';
-            // キャリブレーション状態に関係なく緑色で表示
-            cursorRef.current.style.background = 'rgba(0, 255, 0, 0.8)';
+            // より美しい視覚的フィードバック
+            cursorRef.current.style.background = enabled && isConnected ?
+                'radial-gradient(circle, rgba(0, 255, 100, 0.9) 0%, rgba(0, 200, 80, 0.7) 100%)' :
+                'radial-gradient(circle, rgba(128, 128, 128, 0.6) 0%, rgba(100, 100, 100, 0.4) 100%)';
         }
     }, [mousePosition, enabled, isConnected]);
 
@@ -252,28 +260,41 @@ export const useJoyConCursor = ({
             adjustedY *= 0.8;
         }
 
-        // 最小限のデッドゾーン適用
+        // デッドゾーン適用（滑らかな開始のため）
         const magnitude = Math.sqrt(adjustedX * adjustedX + adjustedY * adjustedY);
         if (magnitude < deadzone) {
             return { x: 0, y: 0 };
         }
 
-        // シンプルな正規化（複雑な処理を一時的に削除）
-        const normalizedMagnitude = Math.min(1, magnitude);
-        const angle = Math.atan2(adjustedY, adjustedX);
-        const normalizedX = Math.cos(angle) * normalizedMagnitude;
-        const normalizedY = Math.sin(angle) * normalizedMagnitude;
+        // デッドゾーン境界での滑らかな移行
+        const adjustedMagnitude = (magnitude - deadzone) / (1.0 - deadzone);
+        const clampedMagnitude = Math.min(1, adjustedMagnitude);
 
-        // デバッグ情報（常に表示して動作確認）
-        console.log('🎮 LEFT Stick - Using left stick for cursor control:', {
-            raw: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
-            rawTypes: { x: typeof stick.x, y: typeof stick.y },
-            magnitude: magnitude.toFixed(3),
-            deadzone: deadzone,
-            normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) },
-            isValidInput: !isNaN(adjustedX) && !isNaN(adjustedY),
-            wasExtremeValue: isExtremeValue
-        });
+        // より反応しやすい応答カーブを適用（適度なバランス）
+        let responseCurve;
+        if (clampedMagnitude < 0.5) {
+            // 小さな動きでも適度に反応するよう調整
+            responseCurve = clampedMagnitude * clampedMagnitude * 1.5; // 0.8から1.5に上げて反応性向上
+        } else {
+            // 大きな動きでも適切に反応
+            const t = (clampedMagnitude - 0.5) * 2.0;
+            const smoothStep = t * t * (3.0 - 2.0 * t);
+            responseCurve = 0.375 + smoothStep * 0.625; // 最大値を1.0に戻す
+        }
+
+        const angle = Math.atan2(adjustedY, adjustedX);
+        const normalizedX = Math.cos(angle) * responseCurve;
+        const normalizedY = Math.sin(angle) * responseCurve;
+
+        // デバッグ情報（重要な変化のみ表示）
+        if (magnitude > deadzone + 0.02) { // 閾値を下げて反応をより確認しやすく
+            console.log('🎮 LEFT Stick - Balanced cursor control:', {
+                raw: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
+                magnitude: magnitude.toFixed(3),
+                responseCurve: responseCurve.toFixed(3),
+                normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) }
+            });
+        }
 
         return { x: normalizedX, y: normalizedY };
     }, [deadzone]);
@@ -286,56 +307,79 @@ export const useJoyConCursor = ({
 
         const stick = getLeftStick();
         const normalizedStick = normalizeStickInput(stick);
-        const magnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2);
+        const magnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2); if (magnitude > 0.005) { // 閾値を下げて反応しやすく
+            // バランスの取れた速度計算
+            const baseSpeed = 0.1; // 0.06から0.1に上げて適度な速度に
+            const targetVelocityX = normalizedStick.x * sensitivity * baseSpeed;
+            const targetVelocityY = normalizedStick.y * sensitivity * baseSpeed;
 
-        if (magnitude > 0.01) { // 閾値を緩めて反応しやすく
-            // 速度計算をより遅く（ゆっくりとした操作のため）
-            const targetVelocityX = normalizedStick.x * sensitivity * 0.08; // 0.25 → 0.08に大幅減速
-            const targetVelocityY = normalizedStick.y * sensitivity * 0.08;
+            // 適度なスムージング（反応と滑らかさのバランス）
+            const inputMagnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2);
+            const baseSmoothingFactor = 0.15; // 0.1から0.15に上げて適度な反応性
+            const adaptiveSmoothingFactor = baseSmoothingFactor + (inputMagnitude * 0.1); // 0.05から0.1に上げる
 
-            // スムーズな速度補間（より滑らかで遅い動き）
-            const smoothingFactor = 0.15; // 0.3 → 0.15に下げてより滑らかに
-            velocityRef.current.x = velocityRef.current.x * (1 - smoothingFactor) + targetVelocityX * smoothingFactor;
-            velocityRef.current.y = velocityRef.current.y * (1 - smoothingFactor) + targetVelocityY * smoothingFactor;
+            velocityRef.current.x = velocityRef.current.x * (1 - adaptiveSmoothingFactor) + targetVelocityX * adaptiveSmoothingFactor;
+            velocityRef.current.y = velocityRef.current.y * (1 - adaptiveSmoothingFactor) + targetVelocityY * adaptiveSmoothingFactor;
 
             // デバッグログを減らしてパフォーマンス向上
             if (frameCount % 60 === 0) { // 60フレームごと（1秒ごと）
-                console.log('🖱️ Velocity calculated (smoothed):', {
+                console.log('🖱️ Balanced velocity calculated:', {
                     normalizedStick,
+                    inputMagnitude: inputMagnitude.toFixed(3),
+                    adaptiveSmoothingFactor: adaptiveSmoothingFactor.toFixed(3),
                     target: { x: targetVelocityX.toFixed(3), y: targetVelocityY.toFixed(3) },
-                    smoothed: { x: velocityRef.current.x.toFixed(3), y: velocityRef.current.y.toFixed(3) },
-                    magnitude: magnitude.toFixed(3)
+                    smoothed: { x: velocityRef.current.x.toFixed(3), y: velocityRef.current.y.toFixed(3) }
                 });
-            }
-
-            setMousePosition(prev => {
+            } setMousePosition(prev => {
                 const newX = Math.max(0, Math.min(window.innerWidth - 1,
                     prev.x + velocityRef.current.x));
                 const newY = Math.max(0, Math.min(window.innerHeight - 1,
                     prev.y + velocityRef.current.y));
 
-                // デバッグログを減らしてパフォーマンス向上
-                if (frameCount % 30 === 0) { // 30フレームごと（0.5秒ごと）
-                    console.log('🖱️ Mouse position update:', {
-                        prev: { x: prev.x.toFixed(1), y: prev.y.toFixed(1) },
-                        new: { x: newX.toFixed(1), y: newY.toFixed(1) },
-                        delta: { x: (newX - prev.x).toFixed(2), y: (newY - prev.y).toFixed(2) }
-                    });
-                }
-
-                if (Math.abs(newX - prev.x) > 0.5 || Math.abs(newY - prev.y) > 0.5) {
+                // 細かいマウスイベント発火（滑らかさ向上）
+                if (Math.abs(newX - prev.x) > 0.05 || Math.abs(newY - prev.y) > 0.05) {
                     fireMouseEvent('mousemove', newX, newY);
                 }
 
                 return { x: newX, y: newY };
             });
         } else {
-            velocityRef.current.x *= 0.1;
-            velocityRef.current.y *= 0.1;
+            // 適度な減速（バランスの取れた停止感）
+            const currentVelocityMagnitude = Math.sqrt(velocityRef.current.x ** 2 + velocityRef.current.y ** 2);
 
+            // バランスの取れた減速率
+            let decelerationFactor;
+            if (currentVelocityMagnitude > 0.2) {
+                decelerationFactor = 0.9; // 高速時は適度な減速
+            } else if (currentVelocityMagnitude > 0.05) {
+                decelerationFactor = 0.93; // 中速時は緩やかな減速
+            } else {
+                decelerationFactor = 0.96; // 低速時は緩やかな減速
+            }
 
-            if (Math.abs(velocityRef.current.x) < 0.01) velocityRef.current.x = 0;
-            if (Math.abs(velocityRef.current.y) < 0.01) velocityRef.current.y = 0;
+            velocityRef.current.x *= decelerationFactor;
+            velocityRef.current.y *= decelerationFactor;
+
+            // 慣性による継続移動
+            if (Math.abs(velocityRef.current.x) > 0.002 || Math.abs(velocityRef.current.y) > 0.002) {
+                setMousePosition(prev => {
+                    const newX = Math.max(0, Math.min(window.innerWidth - 1,
+                        prev.x + velocityRef.current.x));
+                    const newY = Math.max(0, Math.min(window.innerHeight - 1,
+                        prev.y + velocityRef.current.y));
+
+                    // 慣性移動でも滑らかなマウスイベント
+                    if (Math.abs(newX - prev.x) > 0.02 || Math.abs(newY - prev.y) > 0.02) {
+                        fireMouseEvent('mousemove', newX, newY);
+                    }
+
+                    return { x: newX, y: newY };
+                });
+            }
+
+            // 適度な閾値で滑らかな停止
+            if (Math.abs(velocityRef.current.x) < 0.002) velocityRef.current.x = 0;
+            if (Math.abs(velocityRef.current.y) < 0.002) velocityRef.current.y = 0;
         }
 
         animationFrameRef.current = requestAnimationFrame(updateMousePosition);
@@ -402,23 +446,23 @@ export const useJoyConCursor = ({
 
     }, [enabled, isConnected, getButtons, mousePosition, fireMouseEvent]);
 
-    // フレームレート制限付きアニメーションループ（スムーズな動き）
+    // 高品質60FPSアニメーションループ（自然で滑らかな動き）
     useEffect(() => {
         let lastFrameTime = 0;
-        const targetFPS = 60; // 30FPS → 60FPSに戻してスムーズに
+        const targetFPS = 60;
         const frameInterval = 1000 / targetFPS;
         let frameCount = 0;
 
         const animate = (currentTime) => {
             frameCount++;
 
-            // 60フレームごとにログ出力（1秒ごと）
-            if (frameCount % 60 === 0) {
-                console.log('🔄 Animation loop running:', {
+            // ログを大幅に削減（30秒ごと）
+            if (frameCount % 1800 === 0) { // 60FPS × 30秒 = 1800フレーム
+                console.log('🔄 Smooth animation running:', {
                     enabled,
                     isConnected,
                     frameCount,
-                    currentTime: Math.round(currentTime)
+                    fps: (1000 / (currentTime - lastFrameTime)).toFixed(1)
                 });
             }
 
@@ -431,13 +475,12 @@ export const useJoyConCursor = ({
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
-        console.log('🔄 Starting animation loop:', { enabled, isConnected });
         if (enabled && isConnected) {
+            console.log('🔄 Starting natural cursor animation loop');
             animationFrameRef.current = requestAnimationFrame(animate);
         }
 
         return () => {
-            console.log('🔄 Stopping animation loop');
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }

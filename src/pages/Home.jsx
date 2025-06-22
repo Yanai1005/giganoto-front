@@ -29,8 +29,8 @@ const Home = () => {
 
     const cursorControl = useJoyConCursor({
         enabled: isConnected && !showJoyConModal && !showSettings && !showCalibrationUI && cursorMode && !isTogglingMode,
-        sensitivity: 0.8, // 1.2から0.8に下げてゆっくりとした操作に
-        deadzone: 0.18, // 0.12から0.18に上げて安定性向上
+        sensitivity: 0.7, // 0.4から0.7に上げて適度な反応性に
+        deadzone: 0.08, // 0.1から0.08に下げて反応しやすく
         showCursor: cursorMode && !isTogglingMode,
         autoCalibrate: false,
         calibrationTime: 0

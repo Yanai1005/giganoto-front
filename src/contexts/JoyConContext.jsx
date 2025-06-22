@@ -51,20 +51,42 @@ function JoyConProvider({ children }) {
         try {
             setRawInputData(detail);
 
-            // 詳細デバッグ：受信データの全体構造を確認（ログを減らす）
-            if (detail.analogStickLeft && (Math.abs(detail.analogStickLeft.x || 0) > 0.1 || Math.abs(detail.analogStickLeft.y || 0) > 0.1)) {
-                console.log('🕹️ Left stick data structure:', detail.analogStickLeft);
+            // 詳細デバッグ：受信データの全体構造を確認
+            console.log('🔍 RAW INPUT DATA RECEIVED:', {
+                hasAnalogStickLeft: !!detail.analogStickLeft,
+                hasAnalogStickRight: !!detail.analogStickRight,
+                leftStickData: detail.analogStickLeft,
+                rightStickData: detail.analogStickRight,
+                allKeys: Object.keys(detail)
+            });
+
+            if (detail.analogStickLeft) {
+                console.log('🕹️ Left stick data structure (ALWAYS):', detail.analogStickLeft);
             }
 
             // buttonStatusオブジェクトからボタン状態を取得
             const buttonStatus = detail.buttonStatus || {};
 
-            // スティック入力の適切な変換処理
             const parseStickInput = (stickData, stickName) => {
-                if (!stickData) return { x: 0, y: 0 };
+                console.log(`🔍 ${stickName} - PARSING START:`, {
+                    hasStickData: !!stickData,
+                    stickDataType: typeof stickData,
+                    stickData: stickData
+                });
 
-                // デバッグ用：生データの構造を確認
-                console.log(`${stickName} raw data structure:`, stickData);
+                if (!stickData) {
+                    console.log(`❌ ${stickName} - NO STICK DATA, returning zeros`);
+                    return { x: 0, y: 0 };
+                }
+
+                // デバッグ用：生データの構造を詳細確認
+                console.log(`${stickName} raw data structure (DETAILED):`, {
+                    data: stickData,
+                    keys: Object.keys(stickData),
+                    hasRawData: !!stickData.rawData,
+                    rawDataType: typeof stickData.rawData,
+                    rawDataLength: stickData.rawData ? stickData.rawData.length : 'N/A'
+                });
 
                 // Joy-Conの生データがある場合はバイナリ変換を適用
                 if (stickData.rawData && Array.isArray(stickData.rawData)) {
@@ -222,30 +244,52 @@ function JoyConProvider({ children }) {
                 // joy-con-webhidライブラリの実際のプロパティ名を確認
                 let x = 0, y = 0;
 
-                // 複数の可能なプロパティ名をチェックし、必ず数値に変換
-                const possibleXProps = ['x', 'horizontal', 'h', 'left', 'right'];
-                const possibleYProps = ['y', 'vertical', 'v', 'up', 'down'];
+                // より多くの可能なプロパティ名をチェック
+                const possibleXProps = ['x', 'horizontal', 'h', 'left', 'right', 'hStick', 'stickX', 'analogX'];
+                const possibleYProps = ['y', 'vertical', 'v', 'up', 'down', 'vStick', 'stickY', 'analogY'];
+
+                console.log(`🔍 ${stickName} - SEARCHING FOR PROPERTIES:`, {
+                    allProperties: Object.keys(stickData),
+                    searchingFor: { x: possibleXProps, y: possibleYProps }
+                });
 
                 // X値の検索
                 for (const prop of possibleXProps) {
-                    if (stickData[prop] !== undefined) {
+                    if (stickData[prop] !== undefined && stickData[prop] !== null) {
                         const rawValue = stickData[prop];
                         x = parseFloat(rawValue);
                         if (!isNaN(x)) {
-                            console.log(`${stickName} X found in property: ${prop}, raw value: ${rawValue}, parsed: ${x}`);
+                            console.log(`✅ ${stickName} X found in property: ${prop}, raw value: ${rawValue}, parsed: ${x}`);
                             break;
+                        } else {
+                            console.log(`⚠️ ${stickName} X property ${prop} is NaN: ${rawValue}`);
                         }
                     }
                 }
 
                 // Y値の検索
                 for (const prop of possibleYProps) {
-                    if (stickData[prop] !== undefined) {
+                    if (stickData[prop] !== undefined && stickData[prop] !== null) {
                         const rawValue = stickData[prop];
                         y = parseFloat(rawValue);
                         if (!isNaN(y)) {
-                            console.log(`${stickName} Y found in property: ${prop}, raw value: ${rawValue}, parsed: ${y}`);
+                            console.log(`✅ ${stickName} Y found in property: ${prop}, raw value: ${rawValue}, parsed: ${y}`);
                             break;
+                        } else {
+                            console.log(`⚠️ ${stickName} Y property ${prop} is NaN: ${rawValue}`);
+                        }
+                    }
+                }
+
+                // 値が見つからない場合、すべてのプロパティを表示
+                if (x === 0 && y === 0) {
+                    console.log(`🚨 ${stickName} - NO VALID VALUES FOUND. All properties:`, stickData);
+
+                    // デフォルト値として0以外の小さな値も試す
+                    for (const [key, value] of Object.entries(stickData)) {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue) && Math.abs(numValue) > 0.001) {
+                            console.log(`🔍 ${stickName} - Found non-zero numeric property: ${key} = ${numValue}`);
                         }
                     }
                 }
@@ -292,12 +336,14 @@ function JoyConProvider({ children }) {
                     finalResult.y = 0;
                 }
 
-                console.log(`${stickName} parsed values (final):`, {
+                console.log(`🔍 ${stickName} parsed values (DETAILED FINAL):`, {
                     x: finalResult.x,
                     y: finalResult.y,
                     xType: typeof finalResult.x,
                     yType: typeof finalResult.y,
-                    magnitude: Math.sqrt(finalResult.x * finalResult.x + finalResult.y * finalResult.y).toFixed(3)
+                    magnitude: Math.sqrt(finalResult.x * finalResult.x + finalResult.y * finalResult.y).toFixed(3),
+                    isZero: finalResult.x === 0 && finalResult.y === 0,
+                    originalStickData: stickData
                 });
 
                 return finalResult;
@@ -349,9 +395,20 @@ function JoyConProvider({ children }) {
                 newInputState.leftStick = { x: 0, y: 0 };
             }
 
-            // デバッグ出力を減らす
-            if (Math.abs(newInputState.leftStick.x) > 0.1 || Math.abs(newInputState.leftStick.y) > 0.1) {
-                console.log('✅ Left stick (final):', newInputState.leftStick);
+            // 常に左スティックの最終状態をログ出力（デバッグ用）
+            console.log('🎯 Left stick FINAL STATE:', {
+                ...newInputState.leftStick,
+                magnitude: Math.sqrt(newInputState.leftStick.x ** 2 + newInputState.leftStick.y ** 2).toFixed(3),
+                isActive: Math.sqrt(newInputState.leftStick.x ** 2 + newInputState.leftStick.y ** 2) > 0.05
+            });
+
+            // アクティブな左スティックの動きを強調表示
+            const leftMagnitude = Math.sqrt(newInputState.leftStick.x ** 2 + newInputState.leftStick.y ** 2);
+            if (leftMagnitude > 0.01) { // より低い閾値で検知
+                console.log('🚀 Left stick MOVEMENT DETECTED:', {
+                    ...newInputState.leftStick,
+                    magnitude: leftMagnitude.toFixed(3)
+                });
             }
 
             if (Math.abs(newInputState.rightStick.x) > 0.1 || Math.abs(newInputState.rightStick.y) > 0.1) {
@@ -525,12 +582,17 @@ function JoyConProvider({ children }) {
 
                             const inputListener = (event) => {
                                 try {
-                                    console.log('Raw event received:', event);
+                                    console.log('🎮 Raw event received from Joy-Con:', {
+                                        eventType: event?.type,
+                                        hasDetail: !!event?.detail,
+                                        detailKeys: event?.detail ? Object.keys(event.detail) : 'N/A'
+                                    });
+
                                     if (event && event.detail) {
-                                        console.log('Event detail:', event.detail);
+                                        console.log('🔍 Event detail (FULL):', event.detail);
                                         parseInputData(event.detail);
                                     } else {
-                                        console.warn('Invalid event structure:', event);
+                                        console.warn('❌ Invalid event structure:', event);
                                     }
                                 } catch (err) {
                                     console.error('Error in input listener:', err);
