@@ -3,29 +3,29 @@ import BaseLevel from './BaseLevel.js';
 export default class Level5 extends BaseLevel {
   constructor(uiManager, levelManager) {
     super(uiManager, levelManager);
-    this.correctAnswer = 'MASTER42DETECTIVE007';
+    this.correctAnswer = "HACK'Z_HACKATHON_GIGANOTO_2025";
     this.finalSecretElement = null;
     this.currentHintIndex = 0;
     this.hints = [
-      '💡 ヒント1: 今までのレベルで学んだすべての技術が必要です...',
-      '💡 ヒント2: 複数の場所に散らばった手がかりを収集してください',
+      '💡 ヒント1: このハッカソンイベントに関連する重要な情報が隠されています...',
+      '💡 ヒント2: イベント名、開催年、そして特別なコードが様々な場所に散らばっています',
       '💡 ヒント3: ストレージ、DOM、CSSの3つの領域を調査してください',
-      '💡 ヒント4: 手がかりを正しい順序で組み合わせることが重要です'
+      '💡 ヒント4: 手がかりをアンダースコアで繋げて完全なイベント識別子を作成してください'
     ];
   }
 
   setupLevel() {
     const hintContent = this.createHintContent(
-      '🏆 最終レベル: マスター探偵への道',
-      'これまでに習得したすべてのスキルを駆使して、<strong>最終暗号</strong>を解読してください。',
-      '複数の手がかりが様々な場所に隠されています...'
+      '🏆 最終レベル: ハッカソンマスター',
+      'このハッカソンイベントの<strong>完全な識別子</strong>を解読してください。',
+      'イベント情報が複数の場所に分散して隠されています...'
     );
 
     this.uiManager.updateHintArea(hintContent);
 
     const inputGroup = this.createInputGroup(
-      '最終暗号:',
-      '解読した暗号を入力',
+      'イベント識別子:',
+      '完全な識別子を入力',
       'level5-input',
       () => this.handleSubmit()
     );
@@ -151,10 +151,12 @@ export default class Level5 extends BaseLevel {
 
   setupFinalChallenge() {
     // LocalStorageに手がかりを設定
-    localStorage.setItem('master_fragment', 'MASTER');
+    localStorage.setItem('hackathon_event', "HACK'Z");
+    localStorage.setItem('event_type', 'HACKATHON');
     
     // SessionStorageに手がかりを設定
-    sessionStorage.setItem('cipher_key', '42');
+    sessionStorage.setItem('project_name', 'GIGANOTO');
+    sessionStorage.setItem('event_year', '2025');
     
     // 隠しDOM要素を作成
     this.createHiddenElements();
@@ -165,10 +167,10 @@ export default class Level5 extends BaseLevel {
     
     // 複数の隠し要素を作成（デコイ含む）
     const hiddenElements = [
-      { id: 'tracker-element', style: 'color: #123; opacity: 0.001;', content: 'tracking data' },
-      { id: 'config-element', style: 'color: #456; opacity: 0.001;', content: 'configuration' },
-      { id: 'detective-element', style: 'color: #DETECTIVE; opacity: 0.001;', content: 'detective code' },
-      { id: 'security-element', style: 'color: #007; opacity: 0.001;', content: 'security token' }
+      { id: 'analytics-element', style: 'color: #ANALYTICS; opacity: 0.001;', content: 'analytics tracking' },
+      { id: 'config-element', style: 'color: #CONFIG; opacity: 0.001;', content: 'configuration data' },
+      { id: 'event-element', style: 'color: #EVENT2024; opacity: 0.001;', content: 'event information' },
+      { id: 'project-element', style: 'color: #PROJECT; opacity: 0.001;', content: 'project details' }
     ];
 
     hiddenElements.forEach(element => {
@@ -189,24 +191,24 @@ export default class Level5 extends BaseLevel {
     });
 
     // 参照を保存
-    this.finalSecretElement = document.getElementById('detective-element');
+    this.finalSecretElement = document.getElementById('event-element');
   }
 
   activateClueDiscovery() {
-    console.log('🔍 手がかり探索を開始します...');
+    console.log('🔍 ハッカソンイベント情報の探索を開始します...');
     console.log('');
     console.log('📊 探索領域:');
     console.log('• ブラウザストレージ（Local & Session）');
     console.log('• DOM要素の隠された属性');
     console.log('• CSS スタイルプロパティ');
     console.log('');
-    console.log('🕵️ 各領域から重要な手がかりを収集してください');
-    console.log('💡 手がかりは特定の順序で組み合わせる必要があります');
+    console.log('🏆 このハッカソンイベントの完全な識別子を構築してください');
+    console.log('💡 各部分をアンダースコアで繋げる必要があります');
   }
 
   outputMysteriousMessage() {
-    console.log('🏆 Level 5: 最終暗号の解読が必要です...');
-    console.log('🧩 これまでのすべてのスキルを結集してください');
+    console.log('🏆 Level 5: ハッカソンイベントの完全な識別子が必要です...');
+    console.log('🎯 このイベントに関する重要な情報を収集してください');
     console.log('💡 ヒントが必要な場合は「ヒントを見る」ボタンをクリックしてください');
   }
 
@@ -220,17 +222,19 @@ export default class Level5 extends BaseLevel {
 
   checkAnswer(userAnswer, correctAnswer) {
     if (userAnswer === correctAnswer) {
-      console.log('🎉 正解！最終暗号を完全に解読しました！');
-      console.log('🏆 あなたは真のDeveloper Detectiveマスターです！');
+      console.log('🎉 正解！ハッカソンイベントの完全な識別子を解読しました！');
+      console.log('🏆 HACK\'Z HACKATHON GIGANOTO 2025 - 完全制覇おめでとうございます！');
       super.checkAnswer(userAnswer, correctAnswer);
     } else {
       // 部分的な手がかりをチェック
-      if (userAnswer.includes('MASTER') && userAnswer.includes('42') && userAnswer.includes('DETECTIVE')) {
-        console.log('🔍 すべての手がかりが含まれていますが、順序が違うかもしれません！');
-      } else if (userAnswer.includes('MASTER') || userAnswer.includes('DETECTIVE')) {
-        console.log('🔍 正しい手がかりが含まれています。他の手がかりも探してください！');
-      } else if (userAnswer.includes('42')) {
-        console.log('🔍 数字の手がかりを発見しましたね。他の文字列も必要です！');
+      if (userAnswer.includes("HACK'Z") && userAnswer.includes('HACKATHON') && userAnswer.includes('GIGANOTO') && userAnswer.includes('2025')) {
+        console.log('🔍 すべての要素が含まれていますが、形式が違うかもしれません！');
+      } else if (userAnswer.includes("HACK'Z") || userAnswer.includes('HACKATHON')) {
+        console.log('🔍 イベント名の一部を発見しました。他の要素も探してください！');
+      } else if (userAnswer.includes('GIGANOTO')) {
+        console.log('🔍 プロジェクト名を発見しましたね。他の情報も必要です！');
+      } else if (userAnswer.includes('2025')) {
+        console.log('🔍 開催年を発見しました。他の要素も収集してください！');
       } else if (userAnswer.length === 0) {
         console.log('🤔 値が入力されていません。手がかり探索ボタンを使って調査してください。');
       }
@@ -239,21 +243,23 @@ export default class Level5 extends BaseLevel {
   }
 
   getSuccessMessage() {
-    return '🎉 完全制覇！あなたは真のDeveloper Detectiveマスターになりました！すべての開発者ツールを使いこなすスキルを習得しました！';
+    return '🎉 HACK\'Z HACKATHON GIGANOTO 2025 完全制覇！あなたは真のハッカソンマスターになりました！すべての開発者ツールを使いこなすスキルを習得しました！';
   }
 
   getErrorMessage() {
-    return '❌ 最終暗号が違います。すべての手がかりを収集し、正しい順序で組み合わせてください。';
+    return '❌ イベント識別子が違います。すべてのハッカソン情報を収集し、正しい形式で組み合わせてください。';
   }
 
   cleanup() {
     super.cleanup();
     // 最終レベルの手がかりをクリーンアップ
-    localStorage.removeItem('master_fragment');
-    sessionStorage.removeItem('cipher_key');
+    localStorage.removeItem('hackathon_event');
+    localStorage.removeItem('event_type');
+    sessionStorage.removeItem('project_name');
+    sessionStorage.removeItem('event_year');
     
     // 隠し要素を削除
-    const hiddenElements = ['tracker-element', 'config-element', 'detective-element', 'security-element'];
+    const hiddenElements = ['analytics-element', 'config-element', 'event-element', 'project-element'];
     hiddenElements.forEach(id => {
       const element = document.getElementById(id);
       if (element) {

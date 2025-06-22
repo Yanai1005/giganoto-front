@@ -4,12 +4,39 @@ export default class BaseLevel {
     this.levelManager = levelManager;
     this.isActive = false;
     this.isProcessing = false; // 連打防止フラグ
+    this.debugKeyListener = null; // デバッグキーリスナー
   }
 
   start() {
     this.isActive = true;
     this.isProcessing = false; // レベル開始時にリセット
     this.setupLevel();
+    this.setupDebugKey(); // デバッグキー設定
+  }
+
+  setupDebugKey() {
+    // 既存のリスナーがあれば削除
+    if (this.debugKeyListener) {
+      document.removeEventListener('keydown', this.debugKeyListener);
+    }
+
+    // Zキーでデバッグ正解判定
+    this.debugKeyListener = (event) => {
+      if (event.key.toLowerCase() === 'z' && this.isActive && !this.isProcessing) {
+        event.preventDefault();
+        console.log('🔧 デバッグモード: 正解判定を実行します');
+        this.triggerDebugSuccess();
+      }
+    };
+
+    document.addEventListener('keydown', this.debugKeyListener);
+  }
+
+  triggerDebugSuccess() {
+    // デバッグ用の正解判定
+    this.isProcessing = true;
+    console.log('✅ デバッグ: レベルクリア！');
+    this.onSuccess();
   }
 
   setupLevel() {
@@ -81,6 +108,12 @@ export default class BaseLevel {
   cleanup() {
     this.isActive = false;
     this.isProcessing = false; // クリーンアップ時にリセット
+    
+    // デバッグキーリスナーを削除
+    if (this.debugKeyListener) {
+      document.removeEventListener('keydown', this.debugKeyListener);
+      this.debugKeyListener = null;
+    }
     
     // 入力フィールドをクリア
     this.clearInputFields();
