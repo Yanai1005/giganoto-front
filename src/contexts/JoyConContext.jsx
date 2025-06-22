@@ -46,8 +46,6 @@ function JoyConProvider({ children }) {
         checkSupport();
     }, []);
 
-    // Parse Joy-Con input dat
-
     const parseInputData = useCallback((detail) => {
         try {
             setRawInputData(detail);
@@ -109,7 +107,7 @@ function JoyConProvider({ children }) {
 
                 // 左スティックの場合はY軸を反転（上が正になるように）
                 if (stickName === 'leftStick') {
-                    y = -y;
+                    y = -y; // Y軸を反転して上方向を正にする
                 }
 
                 const magnitude = Math.sqrt(x * x + y * y);
@@ -187,7 +185,6 @@ function JoyConProvider({ children }) {
             return null;
         }
     }, []);
-
     // Connect Joy-Con controllers
     const connectJoyCon = useCallback(async () => {
         if (!isSupported) {

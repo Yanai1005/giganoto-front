@@ -3,10 +3,11 @@ import { useJoyConContext } from '../contexts/JoyConContext';
 
 export const useJoyConCursor = ({
     enabled = true,
-    sensitivity = 0.8, // 感度を上げる
-    deadzone = 0.05,   // デッドゾーンを小さくする
+    sensitivity = 0.8,
+    deadzone = 0.05,
     showCursor = true,
-    smoothing = 0.85   // スムージング係数を追加
+    smoothing = 0.85,
+    invertY = true  // デフォルトでY軸反転をONに変更
 }) => {
     const { inputState, isConnected } = useJoyConContext();
 
@@ -43,12 +44,19 @@ export const useJoyConCursor = ({
             y = Math.max(-1.0, Math.min(1.0, y / 2.0));
         }
 
+        // Y軸の反転制御（Joy-Conの上方向を画面上方向に）
+        if (invertY) {
+            y = -y;
+        }
+
         // デバッグログ（アクティブな入力のみ）
         debugLogRef.current++;
         if (Math.abs(x) > 0.05 || Math.abs(y) > 0.05) {
-            console.log('🎮 Cursor hook - Active LEFT stick:', {
+            console.log('🎮 Cursor hook - Active LEFT stick (after Y invert):', {
                 x: x.toFixed(3),
                 y: y.toFixed(3),
+                invertY: invertY,
+                direction: y > 0 ? 'UP' : y < 0 ? 'DOWN' : 'NEUTRAL',
                 magnitude: Math.sqrt(x * x + y * y).toFixed(3)
             });
         }
