@@ -8,7 +8,7 @@ window.addEventListener('DOMContentLoaded', () => {
     width: 800,
     height: 600,
     backgroundColor: '#000000',
-    scene: [GameScene, EndScene]
+    scene: [GameScene, EndScene] // EndSceneは外部ファイルから正しくインポート
   };
 
   new Phaser.Game(config);
