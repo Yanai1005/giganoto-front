@@ -1,8 +1,7 @@
-// src/gameManager/GameRegistry.js - 既存プロジェクト対応版
 class GameRegistry {
     static games = new Map();
     static currentGameInstance = null;
-    static debugMode = import.meta.env.DEV;
+    static debugMode = true;
     static gameTypeConfig = null;
 
     static debugLog(message, data = null) {
@@ -16,6 +15,7 @@ class GameRegistry {
     }
 
     static getStaticGameImports() {
+        // 静的インポートマップ（Viteでのバンドル時に正しいパスが解決される）
         return {
             'escape': () => import('../games/escape/game.js'),
             'runner': () => import('../games/runner/game.js'),
@@ -23,7 +23,6 @@ class GameRegistry {
             'fishing': () => import('../games/fishing/game.js'),
             'vibration-hunt': () => import('../games/vibration-hunt/game.js'),
             'dev-detective': () => import('../games/dev-detective/game.js'),
-            // 新しいゲームを追加する場合はここに追加
         };
     }
 
@@ -61,19 +60,14 @@ class GameRegistry {
 
             this.debugLog(`ゲーム読み込み開始: ${gameId}`);
 
-            // コンテナから既存のローディング要素のみを削除（Phaserのcanvasは保持）
+            // コンテナを完全にクリア（Canvas要素の重複を防ぐため）
             if (container) {
-                // ローディング要素を選択的に削除
-                const loadingElement = container.querySelector('.game-loading');
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-
-                // 以前のゲームのDOM要素を削除（fishing game特有）
-                const existingTitleContainer = container.querySelector('.fishing-title-container');
-                if (existingTitleContainer) {
-                    existingTitleContainer.remove();
-                }
+                // まず既存のCanvas要素を全て削除
+                this.removeAllCanvasElements();
+                // コンテナ内容をクリア
+                container.innerHTML = '';
+                // 少し待機してからゲーム初期化（非同期処理の競合を防ぐ）
+                await new Promise(resolve => setTimeout(resolve, 100));
             } else {
                 this.errorLog('ゲーム読み込み用のコンテナが提供されていません');
                 throw new Error('ゲームコンテナが提供されていません');
@@ -84,11 +78,13 @@ class GameRegistry {
             });
 
             this.debugLog(`モジュール読み込み中: ${gameId}`);
-            const gameModuleLoader = gameConfig.loader();
 
-            // ローダー関数を実行して実際のモジュールを取得
+            // ローダーの詳細をログ出力
+            const loader = gameConfig.loader();
+            this.debugLog(`ローダー取得: ${gameId}`, typeof loader);
+
             const gameModule = await Promise.race([
-                gameModuleLoader(),
+                loader,
                 timeoutPromise
             ]);
 
@@ -133,11 +129,31 @@ class GameRegistry {
 
             this.debugLog(`ゲーム初期化中: ${gameId}`);
 
+            // ゲーム初期化前にもう一度Canvas要素をチェック
+            const preInitCanvases = document.querySelectorAll('canvas');
+            if (preInitCanvases.length > 0) {
+                this.debugLog(`警告: 初期化前に${preInitCanvases.length}個のCanvas要素が存在します。削除中...`);
+                this.removeAllCanvasElements();
+            }
+
             // ゲームを初期化
             const gameInstance = initializeGameFunction(container);
 
             if (!gameInstance) {
                 throw new Error(`ゲームインスタンスの作成に失敗: ${gameId}`);
+            }
+
+            // 初期化後のCanvas要素数をチェック
+            const postInitCanvases = document.querySelectorAll('canvas');
+            this.debugLog(`ゲーム初期化後のCanvas要素数: ${postInitCanvases.length}`);
+
+            if (postInitCanvases.length > 1) {
+                this.errorLog(`警告: ${postInitCanvases.length}個のCanvas要素が生成されました。1個のみであるべきです。`);
+                // 最初のCanvas以外を削除
+                for (let i = 1; i < postInitCanvases.length; i++) {
+                    this.debugLog(`余分なCanvas要素を削除: ${i + 1}個目`);
+                    postInitCanvases[i].remove();
+                }
             }
 
             this.currentGameInstance = gameInstance;
@@ -148,8 +164,18 @@ class GameRegistry {
             this.errorLog(`ゲーム読み込みに失敗 ${gameId}:`, {
                 message: error.message,
                 stack: error.stack,
-                name: error.name
+                name: error.name,
+                gameConfig: gameConfig ? { title: gameConfig.title, id: gameConfig.id } : 'なし'
             });
+
+            // モジュール読み込みエラーの場合の詳細情報
+            if (error.message.includes('Failed to fetch dynamically imported module')) {
+                this.errorLog('動的インポートエラーの詳細:', {
+                    gameType: gameId,
+                    availableStaticImports: Object.keys(this.getStaticGameImports()),
+                    gameTypeConfig: this.gameTypeConfig && this.gameTypeConfig[gameId]
+                });
+            }
 
             // エラー表示をコンテナに追加
             if (container) {
@@ -189,14 +215,65 @@ class GameRegistry {
 
     static cleanupCurrentGame() {
         if (this.currentGameInstance) {
-            if (typeof this.currentGameInstance.destroy === 'function') {
-                this.debugLog('ゲームインスタンスを破棄中');
-                this.currentGameInstance.destroy(true);
-            } else {
-                this.debugLog('ゲームインスタンスにdestroyメソッドがありません');
+            try {
+                if (typeof this.currentGameInstance.destroy === 'function') {
+                    this.debugLog('ゲームインスタンスを破棄中');
+                    this.currentGameInstance.destroy(true);
+                } else {
+                    this.debugLog('ゲームインスタンスにdestroyメソッドがありません');
+                }
+            } catch (error) {
+                this.errorLog('ゲーム破棄中にエラーが発生:', error);
             }
         }
+
+        // より積極的にCanvas要素を削除
+        this.removeAllCanvasElements();
         this.currentGameInstance = null;
+    }
+
+    static removeAllCanvasElements() {
+        try {
+            // ページ上の全てのCanvas要素を削除
+            const canvasElements = document.querySelectorAll('canvas');
+            this.debugLog(`Canvas要素を${canvasElements.length}個発見`);
+
+            canvasElements.forEach((canvas, index) => {
+                this.debugLog(`Canvas要素を削除中 ${index + 1}/${canvasElements.length}`, {
+                    id: canvas.id || 'unnamed',
+                    className: canvas.className || 'no-class',
+                    parentId: canvas.parentElement?.id || 'no-parent-id',
+                    parentClass: canvas.parentElement?.className || 'no-parent-class'
+                });
+                canvas.remove();
+            });
+
+            // WebGLコンテキストもクリーンアップ
+            this.cleanupWebGLContexts();
+
+        } catch (error) {
+            this.errorLog('Canvas削除中にエラーが発生:', error);
+        }
+    }
+
+    static cleanupWebGLContexts() {
+        try {
+            // WebGLコンテキストの強制クリーンアップ
+            if (window.PIXI && window.PIXI.utils) {
+                window.PIXI.utils.destroyTextureCache();
+            }
+
+            // Phaserのグローバルクリーンアップ
+            if (window.Phaser && window.Phaser.GameObjects) {
+                // Phaserのテクスチャキャッシュをクリア
+                const textureManager = window.Phaser.Textures?.TextureManager;
+                if (textureManager && textureManager.prototype.destroy) {
+                    this.debugLog('Phaserテクスチャキャッシュをクリア中');
+                }
+            }
+        } catch (error) {
+            this.errorLog('WebGLコンテキストクリーンアップ中にエラー:', error);
+        }
     }
 
     static initializeFromJson(gamesData) {
@@ -222,7 +299,7 @@ class GameRegistry {
                         title: gameData.title,
                         description: gameData.description || '',
                         category: gameData.category || 'other',
-                        loader: () => this.getStaticGameLoader(gameData.gameType)
+                        loader: () => this.getDynamicLoader(gameData.gameType)
                     });
                 } catch (error) {
                     this.errorLog(`ゲーム登録に失敗: ${gameData.gameType}`, error);
@@ -236,39 +313,35 @@ class GameRegistry {
 
     }
 
-    // 静的インポートを使用するローダー（Vite対応）
-    static getStaticGameLoader(gameType) {
+    // JSON設定に基づくローダー（静的インポート優先版）
+    static getDynamicLoader(gameType) {
+        // まず静的インポートマップを確認
         const staticImports = this.getStaticGameImports();
-
         if (staticImports[gameType]) {
             this.debugLog(`静的インポートを使用: ${gameType}`);
-            return staticImports[gameType];
+            return staticImports[gameType]();
         }
 
-        // 存在しないゲームの場合は警告を出す
-        this.errorLog(`ゲーム "${gameType}" は静的インポートマップに存在しません`);
-        this.errorLog('利用可能なゲーム:', Object.keys(staticImports));
-
-        // フォールバック: JSON設定を確認
+        // JSONの gameTypes 設定を確認
         const gameTypeInfo = this.gameTypeConfig && this.gameTypeConfig[gameType];
         if (gameTypeInfo && gameTypeInfo.modulePath) {
-            this.debugLog(`JSON設定からモジュールパスを使用: ${gameTypeInfo.modulePath}`);
-            this.debugLog(`警告: ${gameType} は静的インポートマップに追加することを推奨します`);
-            return () => import(/* @vite-ignore */ gameTypeInfo.modulePath);
+            // パスを正しく解決（GameRegistry.jsの位置を基準に）
+            let resolvedPath = gameTypeInfo.modulePath;
+
+            // '../games/'で始まる場合は、現在のファイル位置を考慮
+            if (resolvedPath.startsWith('../games/')) {
+                // GameRegistry.jsは src/gameManager/ にあるので、../games/ は src/games/ になる
+                resolvedPath = resolvedPath.replace('../games/', '../games/');
+            }
+
+            this.debugLog(`JSON設定からモジュールパスを使用: ${resolvedPath}`);
+            return import(/* @vite-ignore */ resolvedPath);
         }
 
-        // 最終フォールバック: 従来の動的インポート（開発環境のみ）
-        if (import.meta.env.DEV) {
-            this.debugLog(`動的インポートを試行（開発環境）: ${gameType}`);
-            this.debugLog(`警告: 本番環境では動作しない可能性があります`);
-            return () => import(/* @vite-ignore */ `../games/${gameType}/game.js`);
-        }
-
-        // 本番環境では厳格にエラーを出す
-        this.errorLog(`ゲームタイプ "${gameType}" が見つかりません`);
-        this.errorLog('静的インポートマップに以下を追加してください:');
-        this.errorLog(`'${gameType}': () => import('../games/${gameType}/game.js'),`);
-        throw new Error(`ゲームタイプ "${gameType}" が見つかりません。静的インポートマップに追加してください`);
+        // フォールバック：直接的なパス指定
+        const fallbackPath = `../games/${gameType}/game.js`;
+        this.debugLog(`フォールバックパスを使用: ${fallbackPath}`);
+        return import(/* @vite-ignore */ fallbackPath);
     }
 
     static isInitialized() {
@@ -283,7 +356,7 @@ class GameRegistry {
                 title: gameData.title,
                 description: gameData.description || '',
                 category: gameData.category || 'other',
-                loader: () => this.getStaticGameLoader(gameData.gameType)
+                loader: () => this.getDynamicLoader(gameData.gameType)
             });
         } else {
             this.errorLog('ゲームデータにgameTypeがありません:', gameData);
@@ -312,7 +385,6 @@ class GameRegistry {
             currentGame: this.currentGameInstance ? 'アクティブ' : 'なし',
             initialized: this.isInitialized(),
             gameTypes: Object.keys(this.gameTypeConfig || {}),
-            staticImports: Object.keys(this.getStaticGameImports()),
             debugMode: this.debugMode
         };
     }
@@ -328,14 +400,6 @@ class GameRegistry {
 
     static getAllGameTypes() {
         return this.gameTypeConfig || {};
-    }
-
-    // 新しいゲームを静的インポートマップに追加するヘルパー
-    static addStaticGameImport(gameType, importFunction) {
-        // この関数は開発時にのみ使用し、実際のマップ更新は手動で行う
-        this.debugLog(`静的インポート追加の提案: ${gameType}`);
-        console.warn(`新しいゲーム "${gameType}" を追加するには、getStaticGameImports()メソッドに以下を追加してください:`);
-        console.warn(`'${gameType}': () => import('../games/${gameType}/game.js'),`);
     }
 }
 
