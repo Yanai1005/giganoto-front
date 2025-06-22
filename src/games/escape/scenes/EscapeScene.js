@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import RankManager from "../utils/RankManager.js";
+
 const alllevels = [
   {
     //index 0
@@ -98,7 +100,7 @@ const alllevels = [
       "W       S  W        B  W",
       "W          W    S      W",
       "WWWWWW         S  WWWWWW",
-      "W    S   S W      P    W",
+      "W    S   S        P    W",
       "W      d   W  S        W",
       "W  S    WWWWWWW        W",
       "Wb   WWWxxxxxxxWWWW   aW",
@@ -157,10 +159,14 @@ class EscapeScene extends Phaser.Scene {
       right: false,
       up: false,
       down: false,
+      z: false, // デバッグ用Zキー
     };
     this.currentLevelIndex = 0;
     this.canTeleport = true;
     this.isGameCleared = false;
+
+    // ランクマネージャーを初期化
+    this.rankManager = new RankManager();
   }
   init(data) {
     this.currentLevelIndex = data.levelIndex || 0;
@@ -171,6 +177,14 @@ class EscapeScene extends Phaser.Scene {
     this.initialPlayer2Pos = data.player2_startPos || null;
 
     this.initialTime = data.startTime || 0;
+
+    // ランクマネージャーのデータを読み込み
+    this.rankManager.load();
+
+    // 初回プレイの場合はデータをリセット
+    if (this.currentLevelIndex === 0 && !data.continueGame) {
+      this.rankManager.reset();
+    }
   }
   preload() {
     // ダミーファイルをロード
@@ -364,9 +378,25 @@ class EscapeScene extends Phaser.Scene {
   handleNextStageTrigger(player, fakewall) {
     if (this.isGameCleared) return;
     console.log("次のステージへ移動します");
+
+    // つなぎステージの場合はランク記録をせず、直接次のステージへ
+    if (this.rankManager.isActualStage(this.currentLevelIndex)) {
+      // 実際のステージの場合のみランクを記録
+      this.rankManager.recordStageTime(
+        this.currentLevelIndex,
+        this.timeElapsed
+      );
+      this.rankManager.calculateStageRank(
+        this.currentLevelIndex,
+        this.timeElapsed
+      );
+      this.rankManager.save();
+    }
+
     const nextStageData = {
       levelIndex: this.currentLevelIndex + 1,
-      startTime: this.timeElapsed,
+      startTime: 0, // 次のステージは0から開始
+      continueGame: true,
     };
     this.scene.restart(nextStageData);
   }
@@ -375,6 +405,26 @@ class EscapeScene extends Phaser.Scene {
     this.isGameCleared = true;
     this.physics.pause();
     if (this.timeEvent) this.timeEvent.remove();
+
+    // つなぎステージの場合はランク表示をせず、直接次のステージへ
+    if (!this.rankManager.isActualStage(this.currentLevelIndex)) {
+      console.log("つなぎステージ: 直接次のステージへ進みます");
+      const nextStageData = {
+        levelIndex: this.currentLevelIndex + 1,
+        startTime: 0,
+        continueGame: true,
+      };
+      this.scene.restart(nextStageData);
+      return;
+    }
+
+    // 実際のステージの場合のみランクを記録
+    this.rankManager.recordStageTime(this.currentLevelIndex, this.timeElapsed);
+    const currentRank = this.rankManager.calculateStageRank(
+      this.currentLevelIndex,
+      this.timeElapsed
+    );
+    this.rankManager.save();
 
     const cam = this.cameras.main;
     const centerX = cam.width / 2;
@@ -386,58 +436,31 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(10);
 
-    // テキスト
-    let rankLetter = "";
-    if (this.timeElapsed <= 15) {
-      rankLetter = "S";
-    } else if (this.timeElapsed > 15 && this.timeElapsed <= 25) {
-      rankLetter = "A";
-    } else if (this.timeElapsed > 25 && this.timeElapsed <= 40) {
-      rankLetter = "B";
-    } else if (this.timeElapsed > 40 && this.timeElapsed <= 60) {
-      rankLetter = "C";
+    // 最終ステージかどうかを判定
+    const isFinalStage = this.currentLevelIndex === alllevels.length - 1;
+
+    if (isFinalStage) {
+      // 最終ステージ：総合ランク表示
+      this.showFinalRankScreen(centerX, centerY);
     } else {
-      rankLetter = "D";
+      // 通常ステージ：ステージ別ランク表示
+      this.showStageRankScreen(centerX, centerY, currentRank);
     }
-    const rankLabelStyle = {
-      fontSize: "40px",
-      fill: "#ffffff",
-      fontFamily: "Arial",
-      stroke: "#000000",
-      strokeThickness: 8,
-    };
-    const rankLetterStyle = {
-      fontSize: "80px",
-      fill: "#ffd700",
-      fontFamily: "Arial",
-      stroke: "#000000",
-      strokeThickness: 8,
-    };
+  }
 
-    const rankLabelText = this.add
-      .text(0, 0, "RANK ", rankLabelStyle)
-      .setOrigin(1, 0.5); // 右揃え
-    const rankLetterText = this.add
-      .text(0, 0, rankLetter, rankLetterStyle)
-      .setOrigin(0, 0.5); // 左揃え
-
-    const totalWidth = rankLabelText.width + rankLetterText.width;
-    const container = this.add.container(
-      centerX - totalWidth / 8,
-      centerY - 80
+  showStageRankScreen(centerX, centerY, rank) {
+    const rankColor = this.rankManager.getRankColor(rank);
+    const rankDescription = this.rankManager.getRankDescription(rank);
+    const actualStageNumber = this.rankManager.getActualStageNumber(
+      this.currentLevelIndex
     );
-    container.add(rankLabelText);
-    rankLetterText.x = rankLabelText.width;
-    container.add(rankLetterText);
 
-    container.setScrollFactor(0).setDepth(11);
-
-    // クリアタイム
+    // ステージ番号
     this.add
-      .text(centerX, centerY, `クリアタイム: ${this.timeElapsed} 秒`, {
-        fontSize: "32px",
+      .text(centerX, centerY - 120, `ステージ ${actualStageNumber} クリア！`, {
+        fontSize: "36px",
         fill: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "sans-serif",
         stroke: "#000000",
         strokeThickness: 6,
       })
@@ -445,9 +468,57 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(11);
 
+    // ランク表示
+    const rankLabelStyle = {
+      fontSize: "40px",
+      fill: "#ffffff",
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+    const rankLetterStyle = {
+      fontSize: "80px",
+      fill: rankColor,
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+
+    const rankLabelText = this.add
+      .text(0, 0, "RANK ", rankLabelStyle)
+      .setOrigin(1, 0.5);
+    const rankLetterText = this.add
+      .text(0, 0, rank, rankLetterStyle)
+      .setOrigin(0, 0.5);
+
+    const totalWidth = rankLabelText.width + rankLetterText.width;
+    const container = this.add.container(
+      centerX - totalWidth / 8,
+      centerY - 40
+    );
+    container.add(rankLabelText);
+    rankLetterText.x = rankLabelText.width;
+    container.add(rankLetterText);
+    container.setScrollFactor(0).setDepth(11);
+
+    // クリアタイム
+    this.add
+      .text(centerX, centerY + 40, `クリアタイム: ${this.timeElapsed} 秒`, {
+        fontSize: "24px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // ボタン
     this.createButton(centerX - 120, centerY + 100, "次へ進む", () => {
       const nextStageData = {
         levelIndex: this.currentLevelIndex + 1,
+        continueGame: true,
       };
       this.scene.restart(nextStageData);
     });
@@ -456,6 +527,133 @@ class EscapeScene extends Phaser.Scene {
       window.location.href = "/";
     });
   }
+
+  showFinalRankScreen(centerX, centerY) {
+    // 総合ランクを計算
+    const finalRank = this.rankManager.calculateFinalRank();
+    const rankColor = this.rankManager.getRankColor(finalRank);
+    const rankDescription = this.rankManager.getRankDescription(finalRank);
+    const totalTime = this.rankManager.getTotalTime();
+    const allStageRanks = this.rankManager.getAllStageRanks();
+
+    // タイトル
+    this.add
+      .text(centerX, centerY - 200, "全ステージクリア！", {
+        fontSize: "40px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // 総合ランク表示
+    const rankLabelStyle = {
+      fontSize: "50px",
+      fill: "#ffffff",
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+    const rankLetterStyle = {
+      fontSize: "100px",
+      fill: rankColor,
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+
+    const rankLabelText = this.add
+      .text(0, 0, "総合ランク ", rankLabelStyle)
+      .setOrigin(1, 0.5);
+    const rankLetterText = this.add
+      .text(0, 0, finalRank, rankLetterStyle)
+      .setOrigin(0, 0.5);
+
+    const totalWidth = rankLabelText.width + rankLetterText.width;
+    const container = this.add.container(
+      centerX - totalWidth / 8,
+      centerY - 120
+    );
+    container.add(rankLabelText);
+    rankLetterText.x = rankLabelText.width;
+    container.add(rankLetterText);
+    container.setScrollFactor(0).setDepth(11);
+
+    // 総合クリアタイム
+    this.add
+      .text(centerX, centerY - 20, `総合クリアタイム: ${totalTime} 秒`, {
+        fontSize: "28px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // 各ステージのランク表示
+    let stageRankY = centerY + 20;
+    allStageRanks.forEach((stageData, index) => {
+      const stageRankColor = this.rankManager.getRankColor(stageData.rank);
+      this.add
+        .text(centerX - 100, stageRankY, `ステージ${stageData.stage}:`, {
+          fontSize: "20px",
+          fill: "#ffffff",
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      this.add
+        .text(centerX, stageRankY, stageData.rank, {
+          fontSize: "24px",
+          fill: stageRankColor,
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      this.add
+        .text(centerX + 100, stageRankY, `${stageData.time}秒`, {
+          fontSize: "20px",
+          fill: "#ffffff",
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      stageRankY += 30;
+    });
+
+    // ボタン
+    this.createButton(centerX - 120, centerY + 180, "もう一度プレイ", () => {
+      this.rankManager.reset();
+      this.rankManager.save();
+      const restartData = {
+        levelIndex: 0,
+        continueGame: false,
+      };
+      this.scene.restart(restartData);
+    });
+
+    this.createButton(centerX + 120, centerY + 180, "ホームに戻る", () => {
+      window.location.href = "/";
+    });
+  }
+
   createButton(x, y, text, callback) {
     const button = this.add.container(x, y);
 
@@ -464,7 +662,7 @@ class EscapeScene extends Phaser.Scene {
       .text(0, 0, text, {
         fontSize: "20px",
         fill: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "sans-serif",
       })
       .setOrigin(0.5);
 
@@ -632,21 +830,68 @@ class EscapeScene extends Phaser.Scene {
       .text(400, 570, "矢印キーで移動", {
         fontSize: "16px",
         fill: "#cccccc",
-        fontFamily: "Arial",
+        fontFamily: "sans-serif",
       })
-      .setOrigin(0.5); // デバッグ表示
+      .setOrigin(0.5);
 
+    // デバッグ用操作説明
+    this.add
+      .text(400, 590, "デバッグ: Zキーでステージクリア", {
+        fontSize: "14px",
+        fill: "#ff6b6b",
+        fontFamily: "sans-serif",
+      })
+      .setOrigin(0.5);
+
+    // ステージ番号表示
+    const actualStageNumber = this.rankManager.getActualStageNumber(
+      this.currentLevelIndex
+    );
+    const stageDisplayText =
+      actualStageNumber > 0
+        ? `ステージ ${actualStageNumber}`
+        : `つなぎステージ ${this.currentLevelIndex + 1}`;
+
+    this.stageText = this.add.text(10, 40, stageDisplayText, {
+      fontSize: "18px",
+      fill: "#ffffff",
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 3,
+    });
+
+    // デバッグ情報
     this.debugText = this.add.text(10, 10, "", {
       fontSize: "14px",
       fill: "#ffffff",
-      fontFamily: "Arial",
-    }); // タイム表示
+      fontFamily: "sans-serif",
+    });
 
+    // タイム表示
     this.timeText = this.add.text(680, 10, "タイム: 0", {
       fontSize: "14px",
       fill: "#ffffff",
-      fontFamily: "Arial",
+      fontFamily: "sans-serif",
     });
+
+    // 現在のステージのランク基準を表示（実際のステージのみ）
+    if (this.rankManager.isActualStage(this.currentLevelIndex)) {
+      this.showRankCriteria();
+    }
+  }
+
+  showRankCriteria() {
+    const criteria = this.rankManager.getRankCriteria(this.currentLevelIndex);
+    const criteriaText = this.add.text(
+      10,
+      70,
+      `ランク基準: S≤${criteria.S}s A≤${criteria.A}s B≤${criteria.B}s C≤${criteria.C}s`,
+      {
+        fontSize: "12px",
+        fill: "#cccccc",
+        fontFamily: "sans-serif",
+      }
+    );
   }
 
   createPlayer1() {
@@ -741,6 +986,16 @@ class EscapeScene extends Phaser.Scene {
           this.keys.space = true;
           break;
 
+        case "z":
+        case "Z":
+          this.keys.z = true;
+          // デバッグ用：Zキーでステージクリア
+          if (!this.isGameCleared) {
+            console.log("デバッグ: Zキーでステージクリア");
+            this.gameClear();
+          }
+          break;
+
         default:
           if (event.key >= "0" && event.key <= "9") {
             this.keys.numbers[parseInt(event.key, 10)] = true;
@@ -768,6 +1023,11 @@ class EscapeScene extends Phaser.Scene {
 
         case " ":
           this.keys.space = false;
+          break;
+
+        case "z":
+        case "Z":
+          this.keys.z = false;
           break;
 
         default:
@@ -891,14 +1151,21 @@ class EscapeScene extends Phaser.Scene {
     ) {
       this.player2.anims.stop();
       this.player2.setTexture("p2_down_1"); // 正面向きの静止画キー
-    } // デバッグ情報の更新
+    }
+    // デバッグ情報の更新
+    const currentRank = this.rankManager.isActualStage(this.currentLevelIndex)
+      ? this.rankManager.calculateStageRank(
+          this.currentLevelIndex,
+          this.timeElapsed
+        )
+      : "なし";
 
     this.debugText.setText(
       `Player 1: (${Math.round(this.player1.x)}, ${Math.round(
         this.player1.y
       )})\nPlayer 2: (${Math.round(this.player2.x)}, ${Math.round(
         this.player2.y
-      )})`
+      )})\n現在ランク: ${currentRank}`
     );
 
     let player1OnGoal1 = false;
