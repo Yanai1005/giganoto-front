@@ -11,7 +11,6 @@ function useJoyConContext() {
     return context;
 }
 
-// JoyConProviderを関数宣言として定義
 function JoyConProvider({ children }) {
     const [isSupported, setIsSupported] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -32,6 +31,25 @@ function JoyConProvider({ children }) {
     const inputCallbacksRef = useRef(new Set());
     const isInitializedRef = useRef(false);
 
+    // Joy-Con スティックの仕様定数
+    const STICK_CONSTANTS = {
+        // Joy-Conの標準的な値範囲
+        MIN_RAW: 0,
+        MAX_RAW: 4095,        // 12bit (0-4095)
+        CENTER_RAW: 2047.5,   // 中央値
+        DEADZONE_RAW: 100,    // デッドゾーン（生値）
+
+        // 出力範囲
+        OUTPUT_MIN: -1.0,
+        OUTPUT_MAX: 1.0,
+
+        // 較正用
+        calibration: {
+            leftStick: { centerX: 2047.5, centerY: 2047.5, rangeX: 1800, rangeY: 1800 },
+            rightStick: { centerX: 2047.5, centerY: 2047.5, rangeX: 1800, rangeY: 1800 }
+        }
+    };
+
     // Check WebHID support
     useEffect(() => {
         const checkSupport = () => {
@@ -46,15 +64,62 @@ function JoyConProvider({ children }) {
         checkSupport();
     }, []);
 
+    // 正しいスティック値変換関数
+    const convertStickValue = useCallback((rawValue, center, range, stickName, axis) => {
+        // rawValueが既に正規化されている場合の検出
+        if (typeof rawValue === 'number' && Math.abs(rawValue) <= 3.0) {
+            console.log(`⚠️ ${stickName} ${axis}: 既に正規化済みの値を検出`, rawValue);
+
+            // 既に正規化されている値をそのまま使用（小さな調整のみ）
+            let normalizedValue = rawValue;
+
+            // 極小値をゼロにクランプ
+            if (Math.abs(normalizedValue) < 0.05) {
+                normalizedValue = 0;
+            }
+
+            // 範囲制限
+            normalizedValue = Math.max(-1.0, Math.min(1.0, normalizedValue));
+
+            return normalizedValue;
+        }
+
+        // 生の12bitデータの場合の変換
+        if (typeof rawValue === 'number' && rawValue >= 0 && rawValue <= 4095) {
+            console.log(`🔧 ${stickName} ${axis}: 12bit変換`, {
+                raw: rawValue,
+                center: center,
+                range: range
+            });
+
+            // 中央値からの差分を計算
+            const delta = rawValue - center;
+
+            // デッドゾーン適用
+            if (Math.abs(delta) < STICK_CONSTANTS.DEADZONE_RAW) {
+                return 0;
+            }
+
+            // 正規化（-1.0 〜 1.0）
+            const normalized = delta / range;
+
+            // 範囲制限
+            return Math.max(-1.0, Math.min(1.0, normalized));
+        }
+
+        // 不明な形式の場合
+        console.warn(`❓ ${stickName} ${axis}: 不明なデータ形式`, rawValue, typeof rawValue);
+        return 0;
+    }, []);
+
     const parseInputData = useCallback((detail) => {
         try {
             setRawInputData(detail);
 
-            console.log('🔍 RAW INPUT DATA RECEIVED:', {
-                hasAnalogStickLeft: !!detail.analogStickLeft,
-                hasAnalogStickRight: !!detail.analogStickRight,
-                leftStickData: detail.analogStickLeft,
-                rightStickData: detail.analogStickRight,
+            console.log('🔍 完全なRAWデータ:', {
+                analogStickLeft: detail.analogStickLeft,
+                analogStickRight: detail.analogStickRight,
+                detail: detail
             });
 
             const buttonStatus = detail.buttonStatus || {};
@@ -64,62 +129,52 @@ function JoyConProvider({ children }) {
                     return { x: 0, y: 0 };
                 }
 
-                let x = 0, y = 0;
+                console.log(`🎮 ${stickName} RAWデータ:`, stickData);
 
-                // プロパティ名の統一的な検索
-                const possibleXProps = ['x', 'horizontal', 'h'];
-                const possibleYProps = ['y', 'vertical', 'v'];
+                let rawX = 0, rawY = 0;
+
+                // 様々なプロパティ名を試行
+                const xProps = ['x', 'horizontal', 'h', 'X'];
+                const yProps = ['y', 'vertical', 'v', 'Y'];
 
                 // X値の取得
-                for (const prop of possibleXProps) {
+                for (const prop of xProps) {
                     if (stickData[prop] !== undefined && stickData[prop] !== null) {
-                        const rawValue = parseFloat(stickData[prop]);
-                        if (!isNaN(rawValue)) {
-                            x = rawValue;
-                            console.log(`✅ ${stickName} X found: ${prop} = ${rawValue}`);
-                            break;
-                        }
+                        rawX = stickData[prop];
+                        console.log(`✅ ${stickName} X値発見: ${prop} = ${rawX} (型: ${typeof rawX})`);
+                        break;
                     }
                 }
 
                 // Y値の取得
-                for (const prop of possibleYProps) {
+                for (const prop of yProps) {
                     if (stickData[prop] !== undefined && stickData[prop] !== null) {
-                        const rawValue = parseFloat(stickData[prop]);
-                        if (!isNaN(rawValue)) {
-                            y = rawValue;
-                            console.log(`✅ ${stickName} Y found: ${prop} = ${rawValue}`);
-                            break;
-                        }
+                        rawY = stickData[prop];
+                        console.log(`✅ ${stickName} Y値発見: ${prop} = ${rawY} (型: ${typeof rawY})`);
+                        break;
                     }
                 }
 
-                // 範囲外の値を適切にスケール（-2〜2の範囲を-1〜1に正規化）
-                if (Math.abs(x) > 1.0 || Math.abs(y) > 1.0) {
-                    console.log(`🔧 ${stickName} scaling from extended range:`, { originalX: x, originalY: y });
+                // 数値変換
+                rawX = parseFloat(rawX) || 0;
+                rawY = parseFloat(rawY) || 0;
 
-                    // -2〜2の範囲を-1〜1にマッピング
-                    x = Math.max(-1.0, Math.min(1.0, x / 2.0));
-                    y = Math.max(-1.0, Math.min(1.0, y / 2.0));
+                console.log(`📊 ${stickName} 変換前:`, { rawX, rawY });
 
-                    console.log(`🔧 ${stickName} scaled values:`, { scaledX: x, scaledY: y });
+                // スティック固有の較正値
+                const isLeftStick = stickName === 'leftStick';
+                const calibration = STICK_CONSTANTS.calibration[stickName];
+
+                // 正しい変換を適用
+                let x = convertStickValue(rawX, calibration.centerX, calibration.rangeX, stickName, 'X');
+                let y = convertStickValue(rawY, calibration.centerY, calibration.rangeY, stickName, 'Y');
+
+                // 左スティックの場合はY軸を反転
+                if (isLeftStick) {
+                    y = -y;
                 }
 
-                // 左スティックの場合はY軸を反転（上が正になるように）
-                if (stickName === 'leftStick') {
-                    y = -y; // Y軸を反転して上方向を正にする
-                }
-
-                const magnitude = Math.sqrt(x * x + y * y);
-
-                // アクティブな入力のログ出力
-                if (magnitude > 0.05) {
-                    console.log(`🎮 ${stickName} ACTIVE:`, {
-                        x: x.toFixed(3),
-                        y: y.toFixed(3),
-                        magnitude: magnitude.toFixed(3)
-                    });
-                }
+                console.log(`🎯 ${stickName} 最終結果:`, { x: x.toFixed(3), y: y.toFixed(3) });
 
                 return { x, y };
             };
@@ -153,15 +208,6 @@ function JoyConProvider({ children }) {
                 accel: detail.actualAccelerometer || detail.accelerometer || { x: 0, y: 0, z: 0 }
             };
 
-            // 左スティックの最終確認
-            const leftMagnitude = Math.sqrt(newInputState.leftStick.x ** 2 + newInputState.leftStick.y ** 2);
-            if (leftMagnitude > 0.01) {
-                console.log('🚀 LEFT STICK FINAL:', {
-                    ...newInputState.leftStick,
-                    magnitude: leftMagnitude.toFixed(3)
-                });
-            }
-
             setInputState(newInputState);
 
             // コールバック実行
@@ -184,7 +230,20 @@ function JoyConProvider({ children }) {
             console.error('Error parsing Joy-Con input data:', error);
             return null;
         }
+    }, [convertStickValue]);
+
+    // 較正データ更新機能
+    const updateCalibration = useCallback((stickName, centerX, centerY, rangeX, rangeY) => {
+        STICK_CONSTANTS.calibration[stickName] = {
+            centerX: centerX || STICK_CONSTANTS.CENTER_RAW,
+            centerY: centerY || STICK_CONSTANTS.CENTER_RAW,
+            rangeX: rangeX || 1800,
+            rangeY: rangeY || 1800
+        };
+
+        console.log(`🎯 ${stickName} 較正更新:`, STICK_CONSTANTS.calibration[stickName]);
     }, []);
+
     // Connect Joy-Con controllers
     const connectJoyCon = useCallback(async () => {
         if (!isSupported) {
@@ -210,7 +269,6 @@ function JoyConProvider({ children }) {
     // Dummy rumble function (disabled)
     const rumble = useCallback(async (frequency = 320, amplitude = 0.5, duration = 200) => {
         console.log('Rumble disabled');
-        // 振動は無効化
         return Promise.resolve();
     }, []);
 
@@ -228,7 +286,7 @@ function JoyConProvider({ children }) {
         };
     }, []);
 
-    // Safe setup function for Joy-Con (without vibration)
+    // Safe setup function for Joy-Con
     const setupJoyCon = useCallback(async (joyCon) => {
         try {
             console.log(`Setting up ${joyCon.device.productName}...`);
@@ -246,7 +304,6 @@ function JoyConProvider({ children }) {
                     name: 'enableIMUMode',
                     task: () => joyCon.enableIMUMode?.()
                 }
-                // enableVibrationを削除
             ];
 
             for (const { name, task } of setupTasks) {
@@ -279,10 +336,6 @@ function JoyConProvider({ children }) {
             }
 
             console.log(`Successfully connected ${joyCon.device.productName}:`, deviceInfo);
-
-            // Welcome rumble削除
-            console.log('Setup completed without vibration');
-
             return true;
         } catch (error) {
             console.error(`Failed to setup ${joyCon.device.productName}:`, error);
@@ -324,17 +377,8 @@ function JoyConProvider({ children }) {
 
                             const inputListener = (event) => {
                                 try {
-                                    console.log('🎮 Raw event received from Joy-Con:', {
-                                        eventType: event?.type,
-                                        hasDetail: !!event?.detail,
-                                        detailKeys: event?.detail ? Object.keys(event.detail) : 'N/A'
-                                    });
-
                                     if (event && event.detail) {
-                                        console.log('🔍 Event detail (FULL):', event.detail);
                                         parseInputData(event.detail);
-                                    } else {
-                                        console.warn('❌ Invalid event structure:', event);
                                     }
                                 } catch (err) {
                                     console.error('Error in input listener:', err);
@@ -402,7 +446,9 @@ function JoyConProvider({ children }) {
         rawInputData,
         connectJoyCon,
         rumble,
-        registerInputCallback
+        registerInputCallback,
+        updateCalibration,
+        stickConstants: STICK_CONSTANTS
     };
 
     return (
@@ -412,5 +458,4 @@ function JoyConProvider({ children }) {
     );
 }
 
-// 名前付きエクスポート
 export { useJoyConContext, JoyConProvider };
