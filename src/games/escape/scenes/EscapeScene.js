@@ -119,7 +119,7 @@ const alllevels = [
       "W       S  W           W",
       "W          W    S      W",
       "WWWWWW         S  WWWWWW",
-      "W    S   S W      P    W",
+      "W    S   S        P    W",
       "W      d   W  S        W",
       "W  S    WWWWWWW        W",
       "Wb   WWWxxxxxxxWWWW   aW",
@@ -387,21 +387,54 @@ class EscapeScene extends Phaser.Scene {
       .setDepth(10);
 
     // テキスト
-    this.add
-      .text(centerX, centerY - 80, "STAGE CLEAR!", {
-        fontSize: "64px",
-        fill: "#ffd700",
-        fontFamily: "Arial",
-        stroke: "#000000",
-        strokeThickness: 8,
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(11);
+    let rankLetter = "";
+    if (this.timeElapsed <= 15) {
+      rankLetter = "S";
+    } else if (this.timeElapsed > 15 && this.timeElapsed <= 25) {
+      rankLetter = "A";
+    } else if (this.timeElapsed > 25 && this.timeElapsed <= 40) {
+      rankLetter = "B";
+    } else if (this.timeElapsed > 40 && this.timeElapsed <= 60) {
+      rankLetter = "C";
+    } else {
+      rankLetter = "D";
+    }
+    const rankLabelStyle = {
+      fontSize: "40px",
+      fill: "#ffffff",
+      fontFamily: "Arial",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+    const rankLetterStyle = {
+      fontSize: "80px",
+      fill: "#ffd700",
+      fontFamily: "Arial",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+
+    const rankLabelText = this.add
+      .text(0, 0, "RANK ", rankLabelStyle)
+      .setOrigin(1, 0.5); // 右揃え
+    const rankLetterText = this.add
+      .text(0, 0, rankLetter, rankLetterStyle)
+      .setOrigin(0, 0.5); // 左揃え
+
+    const totalWidth = rankLabelText.width + rankLetterText.width;
+    const container = this.add.container(
+      centerX - totalWidth / 8,
+      centerY - 80
+    );
+    container.add(rankLabelText);
+    rankLetterText.x = rankLabelText.width;
+    container.add(rankLetterText);
+
+    container.setScrollFactor(0).setDepth(11);
 
     // クリアタイム
     this.add
-      .text(centerX, centerY, `ステージクリアタイム: ${this.timeElapsed} 秒`, {
+      .text(centerX, centerY, `クリアタイム: ${this.timeElapsed} 秒`, {
         fontSize: "32px",
         fill: "#ffffff",
         fontFamily: "Arial",
@@ -415,8 +448,6 @@ class EscapeScene extends Phaser.Scene {
     this.createButton(centerX - 120, centerY + 100, "次へ進む", () => {
       const nextStageData = {
         levelIndex: this.currentLevelIndex + 1,
-        player1_startPos: { x: this.player1.x, y: this.player1.y },
-        player2_startPos: { x: this.player2.x, y: this.player2.y },
       };
       this.scene.restart(nextStageData);
     });
