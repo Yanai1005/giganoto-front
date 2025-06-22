@@ -66,20 +66,23 @@ function JoyConProvider({ children }) {
 
     // 正しいスティック値変換関数
     const convertStickValue = useCallback((rawValue, center, range, stickName, axis) => {
-        // rawValueが既に正規化されている場合の検出
+        // rawValueが既に正規化されている場合の検出（-3.0〜3.0の範囲で拡張）
         if (typeof rawValue === 'number' && Math.abs(rawValue) <= 3.0) {
             console.log(`⚠️ ${stickName} ${axis}: 既に正規化済みの値を検出`, rawValue);
 
             // 既に正規化されている値をそのまま使用（小さな調整のみ）
             let normalizedValue = rawValue;
 
-            // 極小値をゼロにクランプ
-            if (Math.abs(normalizedValue) < 0.05) {
+            // デッドゾーンを少し大きく調整（0.05 -> 0.1）
+            if (Math.abs(normalizedValue) < 0.1) {
                 normalizedValue = 0;
             }
 
-            // 範囲制限
-            normalizedValue = Math.max(-1.0, Math.min(1.0, normalizedValue));
+            // 範囲制限を緩和（-1.5〜1.5に拡張して、より大きな値を許可）
+            normalizedValue = Math.max(-1.5, Math.min(1.5, normalizedValue));
+
+            // 最終的に-1.0〜1.0の範囲にスケール
+            normalizedValue = normalizedValue / 1.5;
 
             return normalizedValue;
         }
@@ -459,3 +462,4 @@ function JoyConProvider({ children }) {
 }
 
 export { useJoyConContext, JoyConProvider };
+
