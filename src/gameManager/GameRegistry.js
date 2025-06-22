@@ -22,6 +22,7 @@ class GameRegistry {
             'story': () => import('../games/story/game.js'),
             'fishing': () => import('../games/fishing/game.js'),
             'vibration-hunt': () => import('../games/vibration-hunt/game.js'),
+            'dev-detective': () => import('../games/dev-detective/game.js'),
             // 新しいゲームを追加する場合はここに追加
         };
     }
