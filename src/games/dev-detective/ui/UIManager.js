@@ -304,7 +304,38 @@ export default class UIManager {
     label.style.fontWeight = 'bold';
 
     const input = this.createInput(inputPlaceholder, inputId);
-    const button = this.createButton(buttonText, onSubmit);
+    
+    // 連打防止付きのボタンを作成
+    const button = this.createButton(buttonText, () => {
+      // ボタンが既に無効化されている場合は処理しない
+      if (button.disabled) {
+        return;
+      }
+      
+      // 一時的にボタンを無効化
+      button.disabled = true;
+      button.style.opacity = '0.6';
+      button.style.cursor = 'not-allowed';
+      
+      // 元のハンドラーを実行
+      if (onSubmit) {
+        onSubmit();
+      }
+      
+      // 1秒後にボタンを再有効化
+      setTimeout(() => {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+      }, 1000);
+    });
+
+    // Enterキーでも送信可能にする
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !button.disabled) {
+        button.click();
+      }
+    });
 
     group.appendChild(label);
     group.appendChild(input);

@@ -11,6 +11,7 @@ export default class LevelManager {
     this.maxLevels = 5;
     this.levels = this.initializeLevels();
     this.currentLevelInstance = null;
+    this.isTransitioning = false; // レベル遷移中フラグ
   }
 
   initializeLevels() {
@@ -34,6 +35,7 @@ export default class LevelManager {
     }
 
     this.currentLevel = levelNumber;
+    this.isTransitioning = false; // 新しいレベル開始時にリセット
     this.uiManager.updateLevelDisplay(levelNumber);
     
     // 前のレベルインスタンスをクリアンアップ
@@ -49,6 +51,15 @@ export default class LevelManager {
   }
 
   onLevelComplete(message) {
+    // 既にレベル遷移中の場合は無視
+    if (this.isTransitioning) {
+      console.log('⏳ レベル遷移中です...');
+      return;
+    }
+
+    // レベル遷移開始
+    this.isTransitioning = true;
+    
     this.uiManager.showSuccess(message);
     
     setTimeout(() => {
@@ -62,10 +73,12 @@ export default class LevelManager {
   }
 
   onLevelError(message) {
+    // エラー時は遷移フラグをリセットしない（再挑戦可能）
     this.uiManager.showError(message);
   }
 
   gameComplete() {
+    this.isTransitioning = true; // ゲーム完了状態を維持
     this.showGameCompleteScreen();
     this.outputFinalConsoleMessages();
   }
@@ -121,5 +134,6 @@ export default class LevelManager {
     if (this.currentLevelInstance && typeof this.currentLevelInstance.cleanup === 'function') {
       this.currentLevelInstance.cleanup();
     }
+    this.isTransitioning = false; // クリーンアップ時にリセット
   }
 } 

@@ -3,10 +3,12 @@ export default class BaseLevel {
     this.uiManager = uiManager;
     this.levelManager = levelManager;
     this.isActive = false;
+    this.isProcessing = false; // 連打防止フラグ
   }
 
   start() {
     this.isActive = true;
+    this.isProcessing = false; // レベル開始時にリセット
     this.setupLevel();
   }
 
@@ -16,11 +18,22 @@ export default class BaseLevel {
   }
 
   checkAnswer(userAnswer, correctAnswer) {
+    // 既に処理中の場合は無視
+    if (this.isProcessing) {
+      console.log('⏳ 処理中です。しばらくお待ちください...');
+      return false;
+    }
+
+    // 処理開始
+    this.isProcessing = true;
+
     if (userAnswer === correctAnswer) {
       this.onSuccess();
       return true;
     } else {
       this.onError();
+      // エラーの場合は処理フラグをリセット（再挑戦可能）
+      this.isProcessing = false;
       return false;
     }
   }
@@ -28,6 +41,7 @@ export default class BaseLevel {
   onSuccess() {
     // 成功時の処理を各レベルで実装可能
     this.levelManager.onLevelComplete(this.getSuccessMessage());
+    // 成功時は次のレベルに進むため、フラグはリセットしない
   }
 
   onError() {
@@ -66,6 +80,7 @@ export default class BaseLevel {
 
   cleanup() {
     this.isActive = false;
+    this.isProcessing = false; // クリーンアップ時にリセット
     // 必要に応じて各レベルで追加のクリーンアップを実装
   }
 } 
