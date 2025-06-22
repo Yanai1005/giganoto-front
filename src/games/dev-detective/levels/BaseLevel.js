@@ -81,6 +81,23 @@ export default class BaseLevel {
   cleanup() {
     this.isActive = false;
     this.isProcessing = false; // クリーンアップ時にリセット
+    
+    // 入力フィールドをクリア
+    this.clearInputFields();
+    
     // 必要に応じて各レベルで追加のクリーンアップを実装
+  }
+
+  clearInputFields() {
+    // すべての入力フィールドをクリア
+    const inputs = document.querySelectorAll('input[type="text"]');
+    inputs.forEach(input => {
+      input.value = '';
+      // ブラウザの記憶をクリア
+      input.setAttribute('autocomplete', 'new-password');
+      setTimeout(() => {
+        input.setAttribute('autocomplete', 'off');
+      }, 50);
+    });
   }
 } 

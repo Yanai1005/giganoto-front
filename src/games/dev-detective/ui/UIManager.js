@@ -261,6 +261,13 @@ export default class UIManager {
     input.placeholder = placeholder;
     if (id) input.id = id;
     
+    // オートコンプリートとブラウザの記憶機能を無効化
+    input.autocomplete = 'off';
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+    
     // デフォルトスタイル
     const defaultStyle = {
       padding: '12px 18px',
@@ -304,6 +311,16 @@ export default class UIManager {
     label.style.fontWeight = 'bold';
 
     const input = this.createInput(inputPlaceholder, inputId);
+    
+    // 入力フィールドの値を即座にクリア
+    input.value = '';
+    
+    // 少し遅延してからもう一度クリア（ブラウザの自動入力対策）
+    setTimeout(() => {
+      if (input) {
+        input.value = '';
+      }
+    }, 100);
     
     // 連打防止付きのボタンを作成
     const button = this.createButton(buttonText, () => {
