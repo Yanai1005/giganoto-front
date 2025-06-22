@@ -1,6 +1,8 @@
+@use 'sass:color';
 @use 'variables' as *;
 @use 'mixins' as *;
 
+// テーマカラー定義 
 @mixin theme-colors($theme: 'dark') {
     @if $theme =='light' {
         --bg-primary: #{$light-background};
@@ -15,6 +17,35 @@
         --accent-secondary: #{$nintendo-blue};
         --system-menu-bg: rgba(255, 255, 255, 0.95);
         --glass-bg: rgba(240, 240, 240, 0.9);
+        --bg-tertiary: #FAFAFA;
+        --surface-primary: #FFFFFF;
+        --surface-secondary: #F8F8F8;
+        --surface-hover: #F0F0F0;
+        --text-tertiary: #999999;
+        --text-inverse: #FFFFFF;
+        --border-light: #F0F0F0;
+        --border-strong: #CCCCCC;
+        --shadow-strong: rgba(0, 0, 0, 0.2);
+        --overlay-light: rgba(0, 0, 0, 0.1);
+        --overlay-strong: rgba(0, 0, 0, 0.5);
+        --glass-border: rgba(0, 0, 0, 0.06);
+
+        // ステータスカラー
+        --accent-success: #4CAF50;
+        --accent-warning: #FF9800;
+        --accent-error: #F44336;
+        --accent-info: #2196F3;
+
+        // グラデーション
+        --gradient-primary: linear-gradient(135deg, #{$nintendo-red} 0%, #{color.adjust($nintendo-red, $lightness: 10%)} 100%);
+        --gradient-secondary: linear-gradient(135deg, #{$nintendo-blue} 0%, #{color.adjust($nintendo-blue, $lightness: 10%)} 100%);
+        --gradient-background: linear-gradient(135deg, #F0F0F0 0%, #E8E8E8 100%);
+
+        // ゲームタイル専用
+        --game-tile-bg: #FFFFFF;
+        --game-tile-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --game-tile-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
+        --game-tile-overlay: rgba(0, 0, 0, 0.1);
     }
 
     @else {
@@ -30,9 +61,39 @@
         --accent-secondary: #{$nintendo-red};
         --system-menu-bg: rgba(45, 45, 45, 0.95);
         --glass-bg: rgba(45, 45, 45, 0.9);
+        --bg-tertiary: #353535;
+        --surface-primary: #404040;
+        --surface-secondary: #353535;
+        --surface-hover: #4A4A4A;
+        --text-tertiary: #999999;
+        --text-inverse: #000000;
+        --border-light: #404040;
+        --border-strong: #666666;
+        --shadow-strong: rgba(0, 0, 0, 0.6);
+        --overlay-light: rgba(0, 0, 0, 0.3);
+        --overlay-strong: rgba(0, 0, 0, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.06);
+
+        // ステータスカラー
+        --accent-success: #4CAF50;
+        --accent-warning: #FF9800;
+        --accent-error: #F44336;
+        --accent-info: #2196F3;
+
+        // グラデーション
+        --gradient-primary: linear-gradient(135deg, #{$nintendo-blue} 0%, #{color.adjust($nintendo-blue, $lightness: 10%)} 100%);
+        --gradient-secondary: linear-gradient(135deg, #{$nintendo-red} 0%, #{color.adjust($nintendo-red, $lightness: 10%)} 100%);
+        --gradient-background: linear-gradient(135deg, #2D2D2D 0%, #232526 100%);
+
+        // ゲームタイル専用
+        --game-tile-bg: #404040;
+        --game-tile-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        --game-tile-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.4);
+        --game-tile-overlay: rgba(255, 255, 255, 0.1);
     }
 }
 
+// テーマクラス定義
 .theme-light {
     @include theme-colors('light');
 }
@@ -41,14 +102,57 @@
     @include theme-colors('dark');
 }
 
-@mixin themed-background($opacity: 1) {
-    background-color: rgba(var(--bg-primary-rgb), $opacity);
+
+// 既存のミックスイン
+
+@mixin themed-background($variant: 'primary', $opacity: 1) {
+    @if $variant =='primary' {
+        background-color: var(--bg-primary);
+    }
+
+    @else if $variant =='secondary' {
+        background-color: var(--bg-secondary);
+    }
+
+    @else if $variant =='tertiary' {
+        background-color: var(--bg-tertiary);
+    }
+
+    @else if $variant =='surface' {
+        background-color: var(--surface-primary);
+    }
+
+    @else if $variant =='glass' {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    @if $opacity !=1 {
+        opacity: $opacity;
+    }
 }
 
-@mixin themed-card {
+@mixin themed-card($padding: $spacing-4, $elevated: false) {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px var(--shadow-color);
+    border-radius: $border-radius-lg;
+    padding: $padding;
+
+    @if $elevated {
+        box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    @else {
+        box-shadow: 0 2px 4px var(--shadow-color);
+    }
+
+    transition: all $transition-base;
+
+    &:hover {
+        box-shadow: 0 6px 20px var(--shadow-hover);
+        transform: translateY(-1px);
+    }
 }
 
 @mixin themed-text($variant: 'primary') {
@@ -59,29 +163,72 @@
     @else if $variant =='secondary' {
         color: var(--text-secondary);
     }
+
+    @else if $variant =='tertiary' {
+        color: var(--text-tertiary);
+    }
+
+    @else if $variant =='inverse' {
+        color: var(--text-inverse);
+    }
 }
 
-@mixin themed-button($style: 'primary') {
+@mixin themed-button($style: 'primary', $size: 'medium') {
+    @include button-reset;
+    @include themed-focus-ring;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: $font-weight-medium;
+    border-radius: $border-radius-base;
+    transition: all $transition-fast;
+    cursor: pointer;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+
+    // サイズ設定
+    @if $size =='small' {
+        padding: $spacing-2 $spacing-3;
+        font-size: $font-size-sm;
+    }
+
+    @else if $size =='large' {
+        padding: $spacing-4 $spacing-6;
+        font-size: $font-size-lg;
+    }
+
+    @else {
+        padding: $spacing-3 $spacing-4;
+        font-size: $font-size-base;
+    }
+
     @if $style =='primary' {
-        background-color: var(--accent-primary);
+        background: var(--gradient-primary);
         color: white;
         border: 2px solid var(--accent-primary);
+        box-shadow: 0 2px 8px rgba(28, 191, 222, 0.3);
 
         &:hover {
-            background-color: var(--accent-secondary);
-            border-color: var(--accent-secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(28, 191, 222, 0.4);
+        }
+
+        &:active {
+            transform: translateY(0);
         }
     }
 
     @else if $style =='secondary' {
-        background-color: var(--bg-secondary);
+        background-color: var(--surface-primary);
         color: var(--text-primary);
         border: 2px solid var(--border-color);
 
         &:hover {
-            background-color: var(--accent-primary);
-            color: white;
+            background-color: var(--surface-hover);
             border-color: var(--accent-primary);
+            color: var(--accent-primary);
         }
     }
 
@@ -91,23 +238,32 @@
         border: 2px solid transparent;
 
         &:hover {
-            background-color: var(--bg-secondary);
-            border-color: var(--border-color);
+            background-color: var(--surface-secondary);
+            border-color: var(--border-light);
         }
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 }
 
 @mixin themed-game-tile {
-    background-color: var(--bg-secondary);
-    box-shadow: 0 4px 12px var(--shadow-color);
+    background-color: var(--game-tile-bg);
+    box-shadow: var(--game-tile-shadow);
+    border: 1px solid var(--border-light);
 
     &:hover {
-        box-shadow: 0 6px 20px var(--shadow-hover);
+        box-shadow: var(--game-tile-shadow-hover);
+        transform: translateY(-2px);
     }
 
     &--selected {
         border: 3px solid var(--accent-primary);
         box-shadow: 0 8px 24px var(--shadow-hover);
+        transform: scale(1.05);
     }
 }
 
@@ -115,25 +271,28 @@
     background: var(--system-menu-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--glass-border);
+    box-shadow: 0 -4px 20px var(--shadow-color);
 }
 
 @mixin themed-system-icon {
-    background-color: var(--bg-secondary);
+    background-color: var(--surface-secondary);
     color: var(--text-primary);
     border: 2px solid transparent;
     box-shadow: 0 2px 4px var(--shadow-color);
+    transition: all $transition-fast;
 
     &:hover {
-        background-color: var(--accent-primary);
-        color: white;
+        background-color: var(--surface-hover);
         box-shadow: 0 4px 8px var(--shadow-hover);
+        transform: scale(1.05);
     }
 
     &--active {
-        background-color: var(--accent-primary);
+        background: var(--gradient-primary);
         color: white;
         border-color: var(--accent-primary);
+        box-shadow: 0 4px 12px rgba(28, 191, 222, 0.4);
     }
 }
 
@@ -141,13 +300,16 @@
     background: var(--glass-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: 0 2px 10px var(--shadow-color);
 }
 
 @mixin themed-settings-overlay {
-    background-color: var(--bg-secondary);
+    background-color: var(--surface-primary);
     border: 1px solid var(--border-color);
     box-shadow: 0 8px 24px var(--shadow-hover);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 @mixin themed-battery-icon($level: 85) {
@@ -159,15 +321,15 @@
 
     &::after {
         @if $level >60 {
-            background: #4CAF50;
+            background: var(--accent-success);
         }
 
         @else if $level >20 {
-            background: #FF9800;
+            background: var(--accent-warning);
         }
 
         @else {
-            background: #F44336;
+            background: var(--accent-error);
         }
     }
 }
@@ -189,20 +351,23 @@
     }
 }
 
-@mixin themed-focus-ring {
+@mixin themed-focus-ring($offset: 2px) {
     &:focus-visible {
         outline: 2px solid var(--accent-primary);
-        outline-offset: 2px;
+        outline-offset: $offset;
     }
 }
 
 @mixin themed-notification-badge {
-    background: #FF4444;
+    background: var(--accent-error);
     color: white;
     @include pulse-animation(2s);
 }
 
+// テーマ固有のスタイル 
 .theme-light {
+
+    // ゲームタイル
     .game-tile__overlay {
         background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
     }
@@ -210,9 +375,33 @@
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+
+    // スクロールバー
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+    }
+
+    // 選択テキスト
+    ::selection {
+        background: rgba(231, 0, 9, 0.2);
+        color: var(--text-primary);
+    }
+
+    // グラデーション背景アニメーション
+    .switch-home {
+        background: var(--gradient-background);
+        background-size: 200% 200%;
+        animation: gradientShift 10s ease infinite;
+    }
 }
 
 .theme-dark {
+
+    // ゲームタイル
     .game-tile__overlay {
         background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
     }
@@ -220,8 +409,28 @@
     .user-avatar {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
+
+    // スクロールバー
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+    }
+
+    // 選択テキスト
+    ::selection {
+        background: rgba(28, 191, 222, 0.3);
+        color: var(--text-primary);
+    }
+
+    .switch-home {
+        background: var(--gradient-background);
+    }
 }
 
+// アクセシビリティ対応 
 @media (prefers-contrast: high) {
 
     .theme-light,
@@ -229,6 +438,7 @@
         --border-color: currentColor;
         --accent-primary: #000000;
         --accent-secondary: #FFFFFF;
+        --shadow-color: rgba(0, 0, 0, 0.5);
     }
 
     .theme-light {
@@ -252,4 +462,61 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+// アニメーション
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+// ユーティリティクラス
+
+.theme-transition {
+    transition: background-color $transition-smooth,
+        color $transition-smooth,
+        border-color $transition-smooth,
+        box-shadow $transition-smooth;
+}
+
+.themed-border {
+    border-color: var(--border-color);
+}
+
+.themed-shadow {
+    box-shadow: var(--shadow-color);
+}
+
+.themed-glass {
+    @include themed-background('glass');
+}
+
+.themed-card {
+    @include themed-card;
+}
+
+.themed-text-primary {
+    @include themed-text('primary');
+}
+
+.themed-text-secondary {
+    @include themed-text('secondary');
+}
+
+.themed-button-primary {
+    @include themed-button('primary');
+}
+
+.themed-button-secondary {
+    @include themed-button('secondary');
 }

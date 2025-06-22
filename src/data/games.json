@@ -1,13 +1,21 @@
 {
-    "games": [
-        {
-            "id": 5,
-            "title": "釣りマスター3D",
-            "description": "3D釣りシミュレーション！様々な魚を釣り上げよう！",
-            "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
-            "path": "/game",
-            "gameType": "fishing"
-        },
+  "games": [
+    {
+      "id": 4,
+      "title": "TOWER QUEST",
+      "description": "二人で部屋から脱出するゲーム",
+      "image": "https://chatgpt.com/backend-api/public_content/enc/eyJpZCI6Im1fNjg1Nzg0N2ZhZDQwODE5MTk3ZmVkZDg5ZDQ2YjRhOTQ6ZmlsZV8wMDAwMDAwMDJiYjg2MWY0OTRhMzJiNzQxZGM2OWIwYiIsInRzIjoiNDg2MjY5IiwicCI6InB5aSIsInNpZyI6IjM2NzI3NWU2ZDQ0MTUwNzYyYzk1Nzg3ZWNkMTkwODY3M2Q5MzU1ZDBiYmZmYjJjOWVjMjQzN2NiZjMxZDU2MWEiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsfQ==",
+      "path": "/game",
+      "gameType": "escape"
+    },
+    {
+      "id": 5,
+      "title": "釣りマスター3D",
+      "description": "3D釣りシミュレーション！様々な魚を釣り上げよう！",
+      "image": "/assets/fishing_game.png",
+      "path": "/game",
+      "gameType": "fishing"
+    },
         {
             "id": 6,
             "title": "シナリオ",
@@ -16,18 +24,67 @@
             "path": "/game",
             "gameType": "story"
         }
-    ],    "gameTypes": {
-        "fishing": {
-            "name": "釣り",
-            "description": "3Dフィッシングゲーム",
-            "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
-            "modulePath": "../games/fishing/game.js"
-        },
-        "story": {
-            "name": "ストーリー",
-            "description": "二重人格シナリオゲーム",
-            "controls": "SPACEで進行、Q,Eで人格変更,選択肢は左クリック",
-            "modulePath": "../games/story/game.js"
-        }
+    {
+      "id": 7,
+      "title": "避けゲー",
+      "description": "避けゲー",
+      "image": "hako.png",
+      "path": "/game",
+      "gameType": "runner"
+    },
+    {
+      "id": 8,
+      "title": "強震動探し",
+      "description": "Joy-Conの振動で隠された場所を見つけよう！Nintendo Switch 2のひみつ展風ゲーム",
+      "image": "/assets/vibration_hunt.png",
+      "path": "/game",
+      "gameType": "vibration-hunt"
+    },
+    {
+      "id": 9,
+      "title": "Developer Detective",
+      "description": "開発者ツールを駆使して謎を解け！コンソール、DOM、ネットワークタブを活用した本格謎解きゲーム",
+      "image": "/assets/dev-detective.png",
+      "path": "/game",
+      "gameType": "dev-detective"
     }
+  ],
+  "gameTypes": {
+    "fishing": {
+      "name": "釣り",
+      "description": "3Dフィッシングゲーム",
+      "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+      "modulePath": "../games/fishing/game.js"
+    },
+    "story": {
+      "name": "ストーリー",
+      "description": "二重人格シナリオゲーム",
+      "controls": "SPACEで進行、Q,Eで人格変更,選択肢は左クリック",
+      "modulePath": "../games/story/game.js"
+    },
+    "runner": {
+      "name": "避けゲー",
+      "description": "避けゲー",
+      "controls": "W,D矢印キーで移動、赤い障害物を避けるとスコアが増える（Amazon Q CLIで開発）",
+      "modulePath": "../games/runner/game.js"
+    },
+    "escape": {
+      "name": "TOWER QUEST",
+      "description": "二人同時操作でクリアボタンを押すゲーム",
+      "controls": "矢印キーで移動",
+      "modulePath": "../games/escape/game.js"
+    },
+    "vibration-hunt": {
+      "name": "強震動探し",
+      "description": "Joy-Conの振動機能を使って隠された強震動ポイントを探すゲーム",
+      "controls": "マウスを動かして振動を感じ、Joy-ConのAボタンで決定。Joy-Con接続必須",
+      "modulePath": "../games/vibration-hunt/game.js"
+    },
+    "dev-detective": {
+      "name": "Developer Detective",
+      "description": "開発者ツールを活用した謎解きゲーム",
+      "controls": "F12でデベロッパーツールを開き、コンソール・DOM・ネットワークタブを使って謎を解こう！",
+      "modulePath": "../games/dev-detective/game.js"
+    }
+  }
 }
