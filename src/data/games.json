@@ -26,8 +26,8 @@
     },
     {
       "id": 7,
-      "title": "走るゲーム",
-      "description": "走るゲーム",
+      "title": "避けゲー",
+      "description": "避けゲー",
       "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
       "path": "/game",
       "gameType": "runner"
@@ -47,9 +47,9 @@
       "modulePath": "../games/story/game.js"
     },
     "runner": {
-      "name": "走るゲーム",
-      "description": "走るゲーム",
-      "controls": "矢印キーで移動、スペースキーでジャンプ",
+      "name": "避けゲー",
+      "description": "避けゲー",
+      "controls": "W,D矢印キーで移動、赤い障害物を避けるとスコアが増える（Amazon Q CLIで開発）",
       "modulePath": "../games/runner/game.js"
     },
     "escape": {
