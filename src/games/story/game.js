@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import GameScene from './scenes/GameScene.js';
+import EndScene from './scenes/EndScene.js';
 
 export const initializeGame = (container) => {
     const config = {
@@ -15,7 +16,7 @@ export const initializeGame = (container) => {
                 debug: false
             }
         },
-        scene: [GameScene]
+        scene: [GameScene, EndScene]
     };
 
     const game = new Phaser.Game(config);
