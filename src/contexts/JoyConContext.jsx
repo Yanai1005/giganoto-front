@@ -51,34 +51,9 @@ function JoyConProvider({ children }) {
         try {
             setRawInputData(detail);
 
-            // 詳細デバッグ：受信データの全体構造を確認
-            console.log('🎮 Raw Joy-Con input data (full structure):', detail);
-            console.log('🎮 Available properties:', Object.keys(detail || {}));
-
-            // アナログスティックの情報を詳しく調べる
-            if (detail.analogStickLeft) {
-                console.log('🕹️ Left stick data:', detail.analogStickLeft);
-                console.log('🕹️ Left stick properties:', Object.keys(detail.analogStickLeft));
-
-                // 生データの詳細確認
-                if (detail.analogStickLeft.rawData) {
-                    console.log('🕹️ Left stick rawData:', detail.analogStickLeft.rawData);
-                    console.log('🕹️ Left stick rawData as hex:',
-                        detail.analogStickLeft.rawData.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-                    );
-                }
-            }
-            if (detail.analogStickRight) {
-                console.log('🕹️ Right stick data:', detail.analogStickRight);
-                console.log('🕹️ Right stick properties:', Object.keys(detail.analogStickRight));
-
-                // 生データの詳細確認
-                if (detail.analogStickRight.rawData) {
-                    console.log('🕹️ Right stick rawData:', detail.analogStickRight.rawData);
-                    console.log('🕹️ Right stick rawData as hex:',
-                        detail.analogStickRight.rawData.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-                    );
-                }
+            // 詳細デバッグ：受信データの全体構造を確認（ログを減らす）
+            if (detail.analogStickLeft && (Math.abs(detail.analogStickLeft.x || 0) > 0.1 || Math.abs(detail.analogStickLeft.y || 0) > 0.1)) {
+                console.log('🕹️ Left stick data structure:', detail.analogStickLeft);
             }
 
             // buttonStatusオブジェクトからボタン状態を取得
@@ -118,9 +93,10 @@ function JoyConProvider({ children }) {
                         }
                     };
 
-                    // Method 1: 標準的なJoy-Con変換
+                    // Method 1: 標準的なJoy-Con変換（左スティック）
                     if (stickName === 'leftStick' && data.length >= 3) {
-                        const result = tryConversion('Left-Standard',
+                        // 標準的な左スティック変換
+                        const result1 = tryConversion('Left-Standard-Method1',
                             () => {
                                 const raw = (data[1] << 8) | data[0];
                                 return (raw - 2048) / 2048.0;
@@ -130,10 +106,51 @@ function JoyConProvider({ children }) {
                                 return (rawY - 2048) / 2048.0;
                             }
                         );
-                        if (result.success) {
-                            x = result.x;
-                            y = result.y;
+                        if (result1.success) {
+                            x = result1.x;
+                            y = result1.y;
                             conversionSuccess = true;
+                            console.log('🎯 Left stick using Standard-Method1');
+                        }
+
+                        // 別の左スティック変換方法
+                        if (!conversionSuccess) {
+                            const result2 = tryConversion('Left-Standard-Method2',
+                                () => {
+                                    const raw = data[0] | (data[1] << 8);
+                                    return (raw - 2048) / 2048.0;
+                                },
+                                () => {
+                                    const rawY = data[2] | ((data[1] & 0xF0) << 4);
+                                    return (rawY - 2048) / 2048.0;
+                                }
+                            );
+                            if (result2.success) {
+                                x = result2.x;
+                                y = result2.y;
+                                conversionSuccess = true;
+                                console.log('🎯 Left stick using Standard-Method2');
+                            }
+                        }
+
+                        // 12ビット値として変換
+                        if (!conversionSuccess && data.length >= 3) {
+                            const result3 = tryConversion('Left-12bit',
+                                () => {
+                                    const raw = data[0] | ((data[1] & 0x0F) << 8);
+                                    return (raw - 2048) / 2048.0;
+                                },
+                                () => {
+                                    const rawY = (data[1] >> 4) | (data[2] << 4);
+                                    return (rawY - 2048) / 2048.0;
+                                }
+                            );
+                            if (result3.success) {
+                                x = result3.x;
+                                y = result3.y;
+                                conversionSuccess = true;
+                                console.log('🎯 Left stick using 12bit method');
+                            }
                         }
                     }
 
@@ -212,9 +229,10 @@ function JoyConProvider({ children }) {
                 // X値の検索
                 for (const prop of possibleXProps) {
                     if (stickData[prop] !== undefined) {
-                        x = parseFloat(stickData[prop]);
+                        const rawValue = stickData[prop];
+                        x = parseFloat(rawValue);
                         if (!isNaN(x)) {
-                            console.log(`${stickName} X found in property: ${prop}, value: ${x}`);
+                            console.log(`${stickName} X found in property: ${prop}, raw value: ${rawValue}, parsed: ${x}`);
                             break;
                         }
                     }
@@ -223,26 +241,39 @@ function JoyConProvider({ children }) {
                 // Y値の検索
                 for (const prop of possibleYProps) {
                     if (stickData[prop] !== undefined) {
-                        y = parseFloat(stickData[prop]);
+                        const rawValue = stickData[prop];
+                        y = parseFloat(rawValue);
                         if (!isNaN(y)) {
-                            console.log(`${stickName} Y found in property: ${prop}, value: ${y}`);
+                            console.log(`${stickName} Y found in property: ${prop}, raw value: ${rawValue}, parsed: ${y}`);
                             break;
                         }
                     }
                 }
 
-                // すべてのプロパティを表示（デバッグ用）
-                console.log(`${stickName} all properties:`, stickData);
+                // すべてのプロパティを表示（問題がある時のみ）
+                if (Math.abs(x) > 1.5 || Math.abs(y) > 1.5) {
+                    console.log(`⚠️ ${stickName} extreme values detected. All properties:`, stickData);
+                }
 
-                // 値が異常に大きい場合の正規化（緊急修正）
+                // 極端な値の処理を改良
                 if (Math.abs(x) > 1.0 || Math.abs(y) > 1.0) {
-                    console.warn(`${stickName} values out of range, normalizing:`, { x, y });
+                    console.warn(`🚨 ${stickName} values out of range, attempting correction:`, { x, y });
 
-                    // -2.0, 2.0のような値を-1.0, 1.0の範囲に正規化
-                    x = Math.max(-1.0, Math.min(1.0, x / 2.0));
-                    y = Math.max(-1.0, Math.min(1.0, y / 2.0));
-
-                    console.log(`${stickName} normalized values:`, { x, y });
+                    // -1や1の極端な値の場合、無効なデータとして扱う
+                    if ((Math.abs(x) >= 0.99 && Math.abs(y) >= 0.99) || (x === -1 && y === 1)) {
+                        console.warn(`🚫 ${stickName} detected invalid extreme values, setting to zero:`, { x, y });
+                        x = 0;
+                        y = 0;
+                    } else {
+                        // 範囲外だが有効そうな値の場合は正規化
+                        const originalX = x, originalY = y;
+                        x = Math.max(-1.0, Math.min(1.0, x / 2.0));
+                        y = Math.max(-1.0, Math.min(1.0, y / 2.0));
+                        console.log(`🔧 ${stickName} normalized values:`, {
+                            original: { x: originalX, y: originalY },
+                            normalized: { x, y }
+                        });
+                    }
                 }
 
                 // 値が文字列の"x-2y2"のような形式の場合の対処
@@ -252,14 +283,24 @@ function JoyConProvider({ children }) {
                 }
 
                 // デバッグ：変換後の値を確認
-                console.log(`${stickName} parsed values (converted to numbers):`, {
-                    x: x,
-                    y: y,
-                    xType: typeof x,
-                    yType: typeof y
+                const finalResult = { x, y };
+
+                // 最終チェック：極端な値が残っていたら無効化
+                if ((Math.abs(x) >= 0.99 && Math.abs(y) >= 0.99) || (x === -1 && y === 1)) {
+                    console.error(`🚫 ${stickName} FINAL CHECK: Invalid extreme values detected, forcing to zero:`, finalResult);
+                    finalResult.x = 0;
+                    finalResult.y = 0;
+                }
+
+                console.log(`${stickName} parsed values (final):`, {
+                    x: finalResult.x,
+                    y: finalResult.y,
+                    xType: typeof finalResult.x,
+                    yType: typeof finalResult.y,
+                    magnitude: Math.sqrt(finalResult.x * finalResult.x + finalResult.y * finalResult.y).toFixed(3)
                 });
 
-                return { x, y };
+                return finalResult;
             };
 
             const newInputState = {
@@ -301,18 +342,16 @@ function JoyConProvider({ children }) {
                 gyro: detail.actualGyroscope?.dps || detail.gyroscope || { x: 0, y: 0, z: 0 },
                 accel: detail.actualAccelerometer || detail.accelerometer || { x: 0, y: 0, z: 0 }
             };
-            console.log('buttonStatus object:', buttonStatus);
 
-            const pressedButtons = Object.entries(newInputState.buttons)
-                .filter(([_, pressed]) => pressed)
-                .map(([button, _]) => button);
-
-            if (pressedButtons.length > 0) {
-                console.log('Pressed buttons:', pressedButtons);
+            // 最終的な入力状態の検証
+            if (newInputState.leftStick.x === -1 && newInputState.leftStick.y === 1) {
+                console.error('🚨 CRITICAL: Invalid left stick values detected in final state, resetting to zero');
+                newInputState.leftStick = { x: 0, y: 0 };
             }
 
+            // デバッグ出力を減らす
             if (Math.abs(newInputState.leftStick.x) > 0.1 || Math.abs(newInputState.leftStick.y) > 0.1) {
-                console.log('Left stick:', newInputState.leftStick);
+                console.log('✅ Left stick (final):', newInputState.leftStick);
             }
 
             if (Math.abs(newInputState.rightStick.x) > 0.1 || Math.abs(newInputState.rightStick.y) > 0.1) {

@@ -29,8 +29,8 @@ const Home = () => {
 
     const cursorControl = useJoyConCursor({
         enabled: isConnected && !showJoyConModal && !showSettings && !showCalibrationUI && cursorMode && !isTogglingMode,
-        sensitivity: 2.0, // 0.02から2.0に大幅に上げてテスト
-        deadzone: 0.03,
+        sensitivity: 0.8, // 1.2から0.8に下げてゆっくりとした操作に
+        deadzone: 0.18, // 0.12から0.18に上げて安定性向上
         showCursor: cursorMode && !isTogglingMode,
         autoCalibrate: false,
         calibrationTime: 0
@@ -261,7 +261,7 @@ const Home = () => {
                                         </>
                                     ) : cursorMode && !isTogglingMode ? (
                                         <>
-                                            <span>右スティック: カーソル移動</span>
+                                            <span>左スティック: カーソル移動</span>
                                             <span>Aボタン: クリック</span>
                                         </>
                                     ) : null}

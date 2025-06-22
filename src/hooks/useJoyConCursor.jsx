@@ -4,7 +4,7 @@ import { useJoyConContext } from '../contexts/JoyConContext';
 export const useJoyConCursor = ({
     enabled = true,
     sensitivity = 0.3,
-    deadzone = 0.1, // デッドゾーンを0.03から0.1に拡大
+    deadzone = 0.18, // デッドゾーンを0.12から0.18に拡大してより安定化
     showCursor = true,
     autoCalibrate = false, // キャリブレーション機能を無効化
     calibrationTime = 3000
@@ -279,11 +279,8 @@ export const useJoyConCursor = ({
     }, [deadzone]);
 
     // Update mouse position based on stick input
-    const updateMousePosition = useCallback(() => {
-        console.log('🖱️ updateMousePosition called:', { enabled, isConnected });
-
+    const updateMousePosition = useCallback((frameCount = 0) => {
         if (!enabled || !isConnected) {
-            console.log('🎮 Update stopped:', { enabled, isConnected });
             return;
         }
 
@@ -292,20 +289,24 @@ export const useJoyConCursor = ({
         const magnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2);
 
         if (magnitude > 0.01) { // 閾値を緩めて反応しやすく
-            // 速度計算（段階3: かなり遅く）
-            const targetVelocityX = normalizedStick.x * sensitivity * 0.5; // 1.0 → 0.5に半減
-            const targetVelocityY = normalizedStick.y * sensitivity * 0.5;
+            // 速度計算をより遅く（ゆっくりとした操作のため）
+            const targetVelocityX = normalizedStick.x * sensitivity * 0.08; // 0.25 → 0.08に大幅減速
+            const targetVelocityY = normalizedStick.y * sensitivity * 0.08;
 
-            // シンプルな速度更新（複雑な慣性を一時的に削除）
-            velocityRef.current.x = targetVelocityX;
-            velocityRef.current.y = targetVelocityY;
+            // スムーズな速度補間（より滑らかで遅い動き）
+            const smoothingFactor = 0.15; // 0.3 → 0.15に下げてより滑らかに
+            velocityRef.current.x = velocityRef.current.x * (1 - smoothingFactor) + targetVelocityX * smoothingFactor;
+            velocityRef.current.y = velocityRef.current.y * (1 - smoothingFactor) + targetVelocityY * smoothingFactor;
 
-            console.log('🖱️ Velocity calculated:', {
-                normalizedStick,
-                sensitivity,
-                velocity: { x: targetVelocityX, y: targetVelocityY },
-                magnitude
-            });
+            // デバッグログを減らしてパフォーマンス向上
+            if (frameCount % 60 === 0) { // 60フレームごと（1秒ごと）
+                console.log('🖱️ Velocity calculated (smoothed):', {
+                    normalizedStick,
+                    target: { x: targetVelocityX.toFixed(3), y: targetVelocityY.toFixed(3) },
+                    smoothed: { x: velocityRef.current.x.toFixed(3), y: velocityRef.current.y.toFixed(3) },
+                    magnitude: magnitude.toFixed(3)
+                });
+            }
 
             setMousePosition(prev => {
                 const newX = Math.max(0, Math.min(window.innerWidth - 1,
@@ -313,18 +314,17 @@ export const useJoyConCursor = ({
                 const newY = Math.max(0, Math.min(window.innerHeight - 1,
                     prev.y + velocityRef.current.y));
 
-                console.log('🖱️ Mouse position update:', {
-                    prev: { x: prev.x, y: prev.y },
-                    new: { x: newX, y: newY },
-                    delta: { x: newX - prev.x, y: newY - prev.y },
-                    windowSize: { width: window.innerWidth, height: window.innerHeight }
-                });
+                // デバッグログを減らしてパフォーマンス向上
+                if (frameCount % 30 === 0) { // 30フレームごと（0.5秒ごと）
+                    console.log('🖱️ Mouse position update:', {
+                        prev: { x: prev.x.toFixed(1), y: prev.y.toFixed(1) },
+                        new: { x: newX.toFixed(1), y: newY.toFixed(1) },
+                        delta: { x: (newX - prev.x).toFixed(2), y: (newY - prev.y).toFixed(2) }
+                    });
+                }
 
-                if (Math.abs(newX - prev.x) > 0.01 || Math.abs(newY - prev.y) > 0.01) {
+                if (Math.abs(newX - prev.x) > 0.5 || Math.abs(newY - prev.y) > 0.5) {
                     fireMouseEvent('mousemove', newX, newY);
-                    console.log('🖱️ Mouse event fired');
-                } else {
-                    console.log('🖱️ Mouse movement too small, event not fired');
                 }
 
                 return { x: newX, y: newY };
@@ -402,10 +402,10 @@ export const useJoyConCursor = ({
 
     }, [enabled, isConnected, getButtons, mousePosition, fireMouseEvent]);
 
-    // フレームレート制限付きアニメーションループ
+    // フレームレート制限付きアニメーションループ（スムーズな動き）
     useEffect(() => {
         let lastFrameTime = 0;
-        const targetFPS = 60; // 60FPSに上げてスムーズに
+        const targetFPS = 60; // 30FPS → 60FPSに戻してスムーズに
         const frameInterval = 1000 / targetFPS;
         let frameCount = 0;
 
@@ -424,7 +424,7 @@ export const useJoyConCursor = ({
 
             if (currentTime - lastFrameTime >= frameInterval) {
                 if (enabled && isConnected) {
-                    updateMousePosition();
+                    updateMousePosition(frameCount);
                 }
                 lastFrameTime = currentTime;
             }
