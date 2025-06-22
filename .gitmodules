@@ -1,0 +1,3 @@
+[submodule "giganoto-infra"]
+	path = giganoto-infra
+	url = git@github.com:Yanai1005/giganoto-infra.git
