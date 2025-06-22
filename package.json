@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "local": "vite --config vite.config.local.js",
+    "local:build": "vite build --config vite.config.local.js",
+    "start": "vite --host 127.0.0.1 --port 3000",
+    "serve": "vite preview --host 127.0.0.1 --port 4173",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

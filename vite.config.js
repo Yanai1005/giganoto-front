@@ -46,12 +46,16 @@ export default defineConfig({
 
   server: {
     port: 5173,
-    host: true
+    host: true,
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+      'Cross-Origin-Opener-Policy': 'same-origin'
+    }
   },
 
   assetsInclude: ['**/*.hdr'],
 
   optimizeDeps: {
-    exclude: ['games/**/*']
+    exclude: ['**/games/**']
   }
 })
