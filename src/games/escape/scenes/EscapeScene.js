@@ -1,11 +1,13 @@
 import Phaser from "phaser";
+import RankManager from "../utils/RankManager.js";
+
 const alllevels = [
   {
     //index 0
     map: [
       "WWWWWWWWWWWWWWWWWWWWWWWW",
       "W          W   S       W",
-      "W S        W     g     W",
+      "W S        W     A     W",
       "W          W           W",
       "W    S     W   S   t S W",
       "W   T      W           W",
@@ -15,7 +17,7 @@ const alllevels = [
       "W   S      W        S  W",
       "W    S     W     P     W",
       "W          W           W",
-      "W       h  W  S      S W",
+      "W       B  W  S      S W",
       "W  SS      W           W",
       "W     p    W   S       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
@@ -24,20 +26,20 @@ const alllevels = [
   {
     //index1
     map: [
-      "WWWWWWWWWLFFFRWWWWWWWWWW",
-      "W        LFFFR  S      W",
-      "W S      LFFFR   g     W",
-      "W          W           W",
+      "WWWWWWWWWFFWffWWWWWWWWWW",
+      "W        LlWrR  S      W",
+      "W S      LlWrR    a    W",
+      "W        LlWrR         W",
       "W    S     W   S   t S W",
       "W   T      W           W",
       "W     S    W  S        W",
       "W          W   S       W",
-      "W     a    W     b     W",
+      "W          W           W",
       "W   S      W        S  W",
       "W    S     W     P     W",
       "W          W           W",
-      "W       h  W  S      S W",
-      "W  SS      W           W",
+      "W          W  S      S W",
+      "W  SS   b  W           W",
       "W     p    W   S       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
     ],
@@ -46,21 +48,105 @@ const alllevels = [
     //index2
     map: [
       "WWWWWWWWWWWWWWWWWWWWWWWW",
-      "W          W   S       W",
-      "W          W           W",
-      "W          W  S        W",
-      "W    S     W           W",
-      "W          W           W",
-      "W     S    W    S      W",
-      "W          W    S      W",
-      "W          W           W",
-      "W          W    S      W",
-      "W          W           W",
-      "W    SSS   W           W",
-      "W       h  W  S        W",
-      "W  SS      W           W",
-      "W         aWb  S     g W",
+      "W      i   W   i       W",
+      "W   B      W           W",
+      "W        p W  i        W",
+      "W    i     W       t   W",
+      "Wi         W           W",
+      "W     i    W    i      W",
+      "W   i      W    iii   iW",
+      "W       i  W    A      W",
+      "W   T      W           W",
+      "W    i    iW     i     W",
+      "W    iii   Wi       P  W",
+      "W          W  i        W",
+      "W  ii      W           W",
+      "W         aWb  i       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
+    ],
+  },
+  {
+    //index3
+    map: [
+      "WffWWWWWWWWWWWWWWWWWWFFW",
+      "WrR    i   W   i     LlW",
+      "WrR b      W         LlW",
+      "W        p W  i        W",
+      "W    i     W       t   W",
+      "W          W           W",
+      "W     i    W    i      W",
+      "W   i      W    iii    W",
+      "W       i  W    a      W",
+      "W   T      W           W",
+      "W    i    iW     i     W",
+      "W    iii   W        P  W",
+      "W          W  i        W",
+      "W  ii      W           W",
+      "W         aWb  i       W",
+      "WWWWWWWWWWWWWWWWWWWWWWWW",
+    ],
+  },
+  {
+    //index4
+    map: [
+      "WWWWWWWWWWWWWWWWWWWWWWW",
+      "W     W   D W  S       W",
+      "W     W  T  W       A  W",
+      "W    tSW   W  S  g  S  W",
+      "W   SSS   W        p SSW",
+      "W         WWWWWWWWWWWWWW",
+      "W    SS    W    S      W",
+      "WSSSS      W    S  G   W",
+      "W       S  W        B  W",
+      "W          W    S      W",
+      "WWWWWW         S  WWWWWW",
+      "W    S   S        P    W",
+      "W      d   W  S        W",
+      "W  S    WWWWWWW        W",
+      "Wb   WWWxxxxxxxWWWW   aW",
+      "WWWWWxxxxxxxxxxxxxxWWWWW",
+    ],
+  },
+  {
+    //index5
+    map: [
+      "WffWWWWWWWWWWWWWWWWWWWW",
+      "WrR   W   D W  S       W",
+      "WrR   W  T  W       a  W",
+      "W    tSW   W  S  g  S  W",
+      "W   SSS   W        p SSW",
+      "W         WWWWWWWWWWWFFW",
+      "W    SS    W    S    LlW",
+      "WSSSS      W    S  G LlW",
+      "W       S  W        b  W",
+      "W          W    S      W",
+      "WWWWWW         S  WWWWWW",
+      "W    S   S        P    W",
+      "W      d   W  S        W",
+      "W  S    WWWWWWW        W",
+      "Wb   WWWxxxxxxxWWWW   aW",
+      "WWWWWxxxxxxxxxxxxxxWWWWW",
+    ],
+  },
+  {
+    //index6
+    map: [
+      "WWWWWWWWWWWWWWWWWW",
+      "W           i     W",
+      "W                  WW",
+      "WT      i     AG    WW",
+      "W   iiid             aWW",
+      "W                   WWWW",
+      "W     i         i  W",
+      "WWWWWWWWWWWWWWWWWWW",
+      "WDg     i   t      W",
+      "W              iB   W",
+      "W            P WWWWW",
+      "W    i   i    WWW",
+      "W        p   W",
+      "W  i       WW",
+      "Wb   WWWWWW",
+      "WWWWW",
     ],
   },
 ];
@@ -73,14 +159,32 @@ class EscapeScene extends Phaser.Scene {
       right: false,
       up: false,
       down: false,
+      z: false, // デバッグ用Zキー
     };
     this.currentLevelIndex = 0;
-
     this.canTeleport = true;
     this.isGameCleared = false;
+
+    // ランクマネージャーを初期化
+    this.rankManager = new RankManager();
   }
   init(data) {
     this.currentLevelIndex = data.levelIndex || 0;
+    this.isGameCleared = false;
+    this.canTeleport = true;
+
+    this.initialPlayer1Pos = data.player1_startPos || null;
+    this.initialPlayer2Pos = data.player2_startPos || null;
+
+    this.initialTime = data.startTime || 0;
+
+    // ランクマネージャーのデータを読み込み
+    this.rankManager.load();
+
+    // 初回プレイの場合はデータをリセット
+    if (this.currentLevelIndex === 0 && !data.continueGame) {
+      this.rankManager.reset();
+    }
   }
   preload() {
     // ダミーファイルをロード
@@ -90,6 +194,7 @@ class EscapeScene extends Phaser.Scene {
     );
     this.load.image("wallSprite", "assets/wall.png");
     this.load.image("stoneSprite", "assets/ishi.png");
+    this.load.image("icestoneSprite", "assets/iceishi.png");
     this.load.image("floorSprite", "assets/floor.png");
     this.load.image("teleportTriggerSprite", "assets/trigger.png");
     this.load.image("teleportDestinationSprite", "assets/destination.png");
@@ -99,7 +204,11 @@ class EscapeScene extends Phaser.Scene {
     this.load.image("fin_goalSprite2", "assets/button_red_on.png");
     this.load.image("l_stairsSprite", "assets/L_stairs.png");
     this.load.image("r_stairsSprite", "assets/R_stairs.png");
-    this.load.image("f_stairsSprite", "assets/F_stairs.png");
+    this.load.image("f_r_stairsSprite", "assets/F_R_stairs.png");
+    this.load.image("f_l_stairsSprite", "assets/F_L_stairs.png");
+    this.load.image("fakewall1Sprite", "assets/wall(2).png");
+    this.load.image("fakewall2Sprite", "assets/wall(2).png");
+    this.load.image("icefloorSprite", "assets/icefloor.png");
 
     // 下向き (1-3)
     this.load.image("p1_down_1", "assets/woman2_free_01.png");
@@ -138,42 +247,68 @@ class EscapeScene extends Phaser.Scene {
     // グループを作成
     this.collidableGroup = this.physics.add.staticGroup();
     this.chests = this.physics.add.staticGroup();
-    const tileSize = 32; // createTexturesのサイズと合わせる
+    const tileSize = 32;
 
     levelData.map.forEach((row, rowIndex) => {
       row.split("").forEach((tile, colIndex) => {
         const x = colIndex * tileSize + tileSize / 2 + offsetX;
         const y = rowIndex * tileSize + tileSize / 2 + offsetY;
 
-        const isTrigger = /^[Tt]/.test(tile);
-        const isDestination = /^[Pp]/.test(tile);
-        const isBarrier = /^S/.test(tile);
-        const isGoal = /^[gh]/.test(tile);
+        const isTrigger = /^[TtGg]/.test(tile);
+        const isDestination = /^[PpDd]/.test(tile);
+        const isBarrier = /^[Si]/.test(tile);
+        const isGoal = /^[AB]/.test(tile);
 
-        // 床を敷く
+        let floorSpriteKey = "floorSprite"; // デフォルトは通常の床
         if (
+          this.currentLevelIndex === 2 ||
+          this.currentLevelIndex === 3 ||
+          this.currentLevelIndex === 6
+        ) {
+          floorSpriteKey = "icefloorSprite"; // ステージ2なら氷の床
+        }
+
+        const shouldPlaceFloor =
           tile === " " ||
           tile === "a" ||
           tile === "b" ||
           isTrigger ||
           isBarrier ||
           isGoal ||
-          isDestination
-        ) {
-          this.add.sprite(x, y, "floorSprite").setDepth(-1);
+          isDestination;
+
+        if (shouldPlaceFloor) {
+          this.add.sprite(x, y, floorSpriteKey).setDepth(-1);
         }
         if (tile === "W") {
           this.collidableGroup.create(x, y, "wallSprite");
+        } else if (tile === "F") {
+          const next = this.fakewall.create(x, y, "fakewall1Sprite");
+          next.setData("player", 1);
+          const wall = this.collidableGroup.create(x, y - tileSize, "dummy");
+          wall.setSize(tileSize, tileSize);
+          wall.setVisible(false);
+        } else if (tile === "f") {
+          const next = this.fakewall.create(x, y, "fakewall2Sprite");
+          next.setData("player", 2);
+          const wall = this.collidableGroup.create(x, y - tileSize, "dummy");
+          wall.setSize(tileSize, tileSize);
+          wall.setVisible(false);
         } else if (tile === "S") {
           this.collidableGroup.create(x, y, "stoneSprite");
+        } else if (tile === "i") {
+          this.collidableGroup.create(x, y, "icestoneSprite");
         } else if (tile === "a") {
           this.player1Start = { x: x, y: y };
         } else if (tile === "b") {
           this.player2Start = { x: x, y: y };
         } else if (isTrigger) {
-          const destinationKey = tile.replace(/^[Tt]/, (match) =>
-            match === "T" ? "P" : "p"
-          );
+          const destinationKey = tile.replace(/^[TtGg]/, (match) => {
+            if (match === "T") return "P";
+            if (match === "t") return "p";
+            if (match === "G") return "D";
+            if (match === "g") return "d";
+          });
           const triggerSprite = this.teleportTriggers.create(
             x,
             y,
@@ -183,20 +318,36 @@ class EscapeScene extends Phaser.Scene {
         } else if (isDestination) {
           this.teleportDestinations[tile] = { x: x, y: y };
           this.add.sprite(x, y, "teleportDestinationSprite");
-        } else if (tile === "g") {
+        } else if (tile === "A") {
           // プレイヤー1のゴール
           const goal = this.goalTiles.create(x, y, "goalSprite1");
           goal.setData("player", 1);
-        } else if (tile === "h") {
+        } else if (tile === "B") {
           // プレイヤー2のゴール
           const goal = this.goalTiles.create(x, y, "goalSprite2");
           goal.setData("player", 2);
+        } else if (tile === "l") {
+          this.stairsTiles.create(x, y, "f_l_stairsSprite");
+        } else if (tile === "r") {
+          this.stairsTiles.create(x, y, "f_r_stairsSprite");
         } else if (tile === "L") {
-          const stairs = this.stairsTIles.create(x, y, "l_stairsSprite");
+          this.add.sprite(x, y, "l_stairsSprite").setDepth(-1);
+          const halfWall = this.collidableGroup.create(
+            x - tileSize / 4,
+            y,
+            "dummy"
+          );
+          halfWall.setSize(tileSize / 3, tileSize);
+          halfWall.setVisible(false);
         } else if (tile === "R") {
-          const stairs = this.stairsTIles.create(x, y, "r_stairsSprite");
-        } else if (tile === "F") {
-          const stairs = this.stairsTiles.create(x, y, "f_stairsSprite");
+          this.add.sprite(x, y, "r_stairsSprite").setDepth(-1);
+          const halfWall = this.collidableGroup.create(
+            x + tileSize / 4,
+            y,
+            "dummy"
+          );
+          halfWall.setSize(tileSize / 3, tileSize);
+          halfWall.setVisible(false);
         }
       });
     });
@@ -224,12 +375,56 @@ class EscapeScene extends Phaser.Scene {
       console.warn(`ワープ先が見つかりません: キー ${destinationKey}`);
     }
   }
+  handleNextStageTrigger(player, fakewall) {
+    if (this.isGameCleared) return;
+    console.log("次のステージへ移動します");
 
+    // つなぎステージの場合はランク記録をせず、直接次のステージへ
+    if (this.rankManager.isActualStage(this.currentLevelIndex)) {
+      // 実際のステージの場合のみランクを記録
+      this.rankManager.recordStageTime(
+        this.currentLevelIndex,
+        this.timeElapsed
+      );
+      this.rankManager.calculateStageRank(
+        this.currentLevelIndex,
+        this.timeElapsed
+      );
+      this.rankManager.save();
+    }
+
+    const nextStageData = {
+      levelIndex: this.currentLevelIndex + 1,
+      startTime: 0, // 次のステージは0から開始
+      continueGame: true,
+    };
+    this.scene.restart(nextStageData);
+  }
   gameClear() {
     if (this.isGameCleared) return;
     this.isGameCleared = true;
     this.physics.pause();
     if (this.timeEvent) this.timeEvent.remove();
+
+    // つなぎステージの場合はランク表示をせず、直接次のステージへ
+    if (!this.rankManager.isActualStage(this.currentLevelIndex)) {
+      console.log("つなぎステージ: 直接次のステージへ進みます");
+      const nextStageData = {
+        levelIndex: this.currentLevelIndex + 1,
+        startTime: 0,
+        continueGame: true,
+      };
+      this.scene.restart(nextStageData);
+      return;
+    }
+
+    // 実際のステージの場合のみランクを記録
+    this.rankManager.recordStageTime(this.currentLevelIndex, this.timeElapsed);
+    const currentRank = this.rankManager.calculateStageRank(
+      this.currentLevelIndex,
+      this.timeElapsed
+    );
+    this.rankManager.save();
 
     const cam = this.cameras.main;
     const centerX = cam.width / 2;
@@ -241,25 +436,31 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(10);
 
-    // テキスト
-    this.add
-      .text(centerX, centerY - 80, "STAGE CLEAR!", {
-        fontSize: "64px",
-        fill: "#ffd700",
-        fontFamily: "Arial",
-        stroke: "#000000",
-        strokeThickness: 8,
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(11);
+    // 最終ステージかどうかを判定
+    const isFinalStage = this.currentLevelIndex === alllevels.length - 1;
 
-    // クリアタイム
+    if (isFinalStage) {
+      // 最終ステージ：総合ランク表示
+      this.showFinalRankScreen(centerX, centerY);
+    } else {
+      // 通常ステージ：ステージ別ランク表示
+      this.showStageRankScreen(centerX, centerY, currentRank);
+    }
+  }
+
+  showStageRankScreen(centerX, centerY, rank) {
+    const rankColor = this.rankManager.getRankColor(rank);
+    const rankDescription = this.rankManager.getRankDescription(rank);
+    const actualStageNumber = this.rankManager.getActualStageNumber(
+      this.currentLevelIndex
+    );
+
+    // ステージ番号
     this.add
-      .text(centerX, centerY, `クリアタイム: ${this.timeElapsed} 秒`, {
-        fontSize: "32px",
+      .text(centerX, centerY - 120, `ステージ ${actualStageNumber} クリア！`, {
+        fontSize: "36px",
         fill: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "sans-serif",
         stroke: "#000000",
         strokeThickness: 6,
       })
@@ -267,14 +468,192 @@ class EscapeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(11);
 
-    this.createButton(centerX - 120, centerY + 100, "次のステージ", () => {
-      this.scene.restart({ levelIndex: this.currentLevelIndex + 1 });
+    // ランク表示
+    const rankLabelStyle = {
+      fontSize: "40px",
+      fill: "#ffffff",
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+    const rankLetterStyle = {
+      fontSize: "80px",
+      fill: rankColor,
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+
+    const rankLabelText = this.add
+      .text(0, 0, "RANK ", rankLabelStyle)
+      .setOrigin(1, 0.5);
+    const rankLetterText = this.add
+      .text(0, 0, rank, rankLetterStyle)
+      .setOrigin(0, 0.5);
+
+    const totalWidth = rankLabelText.width + rankLetterText.width;
+    const container = this.add.container(
+      centerX - totalWidth / 8,
+      centerY - 40
+    );
+    container.add(rankLabelText);
+    rankLetterText.x = rankLabelText.width;
+    container.add(rankLetterText);
+    container.setScrollFactor(0).setDepth(11);
+
+    // クリアタイム
+    this.add
+      .text(centerX, centerY + 40, `クリアタイム: ${this.timeElapsed} 秒`, {
+        fontSize: "24px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // ボタン
+    this.createButton(centerX - 120, centerY + 100, "次へ進む", () => {
+      const nextStageData = {
+        levelIndex: this.currentLevelIndex + 1,
+        continueGame: true,
+      };
+      this.scene.restart(nextStageData);
     });
 
     this.createButton(centerX + 120, centerY + 100, "ホームに戻る", () => {
       window.location.href = "/";
     });
   }
+
+  showFinalRankScreen(centerX, centerY) {
+    // 総合ランクを計算
+    const finalRank = this.rankManager.calculateFinalRank();
+    const rankColor = this.rankManager.getRankColor(finalRank);
+    const rankDescription = this.rankManager.getRankDescription(finalRank);
+    const totalTime = this.rankManager.getTotalTime();
+    const allStageRanks = this.rankManager.getAllStageRanks();
+
+    // タイトル
+    this.add
+      .text(centerX, centerY - 200, "全ステージクリア！", {
+        fontSize: "40px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // 総合ランク表示
+    const rankLabelStyle = {
+      fontSize: "50px",
+      fill: "#ffffff",
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+    const rankLetterStyle = {
+      fontSize: "100px",
+      fill: rankColor,
+      fontFamily: "sans-serif",
+      stroke: "#000000",
+      strokeThickness: 8,
+    };
+
+    const rankLabelText = this.add
+      .text(0, 0, "総合ランク ", rankLabelStyle)
+      .setOrigin(1, 0.5);
+    const rankLetterText = this.add
+      .text(0, 0, finalRank, rankLetterStyle)
+      .setOrigin(0, 0.5);
+
+    const totalWidth = rankLabelText.width + rankLetterText.width;
+    const container = this.add.container(
+      centerX - totalWidth / 8,
+      centerY - 120
+    );
+    container.add(rankLabelText);
+    rankLetterText.x = rankLabelText.width;
+    container.add(rankLetterText);
+    container.setScrollFactor(0).setDepth(11);
+
+    // 総合クリアタイム
+    this.add
+      .text(centerX, centerY - 20, `総合クリアタイム: ${totalTime} 秒`, {
+        fontSize: "28px",
+        fill: "#ffffff",
+        fontFamily: "sans-serif",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(11);
+
+    // 各ステージのランク表示
+    let stageRankY = centerY + 20;
+    allStageRanks.forEach((stageData, index) => {
+      const stageRankColor = this.rankManager.getRankColor(stageData.rank);
+      this.add
+        .text(centerX - 100, stageRankY, `ステージ${stageData.stage}:`, {
+          fontSize: "20px",
+          fill: "#ffffff",
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      this.add
+        .text(centerX, stageRankY, stageData.rank, {
+          fontSize: "24px",
+          fill: stageRankColor,
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      this.add
+        .text(centerX + 100, stageRankY, `${stageData.time}秒`, {
+          fontSize: "20px",
+          fill: "#ffffff",
+          fontFamily: "sans-serif",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+      stageRankY += 30;
+    });
+
+    // ボタン
+    this.createButton(centerX - 120, centerY + 180, "もう一度プレイ", () => {
+      this.rankManager.reset();
+      this.rankManager.save();
+      const restartData = {
+        levelIndex: 0,
+        continueGame: false,
+      };
+      this.scene.restart(restartData);
+    });
+
+    this.createButton(centerX + 120, centerY + 180, "ホームに戻る", () => {
+      window.location.href = "/";
+    });
+  }
+
   createButton(x, y, text, callback) {
     const button = this.add.container(x, y);
 
@@ -283,7 +662,7 @@ class EscapeScene extends Phaser.Scene {
       .text(0, 0, text, {
         fontSize: "20px",
         fill: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "sans-serif",
       })
       .setOrigin(0.5);
 
@@ -320,15 +699,22 @@ class EscapeScene extends Phaser.Scene {
     this.teleportTriggers = this.physics.add.group({ allowGravity: false });
     this.teleportDestinations = {}; // ワープ先座標の保存用
     this.stairsTiles = this.physics.add.staticGroup();
+    this.fakewall = this.physics.add.staticGroup();
+
     this.buildLevel(alllevels[this.currentLevelIndex], 18, 50);
     this.createPlayer1();
     this.createPlayer2();
     this.setupInput();
     this.setupGameplay();
     this.createAnimations();
+    if (this.currentLevelIndex > 0) {
+      this.startTimer();
+    }
+
     this.physics.add.collider(this.player1, this.player2);
     this.physics.add.collider(this.player1, this.collidableGroup);
     this.physics.add.collider(this.player2, this.collidableGroup);
+
     this.physics.add.overlap(
       this.player1,
       this.teleportTriggers,
@@ -439,39 +825,71 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createUI() {
-    // 操作説明
-    this.add
-      .text(400, 570, "矢印キーで移動", {
-        fontSize: "16px",
-        fill: "#cccccc",
-        fontFamily: "Arial",
-      })
-      .setOrigin(0.5); // デバッグ表示
+    // ステージ番号表示
+    const actualStageNumber = this.rankManager.getActualStageNumber(
+      this.currentLevelIndex
+    );
+    const stageDisplayText =
+      actualStageNumber > 0
+        ? `ステージ ${actualStageNumber}`
+        : `つなぎステージ ${this.currentLevelIndex + 1}`;
 
+    // デバッグ情報
     this.debugText = this.add.text(10, 10, "", {
       fontSize: "14px",
       fill: "#ffffff",
-      fontFamily: "Arial",
-    }); // タイム表示
+      fontFamily: "sans-serif",
+    });
 
-    this.timeText = this.add.text(680, 10, "タイム: 0", {
-      fontSize: "14px",
+    // タイム表示
+    this.timeText = this.add.text(680, 10, "Time: 0", {
+      fontSize: "24px",
       fill: "#ffffff",
-      fontFamily: "Arial",
+      fontFamily: "sans-serif",
     });
   }
 
-  createPlayer1() {
-    this.player1 = this.physics.add.sprite(
-      this.player1Start.x,
-      this.player1Start.y,
-      "p1_down_1"
+  showRankCriteria() {
+    const criteria = this.rankManager.getRankCriteria(this.currentLevelIndex);
+    const criteriaText = this.add.text(
+      10,
+      70,
+      `ランク基準: S≤${criteria.S}s A≤${criteria.A}s B≤${criteria.B}s C≤${criteria.C}s`,
+      {
+        fontSize: "12px",
+        fill: "#cccccc",
+        fontFamily: "sans-serif",
+      }
     );
+  }
+
+  createPlayer1() {
+    let startX, startY;
+    if (this.initialPlayer1Pos) {
+      startX = this.initialPlayer1Pos.x;
+      startY = this.initialPlayer1Pos.y;
+    } else {
+      startX = this.player1Start.x;
+      startY = this.player1Start.y;
+    }
+    this.player1 = this.physics.add.sprite(startX, startY, "p1_down_1");
     this.player1.setCollideWorldBounds(true);
-    this.player1.setBounce(0.2);
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
+      this.player1.setBounce(0);
+    } else {
+      this.player1.setBounce(0.2);
+    }
     this.player1.setVelocity(0, 0);
-    if (this.currentLevelIndex === 2) {
-      this.player1.setDrag(200);
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
+      this.player1.setDrag(0);
     } else {
       this.player1.setDrag(2000);
     }
@@ -480,16 +898,33 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createPlayer2() {
-    this.player2 = this.physics.add.sprite(
-      this.player2Start.x,
-      this.player2Start.y,
-      "p2_down_1"
-    );
+    let startX, startY;
+    if (this.initialPlayer2Pos) {
+      startX = this.initialPlayer2Pos.x;
+      startY = this.initialPlayer2Pos.y;
+    } else {
+      startX = this.player2Start.x;
+      startY = this.player2Start.y;
+    }
+    this.player2 = this.physics.add.sprite(startX, startY, "p2_down_1");
+
     this.player2.setCollideWorldBounds(true);
-    this.player2.setBounce(0.2);
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
+      this.player2.setBounce(0);
+    } else {
+      this.player2.setBounce(0.2);
+    }
     this.player2.setVelocity(0, 0);
-    if (this.currentLevelIndex === 2) {
-      this.player2.setDrag(200);
+    if (
+      this.currentLevelIndex === 2 ||
+      this.currentLevelIndex === 3 ||
+      this.currentLevelIndex === 6
+    ) {
+      this.player2.setDrag(0);
     } else {
       this.player2.setDrag(2000);
     }
@@ -518,6 +953,16 @@ class EscapeScene extends Phaser.Scene {
 
         case " ":
           this.keys.space = true;
+          break;
+
+        case "z":
+        case "Z":
+          this.keys.z = true;
+          // デバッグ用：Zキーでステージクリア
+          if (!this.isGameCleared) {
+            console.log("デバッグ: Zキーでステージクリア");
+            this.gameClear();
+          }
           break;
 
         default:
@@ -549,6 +994,11 @@ class EscapeScene extends Phaser.Scene {
           this.keys.space = false;
           break;
 
+        case "z":
+        case "Z":
+          this.keys.z = false;
+          break;
+
         default:
           if (event.key >= "0" && event.key <= "9") {
             this.keys.numbers[parseInt(event.key, 10)] = false;
@@ -558,16 +1008,21 @@ class EscapeScene extends Phaser.Scene {
   }
 
   setupGameplay() {
-    //経過タイマー
-
-    this.timeText.setText("タイム: 0");
-    this.timeElapsed = 0;
+    this.initialTime = this.initialTime || 0; // initで設定された値を使う
+    this.timeElapsed = this.initialTime;
+    this.timeText.setText(`Time: ${this.timeElapsed}`);
+    this.timerStarted = false;
+  }
+  startTimer() {
+    if (this.timerStarted) {
+      return;
+    }
+    this.timerStarted = true;
     this.timeEvent = this.time.addEvent({
       delay: 1000,
-
       callback: () => {
         this.timeElapsed += 1;
-        this.timeText.setText(`タイム: ${this.timeElapsed}`);
+        this.timeText.setText(`Time: ${this.timeElapsed}`);
       },
       loop: true,
     });
@@ -581,20 +1036,36 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.left) {
       this.player1.setVelocityX(-this.player1Speed);
       this.player1.anims.play("p1_left_anim", true);
+      this.startTimer();
     } else if (this.keys.right) {
       this.player1.setVelocityX(this.player1Speed);
       this.player1.anims.play("p1_right_anim", true);
+      this.startTimer();
     } else {
-      this.player1.setVelocityX(0);
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
+        this.player1.setVelocityX(0);
+      }
     }
     if (this.keys.up) {
       this.player1.setVelocityY(-this.player1Speed);
       this.player1.anims.play("p1_up_anim", true);
+      this.startTimer();
     } else if (this.keys.down) {
       this.player1.setVelocityY(this.player1Speed);
       this.player1.anims.play("p1_down_anim", true);
+      this.startTimer();
     } else {
-      this.player1.setVelocityY(0);
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
+        this.player1.setVelocityY(0);
+      }
     }
     if (
       !this.keys.left &&
@@ -610,20 +1081,36 @@ class EscapeScene extends Phaser.Scene {
     if (this.keys.left) {
       this.player2.setVelocityX(-this.player2Speed);
       this.player2.anims.play("p2_left_anim", true);
+      this.startTimer();
     } else if (this.keys.right) {
       this.player2.setVelocityX(this.player2Speed);
       this.player2.anims.play("p2_right_anim", true);
+      this.startTimer();
     } else {
-      this.player2.setVelocityX(0);
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
+        this.player2.setVelocityX(0);
+      }
     }
     if (this.keys.up) {
-      this.player2.setVelocityY(-this.player1Speed);
+      this.player2.setVelocityY(-this.player2Speed);
       this.player2.anims.play("p2_up_anim", true);
+      this.startTimer();
     } else if (this.keys.down) {
-      this.player2.setVelocityY(this.player1Speed);
+      this.player2.setVelocityY(this.player2Speed);
       this.player2.anims.play("p2_down_anim", true);
+      this.startTimer();
     } else {
-      this.player2.setVelocityY(0);
+      if (
+        this.currentLevelIndex !== 2 &&
+        this.currentLevelIndex !== 3 &&
+        this.currentLevelIndex !== 6
+      ) {
+        this.player2.setVelocityY(0);
+      }
     }
     if (
       !this.keys.left &&
@@ -633,18 +1120,25 @@ class EscapeScene extends Phaser.Scene {
     ) {
       this.player2.anims.stop();
       this.player2.setTexture("p2_down_1"); // 正面向きの静止画キー
-    } // デバッグ情報の更新
+    }
+    // デバッグ情報の更新
+    const currentRank = this.rankManager.isActualStage(this.currentLevelIndex)
+      ? this.rankManager.calculateStageRank(
+          this.currentLevelIndex,
+          this.timeElapsed
+        )
+      : "なし";
 
     this.debugText.setText(
       `Player 1: (${Math.round(this.player1.x)}, ${Math.round(
         this.player1.y
       )})\nPlayer 2: (${Math.round(this.player2.x)}, ${Math.round(
         this.player2.y
-      )})`
+      )}`
     );
 
-    let player1OnGoal = false;
-    let player2OnGoal = false;
+    let player1OnGoal1 = false;
+    let player2OnGoal1 = false;
     this.goalTiles.getChildren().forEach((goal) => {
       const goalForPlayer = goal.getData("player");
       if (goalForPlayer === 1) {
@@ -659,16 +1153,34 @@ class EscapeScene extends Phaser.Scene {
       // プレイヤー1が、プレイヤー1用のゴールに重なっているか？
 
       if (goalForPlayer === 1 && this.physics.overlap(this.player1, goal)) {
-        player1OnGoal = true;
+        player1OnGoal1 = true;
         goal.setTexture("fin_goalSprite1");
       }
       if (goalForPlayer === 2 && this.physics.overlap(this.player2, goal)) {
-        player2OnGoal = true;
+        player2OnGoal1 = true;
         goal.setTexture("fin_goalSprite2");
       }
     });
-    if (player1OnGoal && player2OnGoal) {
+    if (player1OnGoal1 && player2OnGoal1) {
       this.gameClear();
+    }
+    if (this.fakewall.countActive(true) > 0) {
+      let player1OnFakewall2 = false;
+      let player2OnFakewall2 = false;
+
+      this.fakewall.getChildren().forEach((wall) => {
+        const wallForPlayer = wall.getData("player");
+
+        if (wallForPlayer === 1 && this.physics.overlap(this.player1, wall)) {
+          player1OnFakewall2 = true;
+        }
+        if (wallForPlayer === 2 && this.physics.overlap(this.player2, wall)) {
+          player2OnFakewall2 = true;
+        }
+      });
+      if (player1OnFakewall2 && player2OnFakewall2) {
+        this.handleNextStageTrigger();
+      }
     }
   }
 }
