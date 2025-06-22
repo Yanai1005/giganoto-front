@@ -2,9 +2,9 @@
   "games": [
     {
       "id": 4,
-      "title": "Escape Room",
-      "description": "二人で部屋から部屋から脱出するゲーム",
-      "image": "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=400&h=300&fit=crop",
+      "title": "TOWER QUEST",
+      "description": "二人で部屋から脱出するゲーム",
+      "image": "https://chatgpt.com/backend-api/public_content/enc/eyJpZCI6Im1fNjg1Nzg0N2ZhZDQwODE5MTk3ZmVkZDg5ZDQ2YjRhOTQ6ZmlsZV8wMDAwMDAwMDJiYjg2MWY0OTRhMzJiNzQxZGM2OWIwYiIsInRzIjoiNDg2MjY5IiwicCI6InB5aSIsInNpZyI6IjM2NzI3NWU2ZDQ0MTUwNzYyYzk1Nzg3ZWNkMTkwODY3M2Q5MzU1ZDBiYmZmYjJjOWVjMjQzN2NiZjMxZDU2MWEiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsfQ==",
       "path": "/game",
       "gameType": "escape"
     },
@@ -61,9 +61,9 @@
       "modulePath": "../games/runner/game.js"
     },
     "escape": {
-      "name": "脱出ゲーム",
-      "description": "謎を解いて部屋から脱出するゲーム",
-      "controls": "二人を同時操作しながら謎を解いて脱出しよう",
+      "name": "TOWER QUEST",
+      "description": "二人同時操作でクリアボタンを押すゲーム",
+      "controls": "矢印キーで移動",
       "modulePath": "../games/escape/game.js"
     },
     "vibration-hunt": {

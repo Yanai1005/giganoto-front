@@ -28,7 +28,7 @@ const alllevels = [
     map: [
       "WWWWWWWWWFFWffWWWWWWWWWW",
       "W        LlWrR  S      W",
-      "W S      LlWrR         W",
+      "W S      LlWrR    a    W",
       "W        LlWrR         W",
       "W    S     W   S   t S W",
       "W   T      W           W",
@@ -39,7 +39,7 @@ const alllevels = [
       "W    S     W     P     W",
       "W          W           W",
       "W          W  S      S W",
-      "W  SS      W           W",
+      "W  SS   b  W           W",
       "W     p    W   S       W",
       "WWWWWWWWWWWWWWWWWWWWWWWW",
     ],
@@ -69,14 +69,14 @@ const alllevels = [
     //index3
     map: [
       "WffWWWWWWWWWWWWWWWWWWFFW",
-      "WrR        W   i     LlW",
-      "WrR        W         LlW",
+      "WrR    i   W   i     LlW",
+      "WrR b      W         LlW",
       "W        p W  i        W",
       "W    i     W       t   W",
       "W          W           W",
       "W     i    W    i      W",
       "W   i      W    iii    W",
-      "W       i  W           W",
+      "W       i  W    a      W",
       "W   T      W           W",
       "W    i    iW     i     W",
       "W    iii   W        P  W",
@@ -112,13 +112,13 @@ const alllevels = [
     map: [
       "WffWWWWWWWWWWWWWWWWWWWW",
       "WrR   W   D W  S       W",
-      "WrR   W  T  W          W",
+      "WrR   W  T  W       a  W",
       "W    tSW   W  S  g  S  W",
       "W   SSS   W        p SSW",
       "W         WWWWWWWWWWWFFW",
       "W    SS    W    S    LlW",
       "WSSSS      W    S  G LlW",
-      "W       S  W           W",
+      "W       S  W        b  W",
       "W          W    S      W",
       "WWWWWW         S  WWWWWW",
       "W    S   S        P    W",
@@ -825,24 +825,6 @@ class EscapeScene extends Phaser.Scene {
   }
 
   createUI() {
-    // 操作説明
-    this.add
-      .text(400, 570, "矢印キーで移動", {
-        fontSize: "16px",
-        fill: "#cccccc",
-        fontFamily: "sans-serif",
-      })
-      .setOrigin(0.5);
-
-    // デバッグ用操作説明
-    this.add
-      .text(400, 590, "デバッグ: Zキーでステージクリア", {
-        fontSize: "14px",
-        fill: "#ff6b6b",
-        fontFamily: "sans-serif",
-      })
-      .setOrigin(0.5);
-
     // ステージ番号表示
     const actualStageNumber = this.rankManager.getActualStageNumber(
       this.currentLevelIndex
@@ -852,14 +834,6 @@ class EscapeScene extends Phaser.Scene {
         ? `ステージ ${actualStageNumber}`
         : `つなぎステージ ${this.currentLevelIndex + 1}`;
 
-    this.stageText = this.add.text(10, 40, stageDisplayText, {
-      fontSize: "18px",
-      fill: "#ffffff",
-      fontFamily: "sans-serif",
-      stroke: "#000000",
-      strokeThickness: 3,
-    });
-
     // デバッグ情報
     this.debugText = this.add.text(10, 10, "", {
       fontSize: "14px",
@@ -868,16 +842,11 @@ class EscapeScene extends Phaser.Scene {
     });
 
     // タイム表示
-    this.timeText = this.add.text(680, 10, "タイム: 0", {
-      fontSize: "14px",
+    this.timeText = this.add.text(680, 10, "Time: 0", {
+      fontSize: "24px",
       fill: "#ffffff",
       fontFamily: "sans-serif",
     });
-
-    // 現在のステージのランク基準を表示（実際のステージのみ）
-    if (this.rankManager.isActualStage(this.currentLevelIndex)) {
-      this.showRankCriteria();
-    }
   }
 
   showRankCriteria() {
@@ -1041,7 +1010,7 @@ class EscapeScene extends Phaser.Scene {
   setupGameplay() {
     this.initialTime = this.initialTime || 0; // initで設定された値を使う
     this.timeElapsed = this.initialTime;
-    this.timeText.setText(`タイム: ${this.timeElapsed}`);
+    this.timeText.setText(`Time: ${this.timeElapsed}`);
     this.timerStarted = false;
   }
   startTimer() {
@@ -1053,7 +1022,7 @@ class EscapeScene extends Phaser.Scene {
       delay: 1000,
       callback: () => {
         this.timeElapsed += 1;
-        this.timeText.setText(`タイム: ${this.timeElapsed}`);
+        this.timeText.setText(`Time: ${this.timeElapsed}`);
       },
       loop: true,
     });
@@ -1165,7 +1134,7 @@ class EscapeScene extends Phaser.Scene {
         this.player1.y
       )})\nPlayer 2: (${Math.round(this.player2.x)}, ${Math.round(
         this.player2.y
-      )})\n現在ランク: ${currentRank}`
+      )}`
     );
 
     let player1OnGoal1 = false;
