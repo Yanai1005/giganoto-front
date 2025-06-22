@@ -31,26 +31,18 @@ function JoyConProvider({ children }) {
     const inputCallbacksRef = useRef(new Set());
     const isInitializedRef = useRef(false);
 
-    // Joy-Con スティックの仕様定数
     const STICK_CONSTANTS = {
-        // Joy-Conの標準的な値範囲
         MIN_RAW: 0,
-        MAX_RAW: 4095,        // 12bit (0-4095)
-        CENTER_RAW: 2047.5,   // 中央値
-        DEADZONE_RAW: 100,    // デッドゾーン（生値）
-
-        // 出力範囲
+        MAX_RAW: 4095,
+        CENTER_RAW: 2047.5,
+        DEADZONE_RAW: 100,
         OUTPUT_MIN: -1.0,
         OUTPUT_MAX: 1.0,
-
-        // 較正用
         calibration: {
             leftStick: { centerX: 2047.5, centerY: 2047.5, rangeX: 1800, rangeY: 1800 },
             rightStick: { centerX: 2047.5, centerY: 2047.5, rangeX: 1800, rangeY: 1800 }
         }
     };
-
-    // Check WebHID support
     useEffect(() => {
         const checkSupport = () => {
             const supported = 'hid' in navigator;
@@ -64,30 +56,21 @@ function JoyConProvider({ children }) {
         checkSupport();
     }, []);
 
-    // 正しいスティック値変換関数
     const convertStickValue = useCallback((rawValue, center, range, stickName, axis) => {
-        // rawValueが既に正規化されている場合の検出（-3.0〜3.0の範囲で拡張）
         if (typeof rawValue === 'number' && Math.abs(rawValue) <= 3.0) {
             console.log(`⚠️ ${stickName} ${axis}: 既に正規化済みの値を検出`, rawValue);
 
-            // 既に正規化されている値をそのまま使用（小さな調整のみ）
             let normalizedValue = rawValue;
 
-            // デッドゾーンを少し大きく調整（0.05 -> 0.1）
-            if (Math.abs(normalizedValue) < 0.1) {
+            if (Math.abs(normalizedValue) < 0.05) {
                 normalizedValue = 0;
             }
 
-            // 範囲制限を緩和（-1.5〜1.5に拡張して、より大きな値を許可）
-            normalizedValue = Math.max(-1.5, Math.min(1.5, normalizedValue));
-
-            // 最終的に-1.0〜1.0の範囲にスケール
-            normalizedValue = normalizedValue / 1.5;
+            normalizedValue = Math.max(-1.0, Math.min(1.0, normalizedValue));
 
             return normalizedValue;
         }
 
-        // 生の12bitデータの場合の変換
         if (typeof rawValue === 'number' && rawValue >= 0 && rawValue <= 4095) {
             console.log(`🔧 ${stickName} ${axis}: 12bit変換`, {
                 raw: rawValue,
@@ -95,22 +78,17 @@ function JoyConProvider({ children }) {
                 range: range
             });
 
-            // 中央値からの差分を計算
             const delta = rawValue - center;
 
-            // デッドゾーン適用
             if (Math.abs(delta) < STICK_CONSTANTS.DEADZONE_RAW) {
                 return 0;
             }
 
-            // 正規化（-1.0 〜 1.0）
             const normalized = delta / range;
 
-            // 範囲制限
             return Math.max(-1.0, Math.min(1.0, normalized));
         }
 
-        // 不明な形式の場合
         console.warn(`❓ ${stickName} ${axis}: 不明なデータ形式`, rawValue, typeof rawValue);
         return 0;
     }, []);
@@ -136,11 +114,9 @@ function JoyConProvider({ children }) {
 
                 let rawX = 0, rawY = 0;
 
-                // 様々なプロパティ名を試行
                 const xProps = ['x', 'horizontal', 'h', 'X'];
                 const yProps = ['y', 'vertical', 'v', 'Y'];
 
-                // X値の取得
                 for (const prop of xProps) {
                     if (stickData[prop] !== undefined && stickData[prop] !== null) {
                         rawX = stickData[prop];
@@ -149,7 +125,6 @@ function JoyConProvider({ children }) {
                     }
                 }
 
-                // Y値の取得
                 for (const prop of yProps) {
                     if (stickData[prop] !== undefined && stickData[prop] !== null) {
                         rawY = stickData[prop];
@@ -158,21 +133,17 @@ function JoyConProvider({ children }) {
                     }
                 }
 
-                // 数値変換
                 rawX = parseFloat(rawX) || 0;
                 rawY = parseFloat(rawY) || 0;
 
                 console.log(`📊 ${stickName} 変換前:`, { rawX, rawY });
 
-                // スティック固有の較正値
                 const isLeftStick = stickName === 'leftStick';
                 const calibration = STICK_CONSTANTS.calibration[stickName];
 
-                // 正しい変換を適用
                 let x = convertStickValue(rawX, calibration.centerX, calibration.rangeX, stickName, 'X');
                 let y = convertStickValue(rawY, calibration.centerY, calibration.rangeY, stickName, 'Y');
 
-                // 左スティックの場合はY軸を反転
                 if (isLeftStick) {
                     y = -y;
                 }
@@ -213,7 +184,6 @@ function JoyConProvider({ children }) {
 
             setInputState(newInputState);
 
-            // コールバック実行
             inputCallbacksRef.current.forEach(callback => {
                 try {
                     requestAnimationFrame(() => {
@@ -235,7 +205,6 @@ function JoyConProvider({ children }) {
         }
     }, [convertStickValue]);
 
-    // 較正データ更新機能
     const updateCalibration = useCallback((stickName, centerX, centerY, rangeX, rangeY) => {
         STICK_CONSTANTS.calibration[stickName] = {
             centerX: centerX || STICK_CONSTANTS.CENTER_RAW,
@@ -247,7 +216,6 @@ function JoyConProvider({ children }) {
         console.log(`🎯 ${stickName} 較正更新:`, STICK_CONSTANTS.calibration[stickName]);
     }, []);
 
-    // Connect Joy-Con controllers
     const connectJoyCon = useCallback(async () => {
         if (!isSupported) {
             setError('WebHID API is not supported');
@@ -269,13 +237,11 @@ function JoyConProvider({ children }) {
         }
     }, [isSupported]);
 
-    // Dummy rumble function (disabled)
     const rumble = useCallback(async (frequency = 320, amplitude = 0.5, duration = 200) => {
         console.log('Rumble disabled');
         return Promise.resolve();
     }, []);
 
-    // Register input callback
     const registerInputCallback = useCallback((callback) => {
         if (typeof callback !== 'function') {
             console.error('Input callback must be a function');
@@ -289,7 +255,6 @@ function JoyConProvider({ children }) {
         };
     }, []);
 
-    // Safe setup function for Joy-Con
     const setupJoyCon = useCallback(async (joyCon) => {
         try {
             console.log(`Setting up ${joyCon.device.productName}...`);
@@ -346,7 +311,6 @@ function JoyConProvider({ children }) {
         }
     }, []);
 
-    // Initialize Joy-Con monitoring
     useEffect(() => {
         if (!isSupported || isInitializedRef.current) return;
 
@@ -462,4 +426,3 @@ function JoyConProvider({ children }) {
 }
 
 export { useJoyConContext, JoyConProvider };
-

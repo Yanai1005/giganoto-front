@@ -28,7 +28,7 @@
       "id": 7,
       "title": "避けゲー",
       "description": "避けゲー",
-      "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+      "image": "hako.png",
       "path": "/game",
       "gameType": "runner"
     }

@@ -247,12 +247,13 @@ const Home = () => {
                 <div className="control-hints">
                     <div className="control-hints__section">
                         {isConnected ? (
-                            <div className="control-hints__joycon">                                    <span className="control-hints__status">
-                                🎮 Joy-Con接続済み {
-                                    isTogglingMode ? '⏳ 切り替え中...' :
-                                        cursorMode ? '🖱️ カーソルモード' : '🎯 ナビモード'
-                                }
-                            </span>
+                            <div className="control-hints__joycon">
+                                <span className="control-hints__status">
+                                    🎮 Joy-Con接続済み {
+                                        isTogglingMode ? '⏳ 切り替え中...' :
+                                            cursorMode ? '🖱️ カーソルモード' : '🎯 ナビモード'
+                                    }
+                                </span>
                                 <div className="control-hints__keys">
                                     {!cursorMode && !isTogglingMode ? (
                                         <>
