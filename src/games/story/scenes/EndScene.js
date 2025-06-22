@@ -1,17 +1,16 @@
 import Phaser from 'phaser';
 
-import Ending1 from './Ending1.js';
-import Ending2 from './Ending2.js';
-import Ending3 from './Ending3.js';
-import Ending4 from './Ending4.js';
-import EndingTrue from './EndingTrue.js';
+import Ending1Text from './Chapters/Ending1.js';
+import Ending2Text from './Chapters/Ending2.js';
+import Ending3Text from './Chapters/Ending3.js';
+import Ending4Text from './Chapters/Ending4.js';
 
 const ENDINGS = {
-  logic_good: Ending1,
-  logic_bad: Ending2,
-  impulse_good: Ending3,
-  impulse_bad: Ending4,
-  true_ending: EndingTrue,
+  logic_good: Ending1Text,
+  logic_bad: Ending2Text,
+  impulse_good: Ending3Text || ['インパルス・グッドエンド（作成中）'],
+  impulse_bad: Ending4Text || ['インパルス・バッドエンド（作成中）'],
+  true_ending: ['トゥルーエンド（作成中）'],
 };
 
 export default class EndScene extends Phaser.Scene {
@@ -24,6 +23,9 @@ export default class EndScene extends Phaser.Scene {
   }
 
   create() {
+    // 背景を黒に
+    this.cameras.main.setBackgroundColor('#000000');
+
     const lines = ENDINGS[this.endingKey] || ['エンディングデータが見つかりません'];
 
     let i = 0;
@@ -40,8 +42,10 @@ export default class EndScene extends Phaser.Scene {
         i++;
         this.input.keyboard.once('keydown-SPACE', nextLine);
       } else {
-        textBox.setText('fin');
+        textBox.setText('fin\n\nスペースキーでタイトルに戻る');
         this.input.keyboard.once('keydown-SPACE', () => {
+          // localStorageをクリアして最初から
+          localStorage.removeItem('choiceHistory');
           location.reload();
         });
       }
