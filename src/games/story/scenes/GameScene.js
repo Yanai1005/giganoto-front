@@ -41,6 +41,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('bg_campus', '/assets/bg_campus.jpg');
     this.load.image('bg_kitchen', '/assets/bg_kitchen.png');
     this.load.image('bg_entrance', '/assets/bg_entrance.jpg');
+    this.load.image('bg_cityStreet', '/assets/bg_cityStreet.jpg');
   }
 
   create() {
@@ -65,7 +66,7 @@ export default class GameScene extends Phaser.Scene {
       fontSize: '20px',
       color: '#ffffff',
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      wordWrap: { width: 700 },
+      wordWrap: { width: 700, useAdvancedWrap: true },
       lineSpacing: 6,
       padding: { top: 10, bottom: 10, left: 10, right: 10 },
     });
@@ -83,7 +84,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.chapterTitle = this.add.text(20, 20, '', {
-      fontSize: '22px',
+      fontSize: '24px',
       fontFamily: 'sans-serif',
       color: '#ffffff',
       backgroundColor: '#00000088',
@@ -150,33 +151,40 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  showNextLine() {
-    const lines = this.storyData.commonLines;
-    if (this.currentLineIndex < lines.length) {
-      const line = lines[this.currentLineIndex];
-      const bgMap = {
-        '家朝': 'bg_home_morning',
-        '家夜': 'bg_home_evening',
-        '校門': 'bg_school_gate',
-        '通学路': 'bg_street_morning',
-        '通学路昼': 'bg_street_evening',
-        '教室昼': 'bg_classroom_day',
-        'キャンパス': 'bg_campus',
-        '玄関': 'bg_entrance',
-        'カフェ': 'bg_cafe',
-      };
-      if (bgMap[line]) {
-        this.changeBackground(bgMap[line]);
-        this.currentLineIndex++;
-        this.showNextLine();
-        return;
-      }
-      this.textBox.setText(line);
-      this.currentLineIndex++;
-    } else {
-      this.showChoices();
-    }
+  processLine(line, onDone) {
+  const bgMap = {
+    '家朝': 'bg_home_morning',
+    '家夜': 'bg_home_evening',
+    '校門': 'bg_school_gate',
+    '通学路': 'bg_street_morning',
+    '通学路昼': 'bg_street_evening',
+    '教室昼': 'bg_classroom_day',
+    'キャンパス夕': 'bg_campus_evening',
+    '玄関': 'bg_entrance',
+    'カフェ': 'bg_cafe',
+    '街中':'bg_cityStreet',
+  };
+
+  if (bgMap[line]) {
+    this.changeBackground(bgMap[line]);
+    // 背景が変わるだけでテキストは表示しない（明転後にonDone）
+    this.time.delayedCall(600, onDone); // 背景切替後に次へ
+  } else {
+    this.textBox.setText(line);
+    this.input.keyboard.once('keydown-SPACE', onDone);
   }
+}
+
+  showNextLine() {
+  const lines = this.storyData.commonLines;
+  if (this.currentLineIndex < lines.length) {
+    const line = lines[this.currentLineIndex];
+    this.currentLineIndex++;
+    this.processLine(line, () => this.showNextLine());
+  } else {
+    this.showChoices();
+  }
+}
 
   showChoices() {
     const choiceLines = this.storyData.choices[this.personality];
@@ -208,24 +216,24 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showResult(lines) {
-    let i = 0;
-    const nextLine = () => {
-      if (i < lines.length) {
-        this.textBox.setText(lines[i]);
-        i++;
-        this.input.keyboard.once('keydown-SPACE', nextLine);
+  let i = 0;
+  const nextLine = () => {
+    if (i < lines.length) {
+      this.processLine(lines[i], nextLine);
+      i++;
+    } else {
+      if (this.chapterIndex >= 5) {
+        const endingKey = this.determineEnding();
+        this.scene.start('EndScene', { endingKey });
       } else {
-        if (this.chapterIndex >= 5) {
-          const endingKey = this.determineEnding();
-          this.scene.start('EndScene', { endingKey });
-        } else {
-          this.chapterIndex++;
-          this.loadChapter();
-        }
+        this.chapterIndex++;
+        this.loadChapter();
       }
-    };
-    nextLine();
-  }
+    }
+  };
+  nextLine();
+}
+
 
   determineEnding() {
     const { logic_1, logic_2, impulse_1, impulse_2 } = this.stats;
