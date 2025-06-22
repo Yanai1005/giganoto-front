@@ -4,17 +4,32 @@ import { useJoyConContext } from '../contexts/JoyConContext';
 export const useJoyConCursor = ({
     enabled = true,
     sensitivity = 0.3,
-    deadzone = 0.3,
+    deadzone = 0.1, // デッドゾーンを0.03から0.1に拡大
     showCursor = true,
-    autoCalibrate = true,
+    autoCalibrate = false, // キャリブレーション機能を無効化
     calibrationTime = 3000
 }) => {
     const { inputState, isConnected } = useJoyConContext();
+
+    // デバッグ用：JoyConの接続状態とinputStateを定期的にログ出力
+    useEffect(() => {
+        const debugInterval = setInterval(() => {
+            console.log('🎮 JoyCon Debug Status (LEFT STICK MODE):', {
+                enabled,
+                isConnected,
+                hasInputState: !!inputState,
+                hasLeftStick: !!(inputState?.leftStick),
+                leftStickValues: inputState?.leftStick
+            });
+        }, 5000); // 5秒ごと
+
+        return () => clearInterval(debugInterval);
+    }, [enabled, isConnected, inputState]);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [isClicking, setIsClicking] = useState(false);
     const [isCalibrating, setIsCalibrating] = useState(false);
     const [calibrationOffset, setCalibrationOffset] = useState({ x: 0, y: 0 });
-    const [isCalibrated, setIsCalibrated] = useState(true);
+    const [isCalibrated, setIsCalibrated] = useState(false); // 初期値をfalseに変更
 
     const animationFrameRef = useRef(null);
     const lastButtonStateRef = useRef({});
@@ -22,18 +37,46 @@ export const useJoyConCursor = ({
     const cursorRef = useRef(null);
 
     const calibrationValuesRef = useRef([]);
-    const calibrationTimerRef = useRef(null);
-
-    const getRightStick = useCallback(() => {
-        if (!inputState || !inputState.rightStick) {
+    const calibrationTimerRef = useRef(null); const getLeftStick = useCallback(() => {
+        if (!inputState || !inputState.leftStick) {
+            console.log('🎮 No inputState or leftStick available');
             return { x: 0, y: 0 };
         }
 
-        const stick = inputState.rightStick;
-        return {
-            x: parseFloat(stick.x) || 0,
-            y: parseFloat(stick.y) || 0
-        };
+        const stick = inputState.leftStick;
+
+        // より詳細なデバッグ情報
+        console.log('🎮 Raw LEFT stick input received (DETAILED):', {
+            raw: stick,
+            xValue: stick.x,
+            yValue: stick.y,
+            xType: typeof stick.x,
+            yType: typeof stick.y,
+            xIsNumber: !isNaN(Number(stick.x)),
+            yIsNumber: !isNaN(Number(stick.y))
+        });
+
+        // 確実に数値に変換
+        let x = parseFloat(stick.x) || 0;
+        let y = parseFloat(stick.y) || 0;
+
+        // NaN チェック
+        if (isNaN(x)) x = 0;
+        if (isNaN(y)) y = 0;
+
+        // 値がゼロでない場合はログ出力
+        if (Math.abs(x) > 0.01 || Math.abs(y) > 0.01) {
+            console.log('🎮 Valid LEFT stick input (converted - DETAILED):', {
+                x,
+                y,
+                originalTypes: { x: typeof stick.x, y: typeof stick.y },
+                originalValues: { x: stick.x, y: stick.y },
+                convertedMagnitude: Math.sqrt(x * x + y * y),
+                isExtremeValue: (Math.abs(x) >= 0.99 || Math.abs(y) >= 0.99)
+            });
+        }
+
+        return { x, y };
     }, [inputState]);
 
     const getButtons = useCallback(() => {
@@ -59,7 +102,7 @@ export const useJoyConCursor = ({
         calibrationValuesRef.current = [];
 
         const collectCalibrationData = () => {
-            const stick = getRightStick();
+            const stick = getLeftStick();
             calibrationValuesRef.current.push({ x: stick.x, y: stick.y });
 
             if (calibrationValuesRef.current.length < calibrationTime / 100) {
@@ -70,7 +113,7 @@ export const useJoyConCursor = ({
         };
 
         calibrationTimerRef.current = setTimeout(collectCalibrationData, 500);
-    }, [enabled, isConnected, autoCalibrate, calibrationTime, getRightStick]);
+    }, [enabled, isConnected, autoCalibrate, calibrationTime, getLeftStick]);
 
     const finishCalibration = useCallback(() => {
         const values = calibrationValuesRef.current;
@@ -95,14 +138,14 @@ export const useJoyConCursor = ({
     }, []);
 
     const manualCalibrate = useCallback(() => {
-        const stick = getRightStick();
+        const stick = getLeftStick();
 
         const samples = [];
         const sampleCount = 10;
 
         const collectSamples = (count) => {
             if (count > 0) {
-                const currentStick = getRightStick();
+                const currentStick = getLeftStick();
                 samples.push({ x: currentStick.x, y: currentStick.y });
                 setTimeout(() => collectSamples(count - 1), 50);
             } else {
@@ -119,19 +162,12 @@ export const useJoyConCursor = ({
 
 
         collectSamples(sampleCount);
-    }, [getRightStick]);
+    }, [getLeftStick]);
 
+    // キャリブレーション効果を無効化
     useEffect(() => {
-        if (enabled && isConnected && autoCalibrate && !isCalibrated) {
-            setIsCalibrated(true);
-            const timer = setTimeout(() => {
-                startAutoCalibration();
-            }, 1000);
-            return () => clearTimeout(timer);
-        } else if (enabled && isConnected && !autoCalibrate) {
-            setIsCalibrated(true);
-        }
-    }, [enabled, isConnected, autoCalibrate, isCalibrated, startAutoCalibration]);
+        // 何もしない（キャリブレーション機能を無効）
+    }, []);
 
     useEffect(() => {
         if (!showCursor) return;
@@ -141,7 +177,7 @@ export const useJoyConCursor = ({
             position: fixed;
             width: 20px;
             height: 20px;
-            background: ${isCalibrating ? 'rgba(255, 165, 0, 0.8)' : (isCalibrated ? 'rgba(0, 255, 0, 0.8)' : 'rgba(255, 0, 0, 0.8)')};
+            background: rgba(0, 255, 0, 0.8);
             border: 2px solid white;
             border-radius: 50%;
             pointer-events: none;
@@ -150,18 +186,6 @@ export const useJoyConCursor = ({
             transition: all 0.2s ease;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         `;
-
-        if (isCalibrating) {
-            cursor.innerHTML = '🎯';
-            cursor.style.fontSize = '12px';
-            cursor.style.textAlign = 'center';
-            cursor.style.lineHeight = '16px';
-        } else if (!isCalibrated) {
-            cursor.innerHTML = '❌';
-            cursor.style.fontSize = '12px';
-            cursor.style.textAlign = 'center';
-            cursor.style.lineHeight = '16px';
-        }
 
         cursor.id = 'joy-con-cursor';
         document.body.appendChild(cursor);
@@ -173,23 +197,17 @@ export const useJoyConCursor = ({
                 cursorRef.current = null;
             }
         };
-    }, [showCursor, isCalibrating, isCalibrated]);
+    }, [showCursor]);
 
     useEffect(() => {
         if (cursorRef.current) {
             cursorRef.current.style.left = `${mousePosition.x}px`;
             cursorRef.current.style.top = `${mousePosition.y}px`;
             cursorRef.current.style.opacity = enabled && isConnected ? '1' : '0.3';
-
-            if (isCalibrating) {
-                cursorRef.current.style.background = 'rgba(255, 165, 0, 0.8)';
-            } else if (isCalibrated) {
-                cursorRef.current.style.background = 'rgba(0, 255, 0, 0.8)';
-            } else {
-                cursorRef.current.style.background = 'rgba(255, 0, 0, 0.8)';
-            }
+            // キャリブレーション状態に関係なく緑色で表示
+            cursorRef.current.style.background = 'rgba(0, 255, 0, 0.8)';
         }
-    }, [mousePosition, enabled, isConnected, isCalibrating, isCalibrated]);
+    }, [mousePosition, enabled, isConnected]);
 
     const fireMouseEvent = useCallback((type, x, y, button = 0) => {
         const element = document.elementFromPoint(x, y);
@@ -214,12 +232,28 @@ export const useJoyConCursor = ({
     const normalizeStickInput = useCallback((stick) => {
         if (!stick) return { x: 0, y: 0 };
 
-        // 一時的にキャリブレーションを無効にして生の値を使用
-        let adjustedX = stick.x; // - calibrationOffset.x;
-        let adjustedY = stick.y; // - calibrationOffset.y;
+        // 確実に数値に変換
+        let adjustedX = parseFloat(stick.x) || 0;
+        let adjustedY = parseFloat(stick.y) || 0;
+
+        // NaN チェック
+        if (isNaN(adjustedX)) adjustedX = 0;
+        if (isNaN(adjustedY)) adjustedY = 0;
+
+        // 極端な値の検出と対処
+        const isExtremeValue = (Math.abs(adjustedX) >= 0.99 || Math.abs(adjustedY) >= 0.99);
+        if (isExtremeValue) {
+            console.log('🚨 Extreme LEFT stick value detected, potentially invalid:', {
+                raw: { x: adjustedX, y: adjustedY },
+                magnitude: Math.sqrt(adjustedX * adjustedX + adjustedY * adjustedY)
+            });
+            // 極端な値の場合、少し減衰させる
+            adjustedX *= 0.8;
+            adjustedY *= 0.8;
+        }
 
         // 最小限のデッドゾーン適用
-        const magnitude = Math.sqrt(adjustedX ** 2 + adjustedY ** 2);
+        const magnitude = Math.sqrt(adjustedX * adjustedX + adjustedY * adjustedY);
         if (magnitude < deadzone) {
             return { x: 0, y: 0 };
         }
@@ -231,12 +265,14 @@ export const useJoyConCursor = ({
         const normalizedY = Math.sin(angle) * normalizedMagnitude;
 
         // デバッグ情報（常に表示して動作確認）
-        console.log('🎮 Stage 3 - Very slow (かなり遅く):', {
-            raw: { x: stick.x.toFixed(3), y: stick.y.toFixed(3) },
-            adjusted: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
+        console.log('🎮 LEFT Stick - Using left stick for cursor control:', {
+            raw: { x: adjustedX.toFixed(3), y: adjustedY.toFixed(3) },
+            rawTypes: { x: typeof stick.x, y: typeof stick.y },
             magnitude: magnitude.toFixed(3),
             deadzone: deadzone,
-            normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) }
+            normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) },
+            isValidInput: !isNaN(adjustedX) && !isNaN(adjustedY),
+            wasExtremeValue: isExtremeValue
         });
 
         return { x: normalizedX, y: normalizedY };
@@ -244,9 +280,14 @@ export const useJoyConCursor = ({
 
     // Update mouse position based on stick input
     const updateMousePosition = useCallback(() => {
-        if (!enabled || !isConnected || isCalibrating) return; // isCalibrated条件を一時的に削除
+        console.log('🖱️ updateMousePosition called:', { enabled, isConnected });
 
-        const stick = getRightStick();
+        if (!enabled || !isConnected) {
+            console.log('🎮 Update stopped:', { enabled, isConnected });
+            return;
+        }
+
+        const stick = getLeftStick();
         const normalizedStick = normalizeStickInput(stick);
         const magnitude = Math.sqrt(normalizedStick.x ** 2 + normalizedStick.y ** 2);
 
@@ -259,14 +300,31 @@ export const useJoyConCursor = ({
             velocityRef.current.x = targetVelocityX;
             velocityRef.current.y = targetVelocityY;
 
+            console.log('🖱️ Velocity calculated:', {
+                normalizedStick,
+                sensitivity,
+                velocity: { x: targetVelocityX, y: targetVelocityY },
+                magnitude
+            });
+
             setMousePosition(prev => {
                 const newX = Math.max(0, Math.min(window.innerWidth - 1,
                     prev.x + velocityRef.current.x));
                 const newY = Math.max(0, Math.min(window.innerHeight - 1,
                     prev.y + velocityRef.current.y));
 
+                console.log('🖱️ Mouse position update:', {
+                    prev: { x: prev.x, y: prev.y },
+                    new: { x: newX, y: newY },
+                    delta: { x: newX - prev.x, y: newY - prev.y },
+                    windowSize: { width: window.innerWidth, height: window.innerHeight }
+                });
+
                 if (Math.abs(newX - prev.x) > 0.01 || Math.abs(newY - prev.y) > 0.01) {
                     fireMouseEvent('mousemove', newX, newY);
+                    console.log('🖱️ Mouse event fired');
+                } else {
+                    console.log('🖱️ Mouse movement too small, event not fired');
                 }
 
                 return { x: newX, y: newY };
@@ -281,10 +339,10 @@ export const useJoyConCursor = ({
         }
 
         animationFrameRef.current = requestAnimationFrame(updateMousePosition);
-    }, [enabled, isConnected, isCalibrating, getRightStick, normalizeStickInput, sensitivity, fireMouseEvent]);
+    }, [enabled, isConnected, getLeftStick, normalizeStickInput, sensitivity, fireMouseEvent]);
 
     useEffect(() => {
-        if (!enabled || !isConnected || isCalibrating) return;
+        if (!enabled || !isConnected) return;
 
         const buttons = getButtons();
         const currentPosition = mousePosition;
@@ -342,17 +400,30 @@ export const useJoyConCursor = ({
             b: buttons.b || false
         };
 
-    }, [enabled, isConnected, isCalibrating, isCalibrated, getButtons, mousePosition, fireMouseEvent, manualCalibrate, startAutoCalibration]);
+    }, [enabled, isConnected, getButtons, mousePosition, fireMouseEvent]);
 
     // フレームレート制限付きアニメーションループ
     useEffect(() => {
         let lastFrameTime = 0;
         const targetFPS = 60; // 60FPSに上げてスムーズに
         const frameInterval = 1000 / targetFPS;
+        let frameCount = 0;
 
         const animate = (currentTime) => {
+            frameCount++;
+
+            // 60フレームごとにログ出力（1秒ごと）
+            if (frameCount % 60 === 0) {
+                console.log('🔄 Animation loop running:', {
+                    enabled,
+                    isConnected,
+                    frameCount,
+                    currentTime: Math.round(currentTime)
+                });
+            }
+
             if (currentTime - lastFrameTime >= frameInterval) {
-                if (enabled && isConnected && !isCalibrating) {
+                if (enabled && isConnected) {
                     updateMousePosition();
                 }
                 lastFrameTime = currentTime;
@@ -360,16 +431,18 @@ export const useJoyConCursor = ({
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
+        console.log('🔄 Starting animation loop:', { enabled, isConnected });
         if (enabled && isConnected) {
             animationFrameRef.current = requestAnimationFrame(animate);
         }
 
         return () => {
+            console.log('🔄 Stopping animation loop');
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [enabled, isConnected, isCalibrating, updateMousePosition]);
+    }, [enabled, isConnected, updateMousePosition]);
 
     useEffect(() => {
         return () => {
@@ -382,11 +455,11 @@ export const useJoyConCursor = ({
     return {
         mousePosition,
         isClicking,
-        isActive: enabled && isConnected && isCalibrated,
-        isCalibrating,
-        isCalibrated,
-        calibrationOffset,
-        recalibrate: manualCalibrate,
-        startAutoCalibration
+        isActive: enabled && isConnected, // キャリブレーション条件を削除
+        isCalibrating: false, // 常にfalse
+        isCalibrated: true, // 常にtrue
+        calibrationOffset: { x: 0, y: 0 }, // 常にゼロ
+        recalibrate: () => { }, // 空の関数
+        startAutoCalibration: () => { } // 空の関数
     };
 };

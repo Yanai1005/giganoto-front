@@ -3,15 +3,16 @@ import * as JoyCon from 'joy-con-webhid';
 
 const JoyConContext = createContext();
 
-export const useJoyConContext = () => {
+function useJoyConContext() {
     const context = useContext(JoyConContext);
     if (!context) {
         throw new Error('useJoyConContext must be used within a JoyConProvider');
     }
     return context;
-};
+}
 
-export const JoyConProvider = ({ children }) => {
+// JoyConProviderを関数宣言として定義
+function JoyConProvider({ children }) {
     const [isSupported, setIsSupported] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [connectedControllers, setConnectedControllers] = useState([]);
@@ -49,20 +50,221 @@ export const JoyConProvider = ({ children }) => {
     const parseInputData = useCallback((detail) => {
         try {
             setRawInputData(detail);
-            console.log('Raw Joy-Con input data:', detail);
+
+            // 詳細デバッグ：受信データの全体構造を確認
+            console.log('🎮 Raw Joy-Con input data (full structure):', detail);
+            console.log('🎮 Available properties:', Object.keys(detail || {}));
+
+            // アナログスティックの情報を詳しく調べる
+            if (detail.analogStickLeft) {
+                console.log('🕹️ Left stick data:', detail.analogStickLeft);
+                console.log('🕹️ Left stick properties:', Object.keys(detail.analogStickLeft));
+
+                // 生データの詳細確認
+                if (detail.analogStickLeft.rawData) {
+                    console.log('🕹️ Left stick rawData:', detail.analogStickLeft.rawData);
+                    console.log('🕹️ Left stick rawData as hex:',
+                        detail.analogStickLeft.rawData.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+                    );
+                }
+            }
+            if (detail.analogStickRight) {
+                console.log('🕹️ Right stick data:', detail.analogStickRight);
+                console.log('🕹️ Right stick properties:', Object.keys(detail.analogStickRight));
+
+                // 生データの詳細確認
+                if (detail.analogStickRight.rawData) {
+                    console.log('🕹️ Right stick rawData:', detail.analogStickRight.rawData);
+                    console.log('🕹️ Right stick rawData as hex:',
+                        detail.analogStickRight.rawData.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+                    );
+                }
+            }
 
             // buttonStatusオブジェクトからボタン状態を取得
             const buttonStatus = detail.buttonStatus || {};
 
+            // スティック入力の適切な変換処理
+            const parseStickInput = (stickData, stickName) => {
+                if (!stickData) return { x: 0, y: 0 };
+
+                // デバッグ用：生データの構造を確認
+                console.log(`${stickName} raw data structure:`, stickData);
+
+                // Joy-Conの生データがある場合はバイナリ変換を適用
+                if (stickData.rawData && Array.isArray(stickData.rawData)) {
+                    const data = stickData.rawData;
+                    console.log(`${stickName} rawData array (length: ${data.length}):`, data);
+
+                    let x = 0, y = 0;
+                    let conversionSuccess = false;
+
+                    // 複数の変換方法を試す
+                    const tryConversion = (method, xCalc, yCalc) => {
+                        try {
+                            const testX = xCalc();
+                            const testY = yCalc();
+
+                            console.log(`${stickName} ${method} conversion result:`, { x: testX, y: testY });
+
+                            // 妥当な範囲内かチェック
+                            if (Math.abs(testX) <= 1.5 && Math.abs(testY) <= 1.5) {
+                                return { x: testX, y: testY, success: true };
+                            }
+                            return { success: false };
+                        } catch (err) {
+                            console.warn(`${stickName} ${method} conversion failed:`, err);
+                            return { success: false };
+                        }
+                    };
+
+                    // Method 1: 標準的なJoy-Con変換
+                    if (stickName === 'leftStick' && data.length >= 3) {
+                        const result = tryConversion('Left-Standard',
+                            () => {
+                                const raw = (data[1] << 8) | data[0];
+                                return (raw - 2048) / 2048.0;
+                            },
+                            () => {
+                                const rawY = (data[2] << 4) | (data[1] >> 4);
+                                return (rawY - 2048) / 2048.0;
+                            }
+                        );
+                        if (result.success) {
+                            x = result.x;
+                            y = result.y;
+                            conversionSuccess = true;
+                        }
+                    }
+
+                    if (stickName === 'rightStick' && data.length >= 6) {
+                        // Method 2a: 右スティック方式1
+                        const result = tryConversion('Right-Method1',
+                            () => {
+                                const raw = (data[4] << 8) | data[3];
+                                return (raw - 2048) / 2048.0;
+                            },
+                            () => {
+                                const rawY = (data[5] << 4) | (data[4] >> 4);
+                                return (rawY - 2048) / 2048.0;
+                            }
+                        );
+                        if (result.success) {
+                            x = result.x;
+                            y = result.y;
+                            conversionSuccess = true;
+                        }
+
+                        // Method 2b: 右スティック方式2（データ位置が異なる場合）
+                        if (!conversionSuccess && data.length >= 9) {
+                            const result2 = tryConversion('Right-Method2',
+                                () => {
+                                    const raw = (data[7] << 8) | data[6];
+                                    return (raw - 2048) / 2048.0;
+                                },
+                                () => {
+                                    const rawY = (data[8] << 4) | (data[7] >> 4);
+                                    return (rawY - 2048) / 2048.0;
+                                }
+                            );
+                            if (result2.success) {
+                                x = result2.x;
+                                y = result2.y;
+                                conversionSuccess = true;
+                            }
+                        }
+
+                        // Method 3: 16ビット値として直接変換
+                        if (!conversionSuccess && data.length >= 4) {
+                            const result3 = tryConversion('Right-16bit',
+                                () => {
+                                    const raw = (data[1] << 8) | data[0];
+                                    return (raw / 32768.0) - 1.0;
+                                },
+                                () => {
+                                    const rawY = (data[3] << 8) | data[2];
+                                    return (rawY / 32768.0) - 1.0;
+                                }
+                            );
+                            if (result3.success) {
+                                x = result3.x;
+                                y = result3.y;
+                                conversionSuccess = true;
+                            }
+                        }
+                    }
+
+                    if (conversionSuccess) {
+                        console.log(`${stickName} binary conversion successful:`, { x, y });
+                        return { x, y };
+                    } else {
+                        console.warn(`${stickName} all binary conversion methods failed`);
+                    }
+                }
+
+                // joy-con-webhidライブラリの実際のプロパティ名を確認
+                let x = 0, y = 0;
+
+                // 複数の可能なプロパティ名をチェックし、必ず数値に変換
+                const possibleXProps = ['x', 'horizontal', 'h', 'left', 'right'];
+                const possibleYProps = ['y', 'vertical', 'v', 'up', 'down'];
+
+                // X値の検索
+                for (const prop of possibleXProps) {
+                    if (stickData[prop] !== undefined) {
+                        x = parseFloat(stickData[prop]);
+                        if (!isNaN(x)) {
+                            console.log(`${stickName} X found in property: ${prop}, value: ${x}`);
+                            break;
+                        }
+                    }
+                }
+
+                // Y値の検索
+                for (const prop of possibleYProps) {
+                    if (stickData[prop] !== undefined) {
+                        y = parseFloat(stickData[prop]);
+                        if (!isNaN(y)) {
+                            console.log(`${stickName} Y found in property: ${prop}, value: ${y}`);
+                            break;
+                        }
+                    }
+                }
+
+                // すべてのプロパティを表示（デバッグ用）
+                console.log(`${stickName} all properties:`, stickData);
+
+                // 値が異常に大きい場合の正規化（緊急修正）
+                if (Math.abs(x) > 1.0 || Math.abs(y) > 1.0) {
+                    console.warn(`${stickName} values out of range, normalizing:`, { x, y });
+
+                    // -2.0, 2.0のような値を-1.0, 1.0の範囲に正規化
+                    x = Math.max(-1.0, Math.min(1.0, x / 2.0));
+                    y = Math.max(-1.0, Math.min(1.0, y / 2.0));
+
+                    console.log(`${stickName} normalized values:`, { x, y });
+                }
+
+                // 値が文字列の"x-2y2"のような形式の場合の対処
+                if (typeof stickData.horizontal === 'string' && stickData.horizontal.includes('x')) {
+                    console.warn(`Invalid stick data format detected for ${stickName}:`, stickData);
+                    return { x: 0, y: 0 };
+                }
+
+                // デバッグ：変換後の値を確認
+                console.log(`${stickName} parsed values (converted to numbers):`, {
+                    x: x,
+                    y: y,
+                    xType: typeof x,
+                    yType: typeof y
+                });
+
+                return { x, y };
+            };
+
             const newInputState = {
-                leftStick: {
-                    x: parseFloat(detail.analogStickLeft?.horizontal) || 0,
-                    y: parseFloat(detail.analogStickLeft?.vertical) || 0
-                },
-                rightStick: {
-                    x: parseFloat(detail.analogStickRight?.horizontal) || 0,
-                    y: parseFloat(detail.analogStickRight?.vertical) || 0
-                },
+                leftStick: parseStickInput(detail.analogStickLeft, 'leftStick'),
+                rightStick: parseStickInput(detail.analogStickRight, 'rightStick'),
                 buttons: {
                     // buttonStatusから直接取得
                     a: buttonStatus.a || false,
@@ -111,6 +313,14 @@ export const JoyConProvider = ({ children }) => {
 
             if (Math.abs(newInputState.leftStick.x) > 0.1 || Math.abs(newInputState.leftStick.y) > 0.1) {
                 console.log('Left stick:', newInputState.leftStick);
+            }
+
+            if (Math.abs(newInputState.rightStick.x) > 0.1 || Math.abs(newInputState.rightStick.y) > 0.1) {
+                console.log('Right stick:', newInputState.rightStick);
+                // 生データも表示してデバッグ
+                if (detail.analogStickRight) {
+                    console.log('Right stick raw data:', detail.analogStickRight);
+                }
             }
 
             setInputState(newInputState);
@@ -357,4 +567,7 @@ export const JoyConProvider = ({ children }) => {
             {children}
         </JoyConContext.Provider>
     );
-};
+}
+
+// 名前付きエクスポート
+export { useJoyConContext, JoyConProvider };

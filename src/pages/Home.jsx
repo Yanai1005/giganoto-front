@@ -29,7 +29,7 @@ const Home = () => {
 
     const cursorControl = useJoyConCursor({
         enabled: isConnected && !showJoyConModal && !showSettings && !showCalibrationUI && cursorMode && !isTogglingMode,
-        sensitivity: 0.02,
+        sensitivity: 2.0, // 0.02から2.0に大幅に上げてテスト
         deadzone: 0.03,
         showCursor: cursorMode && !isTogglingMode,
         autoCalibrate: false,
