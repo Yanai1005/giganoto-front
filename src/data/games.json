@@ -16,14 +16,14 @@
       "path": "/game",
       "gameType": "fishing"
     },
-        {
-            "id": 6,
-            "title": "シナリオ",
-            "description": "シナリオ",
-            "image": "/synario_title.png",
-            "path": "/game",
-            "gameType": "story"
-        }
+    {
+      "id": 6,
+      "title": "シナリオ",
+      "description": "シナリオ",
+      "image": "/synario_title.png",
+      "path": "/game",
+      "gameType": "story"
+    },
     {
       "id": 7,
       "title": "避けゲー",
