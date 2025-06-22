@@ -12,7 +12,7 @@
             "id": 6,
             "title": "シナリオ",
             "description": "シナリオ",
-            "image": "https://images.unsplash.com/photo-1514526991924-269304334bed?w=400&h=300&fit=crop",
+            "image": "/synario_title.png",
             "path": "/game",
             "gameType": "story"
         }
@@ -24,9 +24,9 @@
             "modulePath": "../games/fishing/game.js"
         },
         "story": {
-            "name": "釣り",
-            "description": "3Dフィッシングゲーム",
-            "controls": "キャストボタンで釣り糸を投げ、リールボタンで巻き取り",
+            "name": "ストーリー",
+            "description": "二重人格シナリオゲーム",
+            "controls": "SPACEで進行、Q,Eで人格変更,選択肢は左クリック",
             "modulePath": "../games/story/game.js"
         }
     }
