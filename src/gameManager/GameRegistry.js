@@ -331,7 +331,7 @@ class GameRegistry {
             // '../games/'で始まる場合は、現在のファイル位置を考慮
             if (resolvedPath.startsWith('../games/')) {
                 // GameRegistry.jsは src/gameManager/ にあるので、../games/ は src/games/ になる
-                resolvedPath = resolvedPath.replace('../games/', '../games/');
+                resolvedPath = resolvedPath.replace('../games/', 'src/games/');
             }
 
             this.debugLog(`JSON設定からモジュールパスを使用: ${resolvedPath}`);
