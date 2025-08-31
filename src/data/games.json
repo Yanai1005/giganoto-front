@@ -4,7 +4,7 @@
       "id": 4,
       "title": "TOWER QUEST",
       "description": "二人で部屋から脱出するゲーム",
-      "image": "https://chatgpt.com/backend-api/public_content/enc/eyJpZCI6Im1fNjg1Nzg0N2ZhZDQwODE5MTk3ZmVkZDg5ZDQ2YjRhOTQ6ZmlsZV8wMDAwMDAwMDJiYjg2MWY0OTRhMzJiNzQxZGM2OWIwYiIsInRzIjoiNDg2MjY5IiwicCI6InB5aSIsInNpZyI6IjM2NzI3NWU2ZDQ0MTUwNzYyYzk1Nzg3ZWNkMTkwODY3M2Q5MzU1ZDBiYmZmYjJjOWVjMjQzN2NiZjMxZDU2MWEiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsfQ==",
+      "image": "/escape.png",
       "path": "/game",
       "gameType": "escape"
     },
