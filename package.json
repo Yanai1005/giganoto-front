@@ -10,7 +10,8 @@
     "serve": "vite preview --port 4173",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "game": "node game-generator.js"
   },
   "dependencies": {
     "joy-con-webhid": "^0.7.0",
