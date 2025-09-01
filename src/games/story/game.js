@@ -6,7 +6,7 @@ export const initializeGame = (container) => {
     const config = {
         type: Phaser.AUTO,
         width: 800,
-        height: 600,
+        height: 550,
         parent: container,
         backgroundColor: '#1a1a2e',
         physics: {
