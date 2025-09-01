@@ -6,7 +6,7 @@
   "scripts": {
     "local": "vite --config vite.config.local.js",
     "local:build": "vite build --config vite.config.local.js",
-    "start": "vite  --port 3000",
+    "dev": "vite  --port 3000",
     "serve": "vite preview --port 4173",
     "build": "vite build",
     "lint": "eslint .",
