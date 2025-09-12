@@ -23,6 +23,7 @@ class GameRegistry {
             'fishing': () => import('../games/fishing/game.js'),
             'vibration-hunt': () => import('../games/vibration-hunt/game.js'),
             'dev-detective': () => import('../games/dev-detective/game.js'),
+            'toba': () => import('../games/toba/game.js'),
         };
     }
 
