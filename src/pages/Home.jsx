@@ -6,6 +6,7 @@ import TopBar from '../components/TopBar';
 import SystemMenu from '../components/SystemMenu';
 import GameRegistry from '../gameManager/GameRegistry';
 import gamesData from '../data/games.json';
+import { useJoyConCursor } from '../hooks/useJoyConCursor';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -85,6 +86,22 @@ const Home = () => {
 
     const notifications = {};
 
+    // Joy-Conカーソル機能を有効化（右Joy-ConのAボタンでクリック）
+    const {
+        mousePosition,
+        isClicking,
+        isActive: isJoyConActive,
+        cursorVisible
+    } = useJoyConCursor({
+        enabled: true,
+        sensitivity: 0.8,
+        deadzone: 0.2,
+        showCursor: true,
+        smoothing: 0.85,
+        invertY: true,
+        useRightJoyConForClick: true  // 右Joy-ConのAボタンでクリック
+    });
+
     return (
         <div className="switch-home">
             <TopBar />
@@ -100,6 +117,21 @@ const Home = () => {
                     />
                 ))}
             </main>
+
+            {/* Joy-Con接続状態表示（接続済みの場合） */}
+            {isJoyConActive && (
+                <div className="joycon-status">
+                    <div className="joycon-status__indicator">
+                        <span className="joycon-status__icon">🎮</span>
+                        <span className="joycon-status__text">Joy-Con接続中</span>
+                    </div>
+                    <div className="joycon-status__hint">
+                        <span>左スティック: カーソル移動</span>
+                        <span>右Joy-Con A: クリック</span>
+                        <span>右Joy-Con B: 右クリック</span>
+                    </div>
+                </div>
+            )}
 
             {/* キーボードヒント */}
             <div className="keyboard-hint">
