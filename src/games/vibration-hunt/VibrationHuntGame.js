@@ -12,7 +12,7 @@ export class VibrationHuntGame {
     this.score = 0;
     this.round = 1;
     this.maxRounds = 5;
-    
+
     // 実際のゲームエリアの境界定数
     this.GAME_AREA_BOUNDS = {
       left: 50,
@@ -20,19 +20,19 @@ export class VibrationHuntGame {
       top: 250,
       bottom: 550
     };
-    
+
     // Joy-Con操作用の設定
     this.cursorSpeed = 8; // カーソル移動速度を上げる
     this.inputUpdateInterval = null;
-    
+
     // ゲーム開始直後のボタン誤検出を防ぐための猶予期間
     this.gameStartTime = null;
     this.buttonGracePeriod = 1000; // 1秒の猶予期間（操作性重視）
-    
+
     this.vibrationSettings = {
       baseFreq: { low: 80, high: 160 },
-      maxAmplitude: 0.8,
-      minAmplitude: 0.1,
+      maxAmplitude: 0.3,  // 0.8から0.3に大幅に削減（62.5%削減）
+      minAmplitude: 0.05, // 0.1から0.05に削減（50%削減）
       maxDistance: 300
     };
     this.uiGroup = null; // ゲームUI要素を管理するグループ
@@ -40,10 +40,10 @@ export class VibrationHuntGame {
 
   startGame() {
     console.log('VibrationHuntGame開始');
-    
+
     // 既存のイベントハンドラーをクリア（安全のため）
     this.clearEventHandlers();
-    
+
     // デバッグUI以外の要素を削除
     console.log('デバッグUI以外の要素を削除開始');
     this.scene.children.each((child) => {
@@ -52,15 +52,15 @@ export class VibrationHuntGame {
         child.destroy();
       }
     });
-    
+
     console.log('デバッグUI以外の要素を削除完了');
-    
+
     this.gameActive = true;
     this.round = 1;
     this.score = 0;
     this.aButtonPressed = false; // Aボタン状態をリセット
     this.xButtonPressed = false; // Xボタン状態もリセット
-    
+
     // ボタン状態を完全にリセットするため、少し待ってからラウンド開始
     setTimeout(() => {
       this.startNewRound();
@@ -69,10 +69,10 @@ export class VibrationHuntGame {
 
   clearEventHandlers() {
     console.log('VibrationHuntGame: イベントハンドラーをクリア開始');
-    
+
     // ゲームを非アクティブに
     this.gameActive = false;
-    
+
     // シーン内の全てのインタラクティブオブジェクトのイベントを削除
     this.scene.children.each((child) => {
       if (child.input && child.input.enabled) {
@@ -81,48 +81,48 @@ export class VibrationHuntGame {
         console.log('子オブジェクトのイベントハンドラーを削除:', child.constructor.name);
       }
     });
-    
+
     // 入力監視を停止
     if (this.inputUpdateInterval) {
       clearInterval(this.inputUpdateInterval);
       this.inputUpdateInterval = null;
       console.log('入力監視インターバルを停止');
     }
-    
+
     // UIグループもクリア
     if (this.uiGroup) {
       this.uiGroup.destroy(true);
       this.uiGroup = null;
     }
-    
+
     console.log('VibrationHuntGame: イベントハンドラーをクリア完了');
   }
 
   startNewRound() {
     console.log(`=== startNewRound開始 (Round ${this.round}) ===`);
     console.log('現在のシーン状態:', this.scene.currentScreen);
-    
+
     // ゲーム開始時刻を記録（ボタン誤検出防止用）
     this.gameStartTime = Date.now();
-    
+
     // 実際のゲームエリアの境界に合わせて正解位置を生成
     const bounds = this.GAME_AREA_BOUNDS;
-    
+
     this.targetPosition = {
       x: Math.random() * (bounds.right - bounds.left) + bounds.left,
       y: Math.random() * (bounds.bottom - bounds.top) + bounds.top
     };
-    
+
     // カーソルを中央に初期化
     this.currentPosition = { x: 400, y: 350 };
-    
+
     this.setupDummyVibrations();
     this.updateUI();
-    
+
     // マウスとJoy-Con入力の両方を設定
     // this.setupMouseInput(); // マウス操作を無効化
     this.setupJoyConInput();
-    
+
     console.log(`Round ${this.round}: 正解位置 (${this.targetPosition.x.toFixed(0)}, ${this.targetPosition.y.toFixed(0)})`);
     console.log(`ゲームエリア境界: X(${bounds.left}-${bounds.right}), Y(${bounds.top}-${bounds.bottom})`);
     console.log('=== startNewRound完了 ===');
@@ -133,7 +133,7 @@ export class VibrationHuntGame {
     if (this.difficulty >= 2) {
       const dummyCount = this.difficulty - 1;
       const bounds = this.GAME_AREA_BOUNDS;
-      
+
       for (let i = 0; i < dummyCount; i++) {
         this.dummyPositions.push({
           x: Math.random() * (bounds.right - bounds.left) + bounds.left,
@@ -141,14 +141,14 @@ export class VibrationHuntGame {
           strength: 0.3 + Math.random() * 0.4
         });
       }
-      
+
       console.log(`ダミー振動位置を${dummyCount}個生成:`, this.dummyPositions.map(p => `(${p.x.toFixed(0)}, ${p.y.toFixed(0)})`));
     }
   }
 
   updateUI() {
     console.log('=== updateUI開始 ===');
-    
+
     // UIグループをクリアして再作成
     if (this.uiGroup) {
       this.uiGroup.destroy(true);
@@ -164,18 +164,18 @@ export class VibrationHuntGame {
     );
     bg.fillRect(0, 0, 800, 600);
     this.uiGroup.add(bg);
-    
+
     // 装飾的な背景要素
     const circle1 = this.scene.add.graphics();
     circle1.fillStyle(0x4a3a6a, 0.1);
     circle1.fillCircle(100, 100, 60);
     this.uiGroup.add(circle1);
-    
+
     const circle2 = this.scene.add.graphics();
     circle2.fillStyle(0x5a4a7a, 0.08);
     circle2.fillCircle(700, 500, 80);
     this.uiGroup.add(circle2);
-    
+
     // タイトル（美しいデザイン）
     const title1 = this.scene.add.text(402, 52, '強震動探し', {
       fontSize: '36px',
@@ -185,7 +185,7 @@ export class VibrationHuntGame {
       alpha: 0.3
     }).setOrigin(0.5);
     this.uiGroup.add(title1);
-    
+
     const title2 = this.scene.add.text(400, 50, '強震動探し', {
       fontSize: '36px',
       fill: '#ffffff',
@@ -195,7 +195,7 @@ export class VibrationHuntGame {
       strokeThickness: 3
     }).setOrigin(0.5);
     this.uiGroup.add(title2);
-    
+
     // 情報パネル（スタイリッシュなカード風）
     const infoPanelBg = this.scene.add.graphics();
     infoPanelBg.fillStyle(0x2a2a4a, 0.9);
@@ -203,7 +203,7 @@ export class VibrationHuntGame {
     infoPanelBg.lineStyle(2, 0x00d4aa, 0.8);
     infoPanelBg.strokeRoundedRect(50, 80, 700, 60, 15);
     this.uiGroup.add(infoPanelBg);
-    
+
     // ラウンド表示（左側）
     const roundLabel = this.scene.add.text(80, 95, 'ROUND', {
       fontSize: '14px',
@@ -212,7 +212,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     });
     this.uiGroup.add(roundLabel);
-    
+
     const roundValue = this.scene.add.text(80, 115, `${this.round}/${this.maxRounds}`, {
       fontSize: '20px',
       fill: '#ffffff',
@@ -220,7 +220,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     });
     this.uiGroup.add(roundValue);
-    
+
     // 難易度表示（中央）
     const diffLabel = this.scene.add.text(400, 95, 'DIFFICULTY', {
       fontSize: '14px',
@@ -229,7 +229,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     }).setOrigin(0.5);
     this.uiGroup.add(diffLabel);
-    
+
     const difficultyStars = '★'.repeat(this.difficulty) + '☆'.repeat(5 - this.difficulty);
     const diffValue = this.scene.add.text(400, 115, difficultyStars, {
       fontSize: '18px',
@@ -237,7 +237,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(diffValue);
-    
+
     // スコア表示（右側）
     const scoreLabel = this.scene.add.text(720, 95, 'SCORE', {
       fontSize: '14px',
@@ -246,7 +246,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     }).setOrigin(1, 0);
     this.uiGroup.add(scoreLabel);
-    
+
     const scoreValue = this.scene.add.text(720, 115, this.score.toString(), {
       fontSize: '20px',
       fill: '#ffffff',
@@ -254,7 +254,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     }).setOrigin(1, 0);
     this.uiGroup.add(scoreValue);
-    
+
     // 操作説明（美しいカード風）
     const instructionBg = this.scene.add.graphics();
     instructionBg.fillStyle(0x2a2a4a, 0.9);
@@ -262,7 +262,7 @@ export class VibrationHuntGame {
     instructionBg.lineStyle(2, 0x4a9eff, 0.8);
     instructionBg.strokeRoundedRect(100, 160, 600, 40, 12);
     this.uiGroup.add(instructionBg);
-    
+
     // 操作説明パネル
     const controlPanelBg = this.scene.add.graphics();
     controlPanelBg.fillStyle(0x1a1a3a, 0.8);
@@ -270,28 +270,28 @@ export class VibrationHuntGame {
     controlPanelBg.lineStyle(1, 0x4a9eff, 0.6);
     controlPanelBg.strokeRoundedRect(100, 155, 600, 50, 10);
     this.uiGroup.add(controlPanelBg);
-    
+
     const controlText1 = this.scene.add.text(400, 170, '🕹️ スティックで移動  🅰 Aボタンで決定', {
       fontSize: '14px',
       fill: '#b8c6ff',
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(controlText1);
-    
+
     const controlText2 = this.scene.add.text(400, 190, '✨ 振動の強さを頼りに隠された宝を見つけよう！', {
       fontSize: '13px',
       fill: '#8899bb',
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(controlText2);
-    
+
     // ゲームエリアの枠線
     const gameAreaFrame = this.scene.add.graphics();
     gameAreaFrame.lineStyle(3, 0x00d4aa, 0.7);
     gameAreaFrame.strokeRoundedRect(
-      this.GAME_AREA_BOUNDS.left - 20, 
-      this.GAME_AREA_BOUNDS.top - 20, 
-      this.GAME_AREA_BOUNDS.right - this.GAME_AREA_BOUNDS.left + 40, 
+      this.GAME_AREA_BOUNDS.left - 20,
+      this.GAME_AREA_BOUNDS.top - 20,
+      this.GAME_AREA_BOUNDS.right - this.GAME_AREA_BOUNDS.left + 40,
       this.GAME_AREA_BOUNDS.bottom - this.GAME_AREA_BOUNDS.top + 40,
       15
     );
@@ -299,7 +299,7 @@ export class VibrationHuntGame {
 
     // 宝探しの雰囲気を演出する要素を追加
     this.addAtmosphericElements();
-    
+
     // より魅力的なカーソル
     this.cursor = this.scene.add.graphics();
     this.cursor.fillStyle(0xff4444, 1);
@@ -309,20 +309,20 @@ export class VibrationHuntGame {
     this.cursor.lineStyle(1, 0xff8888, 0.7);
     this.cursor.strokeCircle(0, 0, 15);
     this.uiGroup.add(this.cursor);
-    
+
     // カーソルのグロー効果
     this.cursorGlow = this.scene.add.graphics();
     this.cursorGlow.fillStyle(0xff4444, 0.3);
     this.cursorGlow.fillCircle(0, 0, 20);
     this.uiGroup.add(this.cursorGlow);
-    
+
     // 初期位置設定
     this.cursor.setPosition(this.currentPosition.x, this.currentPosition.y);
     this.cursorGlow.setPosition(this.currentPosition.x, this.currentPosition.y);
-    
+
     // カーソルをインタラクティブにしてマウス操作を有効化
     this.cursor.setInteractive();
-    
+
     // カーソルの微細な動きアニメーション
     this.scene.tweens.add({
       targets: this.cursor,
@@ -333,38 +333,38 @@ export class VibrationHuntGame {
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
-    
+
     console.log('=== updateUI完了 ===');
   }
-  
+
   addAtmosphericElements() {
     // 宝探しの雰囲気を演出する要素
-    
+
     // 1. ランダムに配置された光る粒子
     this.createFloatingParticles();
-    
+
     // 2. 神秘的な光のオーラ
     this.createMysticalAura();
-    
+
     // 3. 宝の手がかりとなるサーチライン
     this.createSearchGrid();
   }
-  
+
   createFloatingParticles() {
     // ゲームエリア内にランダムに配置された光る粒子
     const bounds = this.GAME_AREA_BOUNDS;
     const particleCount = 15;
-    
+
     for (let i = 0; i < particleCount; i++) {
       const particle = this.scene.add.graphics();
       const x = Math.random() * (bounds.right - bounds.left) + bounds.left;
       const y = Math.random() * (bounds.bottom - bounds.top) + bounds.top;
-      
+
       particle.fillStyle(0x88ddff, 0.3);
       particle.fillCircle(0, 0, 2);
       particle.setPosition(x, y);
       this.uiGroup.add(particle);
-      
+
       // ふわふわと浮遊するアニメーション
       this.scene.tweens.add({
         targets: particle,
@@ -375,7 +375,7 @@ export class VibrationHuntGame {
         repeat: -1,
         ease: 'Sine.easeInOut'
       });
-      
+
       // 回転アニメーション
       this.scene.tweens.add({
         targets: particle,
@@ -388,11 +388,11 @@ export class VibrationHuntGame {
       });
     }
   }
-  
+
   createMysticalAura() {
     // ゲームエリアの周囲に神秘的な光のオーラ
     const bounds = this.GAME_AREA_BOUNDS;
-    
+
     const aura = this.scene.add.graphics();
     aura.lineStyle(2, 0x44aaff, 0.3);
     aura.strokeRoundedRect(
@@ -400,16 +400,16 @@ export class VibrationHuntGame {
       bounds.right - bounds.left + 20, bounds.bottom - bounds.top + 20,
       10
     );
-    
+
     aura.lineStyle(1, 0x88ccff, 0.2);
     aura.strokeRoundedRect(
       bounds.left - 25, bounds.top - 25,
       bounds.right - bounds.left + 50, bounds.bottom - bounds.top + 50,
       15
     );
-    
+
     this.uiGroup.add(aura);
-    
+
     // パルスアニメーション
     this.scene.tweens.add({
       targets: aura,
@@ -420,88 +420,88 @@ export class VibrationHuntGame {
       ease: 'Sine.easeInOut'
     });
   }
-  
+
   createSearchGrid() {
     // 微細な探索グリッド（宝探しの雰囲気）
     const bounds = this.GAME_AREA_BOUNDS;
     const gridSize = 50;
-    
+
     const grid = this.scene.add.graphics();
     grid.lineStyle(1, 0x333366, 0.15);
-    
+
     // 縦線
     for (let x = bounds.left; x <= bounds.right; x += gridSize) {
       grid.moveTo(x, bounds.top);
       grid.lineTo(x, bounds.bottom);
     }
-    
+
     // 横線
     for (let y = bounds.top; y <= bounds.bottom; y += gridSize) {
       grid.moveTo(bounds.left, y);
       grid.lineTo(bounds.right, y);
     }
-    
+
     grid.strokePath();
     this.uiGroup.add(grid);
   }
-  
+
 
 
   setupJoyConInput() {
     // マウス操作は常に有効
     this.setupMouseInput();
-    
+
     if (!this.jc) {
       console.log('Joy-Conマネージャーが見つかりません - マウス移動のみ、決定ボタンなし');
       return;
     }
-    
+
     console.log('Joy-Con入力設定開始 - Aボタンでの決定のみ有効');
-    
+
     // 定期的にJoy-Conの入力をチェック（ボタンのみ）
     this.inputUpdateInterval = setInterval(() => {
       this.updateJoyConInput();
     }, 16); // 約60FPS
-    
+
     console.log('Joy-Con入力設定完了 - マウス移動 + Joy-Con決定');
   }
-  
+
   setupMouseInput() {
     console.log('マウス操作設定開始');
-    
+
     // マウス移動でカーソルを制御
     this.scene.input.on('pointermove', (pointer) => {
       if (!this.gameActive) return;
-      
+
       // ゲームエリア内でのマウス位置を取得
       const bounds = this.GAME_AREA_BOUNDS;
       const mouseX = Math.max(bounds.left, Math.min(bounds.right, pointer.x));
       const mouseY = Math.max(bounds.top, Math.min(bounds.bottom, pointer.y));
-      
+
       // カーソル位置を更新
       this.currentPosition.x = mouseX;
       this.currentPosition.y = mouseY;
-      
+
       if (this.cursor) {
         this.cursor.setPosition(this.currentPosition.x, this.currentPosition.y);
         this.cursorGlow.setPosition(this.currentPosition.x, this.currentPosition.y);
       }
-      
+
       // 振動を計算・再生
       this.calculateAndPlayVibration();
     });
-    
+
     // マウスクリックは無効（Joy-ConのAボタンのみで決定）
     // this.scene.input.on('pointerdown', () => {
     //   // マウスクリックでの決定は無効
     // });
-    
+
     console.log('マウス操作設定完了');
   }
 
   updateJoyConInput() {
     if (!this.gameActive || !this.jc) return;
-    
+
     try {
       // Joy-Conデバイスの接続状態をチェック
       if (!this.jc.device || !this.jc.device.opened) {
@@ -509,19 +509,19 @@ export class VibrationHuntGame {
         this.handleJoyConDisconnection();
         return;
       }
-      
+
       const inputState = this.jc.getInputState();
       if (!inputState) return;
-      
+
       // スティック入力は無効（マウスのみでカーソル移動）
       // const stickX = inputState.rightStick.x; // -1 to 1
       // const stickY = inputState.rightStick.y; // -1 to 1
       // スティックでのカーソル移動は無効化
-      
+
       // Aボタンで決定
       if (inputState.buttons.a && !this.aButtonPressed) {
         this.aButtonPressed = true;
-        
+
         // ゲーム開始からの経過時間をチェック（誤検出防止）
         const elapsed = Date.now() - this.gameStartTime;
         if (elapsed > this.buttonGracePeriod) {
@@ -533,7 +533,7 @@ export class VibrationHuntGame {
       } else if (!inputState.buttons.a) {
         this.aButtonPressed = false;
       }
-      
+
       // Xボタンでキャリブレーション再実行
       if (inputState.buttons.x && !this.xButtonPressed) {
         this.xButtonPressed = true;
@@ -550,13 +550,13 @@ export class VibrationHuntGame {
 
   handleJoyConDisconnection() {
     console.log('Joy-Con切断を検出 - ゲームを継続');
-    
+
     // Joy-Conマネージャーをnullに設定
     this.jc = null;
-    
+
     // 振動を停止
     // this.jc.rumble(0, 0, 0, 0); // 既にnullなので呼べない
-    
+
     // ユーザーに通知（簡単なメッセージ）
     if (this.uiGroup) {
       const disconnectMessage = this.scene.add.text(400, 50, 'Joy-Con切断 - マウス操作で継続', {
@@ -567,9 +567,9 @@ export class VibrationHuntGame {
         backgroundColor: '#000000',
         padding: { x: 10, y: 5 }
       }).setOrigin(0.5);
-      
+
       this.uiGroup.add(disconnectMessage);
-      
+
       // 3秒後にメッセージを削除
       setTimeout(() => {
         if (disconnectMessage) disconnectMessage.destroy();
@@ -579,7 +579,7 @@ export class VibrationHuntGame {
 
   handleJoyConError(error) {
     console.error('Joy-Conエラー詳細:', error);
-    
+
     // 特定のエラータイプに応じた処理
     if (error.message && error.message.includes('device not open')) {
       this.handleJoyConDisconnection();
@@ -591,10 +591,10 @@ export class VibrationHuntGame {
 
   calculateAndPlayVibration() {
     if (!this.gameActive) return;
-    
+
     const distance = this.getDistance(this.currentPosition, this.targetPosition);
     let vibrationStrength = this.calculateVibrationStrength(distance);
-    
+
     // ダミー振動の処理
     if (this.dummyPositions) {
       for (const dummy of this.dummyPositions) {
@@ -605,7 +605,7 @@ export class VibrationHuntGame {
         }
       }
     }
-    
+
     // Joy-Conが接続されている場合のみ振動
     if (this.jc) {
       try {
@@ -616,7 +616,7 @@ export class VibrationHuntGame {
         this.handleJoyConDisconnection();
       }
     }
-    
+
     // カーソルのグロー効果を振動の強さに応じて変更
     this.updateCursorGlow(vibrationStrength);
   }
@@ -625,27 +625,27 @@ export class VibrationHuntGame {
     // 振動の強さに応じてカーソルのグロー効果を変更
     const alpha = Math.max(0.2, strength);
     const scale = 1 + strength * 0.8;
-    
+
     this.cursorGlow.clear();
-    
+
     // 複層のグロー効果
     // 外側のグロー
     this.cursorGlow.fillStyle(0xff4444, alpha * 0.3);
     this.cursorGlow.fillCircle(0, 0, 35 * scale);
-    
+
     // 中間のグロー
     this.cursorGlow.fillStyle(0xff6666, alpha * 0.5);
     this.cursorGlow.fillCircle(0, 0, 25 * scale);
-    
+
     // 内側のグロー
     this.cursorGlow.fillStyle(0xff8888, alpha * 0.7);
     this.cursorGlow.fillCircle(0, 0, 15 * scale);
-    
+
     // 宝に非常に近い場合の特別効果
     if (strength > 0.8) {
       this.cursorGlow.lineStyle(2, 0xffff00, alpha);
       this.cursorGlow.strokeCircle(0, 0, 40 * scale);
-      
+
       // パルス効果
       this.scene.tweens.add({
         targets: this.cursorGlow,
@@ -667,31 +667,31 @@ export class VibrationHuntGame {
   calculateVibrationStrength(distance) {
     const maxDist = this.vibrationSettings.maxDistance;
     if (distance >= maxDist) return 0;
-    
+
     const normalizedDistance = distance / maxDist;
     const strength = Math.pow(1 - normalizedDistance, 2);
-    
-    return Math.max(this.vibrationSettings.minAmplitude, 
-                   strength * this.vibrationSettings.maxAmplitude);
+
+    return Math.max(this.vibrationSettings.minAmplitude,
+      strength * this.vibrationSettings.maxAmplitude);
   }
 
   playVibration(strength) {
     if (!this.jc) return; // Joy-Conが切断されている場合は何もしない
-    
+
     try {
       if (strength <= 0) {
         this.jc.rumble(0, 0, 0, 0);
         return;
       }
-      
+
       const { baseFreq } = this.vibrationSettings;
       const freqMultiplier = 1 + strength;
-      
+
       const lowFreq = baseFreq.low * freqMultiplier;
       const highFreq = baseFreq.high * freqMultiplier;
       const lowAmp = strength * 0.7;
       const highAmp = strength;
-      
+
       this.jc.rumble(lowFreq, highFreq, lowAmp, highAmp);
     } catch (error) {
       console.warn('振動コマンド送信エラー:', error);
@@ -703,35 +703,35 @@ export class VibrationHuntGame {
   submitAnswer() {
     console.log('=== submitAnswer開始 ===');
     console.log('現在のシーン状態:', this.scene.currentScreen);
-    
+
     // ゲームを一時的に非アクティブにする（イベントハンドラーはクリアしない）
     this.gameActive = false;
     if (this.jc) {
       this.jc.rumble(0, 0, 0, 0);
     }
-    
+
     // 入力監視を停止
     if (this.inputUpdateInterval) {
       clearInterval(this.inputUpdateInterval);
       this.inputUpdateInterval = null;
     }
-    
+
     const distance = this.getDistance(this.currentPosition, this.targetPosition);
     const accuracy = Math.max(0, 100 - (distance / 3));
     const roundScore = Math.round(accuracy);
-    
+
     this.score += roundScore;
-    
+
     // 美しい結果画面を作成
     this.createBeautifulResultScreen(distance, roundScore);
-    
+
     // 成功エフェクト
     if (distance < 50) {
       this.createSuccessEffect();
     }
-    
+
     console.log('=== submitAnswer完了、3秒後に次の処理 ===');
-    
+
     setTimeout(() => {
       console.log('=== 次ラウンド/ゲーム終了処理開始 ===');
       if (this.round < this.maxRounds) {
@@ -753,26 +753,26 @@ export class VibrationHuntGame {
     overlay.fillStyle(0x000000, 0.8);
     overlay.fillRect(0, 0, 800, 600);
     this.uiGroup.add(overlay);
-    
+
     // 左側に位置表示パネルを作成
     this.createPositionPanel(distance);
-    
+
     // メインの結果パネル（右側に配置）
     const panelWidth = 320;
     const panelHeight = 400;
     const panelX = 600;
     const panelY = 300;
-    
+
     // グラデーション背景パネル
     const panel = this.scene.add.graphics();
     panel.fillGradientStyle(0x1a1a2e, 0x16213e, 0x0f3460, 0x533483);
-    panel.fillRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
-    
+    panel.fillRoundedRect(panelX - panelWidth / 2, panelY - panelHeight / 2, panelWidth, panelHeight, 20);
+
     // パネルの枠線
     panel.lineStyle(3, 0x00d4ff, 0.8);
-    panel.strokeRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    panel.strokeRoundedRect(panelX - panelWidth / 2, panelY - panelHeight / 2, panelWidth, panelHeight, 20);
     this.uiGroup.add(panel);
-    
+
     // タイトル「結果発表」
     const titleText = this.scene.add.text(panelX, panelY - 160, '結果発表', {
       fontSize: '28px',
@@ -781,7 +781,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(titleText);
-    
+
     // 精度評価
     let accuracyRating = '';
     let accuracyColor = '';
@@ -801,7 +801,7 @@ export class VibrationHuntGame {
       accuracyRating = 'もう少し！';
       accuracyColor = '#ff4444';
     }
-    
+
     const accuracyText = this.scene.add.text(panelX, panelY - 100, accuracyRating, {
       fontSize: '24px',
       fill: accuracyColor,
@@ -809,7 +809,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(accuracyText);
-    
+
     // 誤差表示（スタイリッシュ）
     const errorContainer = this.scene.add.graphics();
     errorContainer.fillStyle(0x2a2a2a, 0.8);
@@ -817,7 +817,7 @@ export class VibrationHuntGame {
     errorContainer.lineStyle(2, 0x00d4ff, 0.6);
     errorContainer.strokeRoundedRect(panelX - 120, panelY - 50, 240, 35, 8);
     this.uiGroup.add(errorContainer);
-    
+
     const errorText = this.scene.add.text(panelX, panelY - 32, `誤差: ${distance.toFixed(0)}px`, {
       fontSize: '16px',
       fill: '#ffffff',
@@ -825,7 +825,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(errorText);
-    
+
     // スコア表示（輝くエフェクト付き）
     const scoreContainer = this.scene.add.graphics();
     scoreContainer.fillStyle(0x4a4a00, 0.9);
@@ -833,7 +833,7 @@ export class VibrationHuntGame {
     scoreContainer.lineStyle(3, 0xffff00, 0.8);
     scoreContainer.strokeRoundedRect(panelX - 130, panelY + 10, 260, 45, 12);
     this.uiGroup.add(scoreContainer);
-    
+
     const scoreText = this.scene.add.text(panelX, panelY + 32, `獲得スコア: ${roundScore}点`, {
       fontSize: '18px',
       fill: '#ffff00',
@@ -843,7 +843,7 @@ export class VibrationHuntGame {
       strokeThickness: 2
     }).setOrigin(0.5);
     this.uiGroup.add(scoreText);
-    
+
     // 現在のラウンド情報
     const roundInfo = this.scene.add.text(panelX, panelY + 80, `ラウンド ${this.round}/${this.maxRounds}`, {
       fontSize: '16px',
@@ -851,7 +851,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(roundInfo);
-    
+
     // 総スコア表示
     const totalScoreText = this.scene.add.text(panelX, panelY + 105, `総スコア: ${this.score}点`, {
       fontSize: '16px',
@@ -860,7 +860,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(totalScoreText);
-    
+
     // 次のラウンドまたは終了の案内
     let nextText = '';
     if (this.round < this.maxRounds) {
@@ -868,7 +868,7 @@ export class VibrationHuntGame {
     } else {
       nextText = 'ゲーム終了！最終結果を表示します...';
     }
-    
+
     const nextRoundText = this.scene.add.text(panelX, panelY + 140, nextText, {
       fontSize: '14px',
       fill: '#aaaaaa',
@@ -876,7 +876,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(nextRoundText);
-    
+
     // スコアのキラキラエフェクト
     this.scene.tweens.add({
       targets: scoreText,
@@ -887,7 +887,7 @@ export class VibrationHuntGame {
       repeat: 2,
       ease: 'Back.easeInOut'
     });
-    
+
     // パネル全体のフェードインアニメーション
     panel.setAlpha(0);
     titleText.setAlpha(0);
@@ -899,7 +899,7 @@ export class VibrationHuntGame {
     roundInfo.setAlpha(0);
     totalScoreText.setAlpha(0);
     nextRoundText.setAlpha(0);
-    
+
     this.scene.tweens.add({
       targets: [panel, titleText, accuracyText, errorContainer, errorText, scoreContainer, scoreText, roundInfo, totalScoreText, nextRoundText],
       alpha: 1,
@@ -908,22 +908,22 @@ export class VibrationHuntGame {
       ease: 'Power2'
     });
   }
-  
+
   createPositionPanel(distance) {
     // 左側パネルの設定
     const panelWidth = 300;
     const panelHeight = 400;
     const panelX = 200;
     const panelY = 300;
-    
+
     // 左側パネルの背景
     const leftPanel = this.scene.add.graphics();
     leftPanel.fillGradientStyle(0x1a1a2e, 0x16213e, 0x0f3460, 0x533483);
-    leftPanel.fillRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    leftPanel.fillRoundedRect(panelX - panelWidth / 2, panelY - panelHeight / 2, panelWidth, panelHeight, 20);
     leftPanel.lineStyle(3, 0x00d4ff, 0.8);
-    leftPanel.strokeRoundedRect(panelX - panelWidth/2, panelY - panelHeight/2, panelWidth, panelHeight, 20);
+    leftPanel.strokeRoundedRect(panelX - panelWidth / 2, panelY - panelHeight / 2, panelWidth, panelHeight, 20);
     this.uiGroup.add(leftPanel);
-    
+
     // パネルタイトル
     const panelTitle = this.scene.add.text(panelX, panelY - 160, '位置比較', {
       fontSize: '24px',
@@ -932,71 +932,71 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(panelTitle);
-    
+
     // ミニマップエリアの設定
     const mapWidth = 240;
     const mapHeight = 180;
     const mapX = panelX;
     const mapY = panelY - 40;
-    
+
     // ミニマップの背景
     const mapBg = this.scene.add.graphics();
     mapBg.fillStyle(0x0a0a1a, 0.8);
-    mapBg.fillRoundedRect(mapX - mapWidth/2, mapY - mapHeight/2, mapWidth, mapHeight, 10);
+    mapBg.fillRoundedRect(mapX - mapWidth / 2, mapY - mapHeight / 2, mapWidth, mapHeight, 10);
     mapBg.lineStyle(2, 0x333366, 0.8);
-    mapBg.strokeRoundedRect(mapX - mapWidth/2, mapY - mapHeight/2, mapWidth, mapHeight, 10);
+    mapBg.strokeRoundedRect(mapX - mapWidth / 2, mapY - mapHeight / 2, mapWidth, mapHeight, 10);
     this.uiGroup.add(mapBg);
-    
+
     // ゲームエリアの境界を取得
     const bounds = this.GAME_AREA_BOUNDS;
     const gameAreaWidth = bounds.right - bounds.left;
     const gameAreaHeight = bounds.bottom - bounds.top;
-    
+
     // 座標変換関数（ゲーム座標 → ミニマップ座標）
     const toMapX = (gameX) => {
       const ratio = (gameX - bounds.left) / gameAreaWidth;
-      return mapX - mapWidth/2 + ratio * mapWidth;
+      return mapX - mapWidth / 2 + ratio * mapWidth;
     };
-    
+
     const toMapY = (gameY) => {
       const ratio = (gameY - bounds.top) / gameAreaHeight;
-      return mapY - mapHeight/2 + ratio * mapHeight;
+      return mapY - mapHeight / 2 + ratio * mapHeight;
     };
-    
+
     // 正解位置をミニマップに表示
     const correctMapX = toMapX(this.targetPosition.x);
     const correctMapY = toMapY(this.targetPosition.y);
-    
+
     const correctCircle = this.scene.add.graphics();
     correctCircle.fillStyle(0x00ff88, 1);
     correctCircle.fillCircle(correctMapX, correctMapY, 6);
     correctCircle.lineStyle(2, 0xffffff, 1);
     correctCircle.strokeCircle(correctMapX, correctMapY, 6);
     this.uiGroup.add(correctCircle);
-    
+
     // 正解位置の光る効果（位置は固定）
     const correctGlow = this.scene.add.graphics();
     correctGlow.fillStyle(0x00ff88, 0.3);
     correctGlow.fillCircle(correctMapX, correctMapY, 12);
     this.uiGroup.add(correctGlow);
-    
+
     // 回答位置をミニマップに表示
     const answerMapX = toMapX(this.currentPosition.x);
     const answerMapY = toMapY(this.currentPosition.y);
-    
+
     const answerCircle = this.scene.add.graphics();
     answerCircle.fillStyle(0xff4444, 1);
     answerCircle.fillCircle(answerMapX, answerMapY, 5);
     answerCircle.lineStyle(2, 0xffffff, 1);
     answerCircle.strokeCircle(answerMapX, answerMapY, 5);
     this.uiGroup.add(answerCircle);
-    
+
     // 回答位置の光る効果（位置は固定）
     const answerGlow = this.scene.add.graphics();
     answerGlow.fillStyle(0xff4444, 0.3);
     answerGlow.fillCircle(answerMapX, answerMapY, 10);
     this.uiGroup.add(answerGlow);
-    
+
     // 正解位置と回答位置を結ぶ線
     const connectionLine = this.scene.add.graphics();
     connectionLine.lineStyle(2, 0xffffff, 0.6);
@@ -1004,10 +1004,10 @@ export class VibrationHuntGame {
     connectionLine.lineTo(correctMapX, correctMapY);
     connectionLine.strokePath();
     this.uiGroup.add(connectionLine);
-    
+
     // 凡例
     const legendY = panelY + 80;
-    
+
     // 正解の凡例
     const correctLegendCircle = this.scene.add.graphics();
     correctLegendCircle.fillStyle(0x00ff88, 0.9);
@@ -1015,7 +1015,7 @@ export class VibrationHuntGame {
     correctLegendCircle.lineStyle(2, 0xffffff, 0.9);
     correctLegendCircle.strokeCircle(panelX - 80, legendY, 8);
     this.uiGroup.add(correctLegendCircle);
-    
+
     const correctLegendText = this.scene.add.text(panelX - 60, legendY, '正解位置', {
       fontSize: '14px',
       fill: '#00ff88',
@@ -1023,7 +1023,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0, 0.5);
     this.uiGroup.add(correctLegendText);
-    
+
     // 回答の凡例
     const answerLegendCircle = this.scene.add.graphics();
     answerLegendCircle.fillStyle(0xff4444, 0.8);
@@ -1031,7 +1031,7 @@ export class VibrationHuntGame {
     answerLegendCircle.lineStyle(2, 0xffffff, 0.9);
     answerLegendCircle.strokeCircle(panelX - 80, legendY + 30, 8);
     this.uiGroup.add(answerLegendCircle);
-    
+
     const answerLegendText = this.scene.add.text(panelX - 60, legendY + 30, 'あなたの回答', {
       fontSize: '14px',
       fill: '#ff8888',
@@ -1039,7 +1039,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0, 0.5);
     this.uiGroup.add(answerLegendText);
-    
+
     // 距離情報
     const distanceText = this.scene.add.text(panelX, legendY + 70, `距離: ${distance.toFixed(0)}px`, {
       fontSize: '16px',
@@ -1048,7 +1048,7 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(distanceText);
-    
+
     // アニメーション（グロー効果のみ、位置マーカーは固定）
     this.scene.tweens.add({
       targets: correctGlow,
@@ -1060,7 +1060,7 @@ export class VibrationHuntGame {
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
-    
+
     this.scene.tweens.add({
       targets: answerGlow,
       alpha: 0.1,
@@ -1071,7 +1071,7 @@ export class VibrationHuntGame {
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
-    
+
     // パネル要素のフェードイン
     leftPanel.setAlpha(0);
     panelTitle.setAlpha(0);
@@ -1086,7 +1086,7 @@ export class VibrationHuntGame {
     answerLegendCircle.setAlpha(0);
     answerLegendText.setAlpha(0);
     distanceText.setAlpha(0);
-    
+
     this.scene.tweens.add({
       targets: [leftPanel, panelTitle, mapBg, correctCircle, correctGlow, answerCircle, answerGlow, connectionLine, correctLegendCircle, correctLegendText, answerLegendCircle, answerLegendText, distanceText],
       alpha: 1,
@@ -1102,7 +1102,7 @@ export class VibrationHuntGame {
     const centerGlow = this.scene.add.graphics();
     centerGlow.fillGradientStyle(0x00d4ff, 0x00d4ff, 0x00d4ff, 0x00d4ff, 0.3, 0.3, 0, 0);
     centerGlow.fillCircle(400, 100, 60);
-    
+
     this.scene.tweens.add({
       targets: centerGlow,
       scaleX: 1.2,
@@ -1113,7 +1113,7 @@ export class VibrationHuntGame {
       repeat: -1,
       yoyo: true
     });
-    
+
     this.uiGroup.add(centerGlow);
   }
 
@@ -1125,7 +1125,7 @@ export class VibrationHuntGame {
     const buttonBg = this.scene.add.graphics();
     const primaryColorInt = parseInt(primaryColor.replace('#', ''), 16);
     const hoverColorInt = parseInt(hoverColor.replace('#', ''), 16);
-    
+
     buttonBg.fillGradientStyle(
       primaryColorInt,
       primaryColorInt,
@@ -1201,10 +1201,10 @@ export class VibrationHuntGame {
       particle.fillCircle(0, 0, 3);
       particle.x = this.currentPosition.x;
       particle.y = this.currentPosition.y;
-      
+
       const angle = (i / 15) * Math.PI * 2;
       const speed = Math.random() * 80 + 40;
-      
+
       this.scene.tweens.add({
         targets: particle,
         x: this.currentPosition.x + Math.cos(angle) * speed,
@@ -1222,16 +1222,16 @@ export class VibrationHuntGame {
   endGame() {
     this.gameActive = false;
     console.log(`ゲーム終了 - 最終スコア: ${this.score}`);
-    
+
     // ゲームUIをクリア
     if (this.uiGroup) {
       this.uiGroup.destroy(true);
       this.uiGroup = null;
     }
-    
+
     // 新しいUIグループを作成して終了画面を表示
     this.uiGroup = this.scene.add.group();
-    
+
     // 洗練されたグラデーション背景
     const bg = this.scene.add.graphics();
     bg.fillGradientStyle(
@@ -1241,14 +1241,14 @@ export class VibrationHuntGame {
     );
     bg.fillRect(0, 0, 800, 600);
     this.uiGroup.add(bg);
-    
+
     // シンプルな装飾
     this.createEndGameDecorations();
-    
+
     // メインコンテナ
     const containerX = 400;
     const containerY = 300;
-    
+
     // クリーンなメインパネル
     const mainPanel = this.scene.add.graphics();
     mainPanel.fillStyle(0x1e1e3e, 0.95);
@@ -1256,7 +1256,7 @@ export class VibrationHuntGame {
     mainPanel.lineStyle(1, 0x3a3a6a, 0.8);
     mainPanel.strokeRoundedRect(containerX - 300, containerY - 200, 600, 400, 20);
     this.uiGroup.add(mainPanel);
-    
+
     // ゲーム終了タイトル
     const gameOverTitle = this.scene.add.text(containerX, containerY - 140, 'ゲーム終了！', {
       fontSize: '36px',
@@ -1265,7 +1265,7 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     }).setOrigin(0.5);
     this.uiGroup.add(gameOverTitle);
-    
+
     // 最終スコア表示
     const finalScoreText = this.scene.add.text(containerX, containerY - 80, `最終スコア: ${this.score}点`, {
       fontSize: '28px',
@@ -1274,12 +1274,12 @@ export class VibrationHuntGame {
       fontWeight: 'bold'
     }).setOrigin(0.5);
     this.uiGroup.add(finalScoreText);
-    
+
     // スコア評価とランク表示
     let evaluation = '';
     let rank = '';
     let evaluationColor = '';
-    
+
     if (this.score >= 400) {
       evaluation = '素晴らしい！';
       rank = 'S';
@@ -1301,43 +1301,43 @@ export class VibrationHuntGame {
       rank = 'D';
       evaluationColor = '#6c5ce7';
     }
-    
+
     // シンプルなランク表示
     const rankContainer = this.scene.add.container(containerX, containerY - 20);
-    
+
     const rankCircle = this.scene.add.graphics();
     rankCircle.fillStyle(0x2a2a3a, 1);
     rankCircle.fillCircle(-60, 0, 25);
     const colorHex = parseInt(evaluationColor.replace('#', ''), 16);
     rankCircle.lineStyle(2, colorHex, 1);
     rankCircle.strokeCircle(-60, 0, 25);
-    
+
     const rankText = this.scene.add.text(-60, 0, rank, {
       fontSize: '24px',
       fill: evaluationColor,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'bold'
     }).setOrigin(0.5);
-    
+
     const evaluationText = this.scene.add.text(30, 0, evaluation, {
       fontSize: '20px',
       fill: evaluationColor,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'bold'
     }).setOrigin(0.5);
-    
+
     rankContainer.add([rankCircle, rankText, evaluationText]);
     this.uiGroup.add(rankContainer);
-    
+
     // スタイリッシュなボタンエリア
     const buttonY = containerY + 80;
-    
+
     // タイトルに戻るボタン（タイトル画面と同じスタイル）
     const titleButton = this.createStylishEndGameButton(containerX - 150, buttonY, 'タイトルに戻る', '#4a9eff', '#3a8eef');
-    
+
     // もう一度遊ぶボタン（タイトル画面と同じスタイル）
     const retryButton = this.createStylishEndGameButton(containerX + 150, buttonY, 'もう一度遊ぶ', '#00d4aa', '#00b899');
-    
+
     // タイトルボタンのクリックイベント
     titleButton.on('pointerdown', () => {
       console.log('タイトルに戻るボタンがクリックされました');
@@ -1345,16 +1345,15 @@ export class VibrationHuntGame {
       // VibrationHuntSceneのタイトル画面に戻る
       this.scene.transitionToTitle();
     });
-    
+
     // リトライボタンのクリックイベント
     retryButton.on('pointerdown', () => {
       console.log('もう一度遊ぶボタンがクリックされました');
       this.destroy();
-      // ゲームを最初からやり直し
       const newGame = new VibrationHuntGame(this.scene, this.jc);
       newGame.startGame();
     });
-    
+
     // Joy-Con操作の説明
     const instructionText = this.scene.add.text(containerX, containerY + 150, 'Joy-Con左右で選択、Aボタンで決定', {
       fontSize: '14px',
@@ -1362,41 +1361,41 @@ export class VibrationHuntGame {
       fontFamily: 'Arial, sans-serif'
     }).setOrigin(0.5);
     this.uiGroup.add(instructionText);
-    
+
     // Joy-Con操作でのボタン選択機能
     this.setupEndGameJoyConInput(titleButton, retryButton, titleButton.buttonText, retryButton.buttonText);
-    
+
     // 入力監視を停止
     if (this.inputUpdateInterval) {
       clearInterval(this.inputUpdateInterval);
       this.inputUpdateInterval = null;
     }
-    
+
     if (this.jc) {
       this.jc.rumble(0, 0, 0, 0);
     }
   }
-  
+
   setupEndGameJoyConInput(titleButton, retryButton, titleButtonText, retryButtonText) {
     if (!this.jc) return;
-    
+
     this.selectedButton = 0; // 0: タイトル, 1: リトライ
     this.endGameButtons = [
       { button: titleButton, text: titleButtonText, action: 'title' },
       { button: retryButton, text: retryButtonText, action: 'retry' }
     ];
-    
+
     // 初期選択状態を設定
     this.updateButtonSelection();
-    
+
     // Joy-Con入力監視
     this.endGameInputInterval = setInterval(() => {
       if (!this.jc) return;
-      
+
       try {
         const inputState = this.jc.getInputState();
         if (!inputState) return;
-        
+
         // 左右で選択切り替え
         if (inputState.buttons.left && !this.leftPressed) {
           this.leftPressed = true;
@@ -1405,7 +1404,7 @@ export class VibrationHuntGame {
         } else if (!inputState.buttons.left) {
           this.leftPressed = false;
         }
-        
+
         if (inputState.buttons.right && !this.rightPressed) {
           this.rightPressed = true;
           this.selectedButton = (this.selectedButton + 1) % this.endGameButtons.length;
@@ -1413,7 +1412,7 @@ export class VibrationHuntGame {
         } else if (!inputState.buttons.right) {
           this.rightPressed = false;
         }
-        
+
         // Aボタンで決定
         if (inputState.buttons.a && !this.aButtonPressed) {
           this.aButtonPressed = true;
@@ -1421,13 +1420,13 @@ export class VibrationHuntGame {
         } else if (!inputState.buttons.a) {
           this.aButtonPressed = false;
         }
-        
+
       } catch (error) {
         console.error('終了画面Joy-Con入力エラー:', error);
       }
     }, 16);
   }
-  
+
   updateButtonSelection() {
     this.endGameButtons.forEach((btn, index) => {
       if (index === this.selectedButton) {
@@ -1451,10 +1450,10 @@ export class VibrationHuntGame {
       }
     });
   }
-  
+
   executeSelectedAction() {
     const selectedBtn = this.endGameButtons[this.selectedButton];
-    
+
     if (selectedBtn.action === 'title') {
       console.log('Joy-Con: タイトルに戻る');
       this.destroy();
@@ -1470,19 +1469,19 @@ export class VibrationHuntGame {
 
   destroy() {
     this.gameActive = false;
-    
+
     // 入力監視を停止
     if (this.inputUpdateInterval) {
       clearInterval(this.inputUpdateInterval);
       this.inputUpdateInterval = null;
     }
-    
+
     // 終了画面の入力監視も停止
     if (this.endGameInputInterval) {
       clearInterval(this.endGameInputInterval);
       this.endGameInputInterval = null;
     }
-    
+
     if (this.jc) {
       this.jc.rumble(0, 0, 0, 0);
     }

@@ -6,7 +6,11 @@
     @include game-tile-base;
     @include themed-game-tile;
     @include focus-ring;
-    position: relative;
+
+    // 宣言をネストされたルールの前に移動
+    & {
+        position: relative;
+    }
 
     // ゲーム画像部分
     &__image {
