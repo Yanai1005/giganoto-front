@@ -47,6 +47,14 @@
       "image": "/assets/dev-detective.png",
       "path": "/game",
       "gameType": "dev-detective"
+    },
+    {
+      "id": 10,
+      "title": "とばくろ",
+      "description": "とばくろのゲーム",
+      "image": "/assets/toba.png",
+      "path": "/game",
+      "gameType": "toba"
     }
   ],
   "gameTypes": {
@@ -85,6 +93,12 @@
       "description": "開発者ツールを活用した謎解きゲーム",
       "controls": "F12でデベロッパーツールを開き、コンソール・DOM・ネットワークタブを使って謎を解こう！",
       "modulePath": "../games/dev-detective/game.js"
+    },
+    "toba": {
+      "name": "とばくろ",
+      "description": "とばくろのゲーム",
+      "controls": "基本操作",
+      "modulePath": "../games/toba/game.js"
     }
   }
 }
