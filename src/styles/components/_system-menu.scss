@@ -101,6 +101,190 @@
     }
 }
 
+// Joy-Con接続モーダル
+.joycon-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: $z-modal;
+    @include flex-center;
+
+    &__backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    &__content {
+        position: relative;
+        background: var(--bg-secondary);
+        border-radius: $border-radius-xl;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    &__header {
+        @include flex-center;
+        justify-content: space-between;
+        padding: $spacing-6 $spacing-6 $spacing-4;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    &__title {
+        @include flex-center;
+        gap: $spacing-3;
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+        margin: 0;
+    }
+
+    &__close {
+        @include button-reset;
+        @include flex-center;
+        width: 40px;
+        height: 40px;
+        border-radius: $border-radius-full;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        transition: all $transition-smooth;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transform: scale(1.1);
+        }
+    }
+
+    &__body {
+        padding: $spacing-6;
+    }
+
+    &__status {
+        margin-top: $spacing-6;
+        padding: $spacing-4;
+        background: var(--bg-tertiary);
+        border-radius: $border-radius-lg;
+        border: 1px solid var(--border-color);
+
+        h3 {
+            margin: 0 0 $spacing-4 0;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-semibold;
+            @include themed-text('primary');
+        }
+    }
+
+    &__status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: $spacing-3;
+    }
+
+    &__status-item {
+        @include flex-center;
+        justify-content: space-between;
+        padding: $spacing-2 $spacing-3;
+        background: var(--bg-primary);
+        border-radius: $border-radius-md;
+        border: 1px solid var(--border-color);
+    }
+
+    &__status-label {
+        font-size: $font-size-sm;
+        @include themed-text('secondary');
+        font-weight: $font-weight-medium;
+    }
+
+    &__status-value {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+
+        &--connected {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        &--disconnected {
+            background: rgba(128, 128, 128, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+    }
+
+    &__instructions {
+        margin-top: $spacing-6;
+        padding: $spacing-4;
+        background: var(--bg-tertiary);
+        border-radius: $border-radius-lg;
+        border: 1px solid var(--border-color);
+
+        h3 {
+            margin: 0 0 $spacing-4 0;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-semibold;
+            @include themed-text('primary');
+        }
+    }
+
+    &__instructions-list {
+        @include flex-column;
+        gap: $spacing-2;
+    }
+
+    &__instruction-item {
+        @include flex-center;
+        justify-content: space-between;
+        padding: $spacing-2 $spacing-3;
+        background: var(--bg-primary);
+        border-radius: $border-radius-md;
+        border: 1px solid var(--border-color);
+    }
+
+    &__instruction-button {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        @include themed-text('primary');
+        background: var(--bg-secondary);
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+        border: 1px solid var(--border-color);
+    }
+
+    &__instruction-action {
+        font-size: $font-size-sm;
+        @include themed-text('secondary');
+    }
+}
+
+// モーダルアニメーション
+@keyframes modalSlideIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
 // レスポンシブ対応
 @include sm {
     .nintendo-system-menu {
@@ -131,6 +315,25 @@
                 width: 24px;
                 height: 24px;
             }
+        }
+    }
+
+    .joycon-modal {
+        &__content {
+            width: 95%;
+            max-height: 90vh;
+        }
+
+        &__header {
+            padding: $spacing-4 $spacing-4 $spacing-3;
+        }
+
+        &__body {
+            padding: $spacing-4;
+        }
+
+        &__status-grid {
+            grid-template-columns: 1fr;
         }
     }
 }

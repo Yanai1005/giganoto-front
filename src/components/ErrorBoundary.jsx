@@ -1,4 +1,3 @@
-// src/components/ErrorBoundary.jsx - React Error Boundary for Joy-Con components
 import React from 'react';
 
 class ErrorBoundary extends React.Component {
@@ -8,7 +7,6 @@ class ErrorBoundary extends React.Component {
     }
 
     static getDerivedStateFromError(error) {
-        // Update state so the next render will show the fallback UI
         return { hasError: true };
     }
 

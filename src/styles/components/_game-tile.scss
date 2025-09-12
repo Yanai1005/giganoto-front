@@ -6,86 +6,38 @@
     @include game-tile-base;
     @include themed-game-tile;
     @include focus-ring;
-
-    // ベースの状態
-    &__container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
+    position: relative;
 
     // ゲーム画像部分
     &__image {
         width: 100%;
         height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: var(--bg-secondary);
-        @include flex-center;
-        font-size: 3rem;
         position: relative;
+        overflow: hidden;
+        border-radius: $game-tile-border-radius;
 
-        &::before {
-            content: '';
-            @include absolute-full;
-            background: linear-gradient(135deg,
-                    var(--accent-primary) 0%,
-                    var(--accent-secondary) 100%);
-            opacity: 0.1;
-            z-index: 1;
-        }
-
-        &--placeholder {
-            &::before {
-                opacity: 0.2;
-            }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
         }
     }
 
+    // タイトル部分（画像の上に重ねて表示）
     &__title {
         position: absolute;
         bottom: 0;
         left: 0;
         right: 0;
-        padding: $spacing-5 $spacing-3 $spacing-3;
+        padding: $spacing-3 $spacing-2 $spacing-2;
         background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
         color: white;
         font-size: $font-size-sm;
         font-weight: $font-weight-semibold;
         line-height: $line-height-tight;
-        z-index: 3;
-
+        z-index: 2;
         @include text-truncate-lines(2);
-    }
-
-    &__category {
-        position: absolute;
-        top: $spacing-2;
-        right: $spacing-2;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: $spacing-1 $spacing-2;
-        border-radius: $border-radius-sm;
-        font-size: $font-size-xs;
-        font-weight: $font-weight-medium;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        z-index: 3;
-    }
-
-    &__playtime {
-        position: absolute;
-        top: $spacing-2;
-        left: $spacing-2;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: $spacing-1 $spacing-2;
-        border-radius: $border-radius-sm;
-        font-size: $font-size-xs;
-        font-weight: $font-weight-medium;
-        @include backdrop-blur(4px);
-        z-index: 3;
     }
 
     &--selected {
@@ -118,11 +70,6 @@
 
         .game-tile__title {
             background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-        }
-
-        .game-tile__category,
-        .game-tile__playtime {
-            background: rgba(0, 0, 0, 0.8);
         }
     }
 
@@ -158,7 +105,7 @@
     }
 
     &--favorite {
-        .game-tile__category {
+        .game-tile__title {
             &::before {
                 content: '♥';
                 color: #FF4081;
@@ -169,7 +116,6 @@
 }
 
 // ゲームグリッドコンテナ
-
 .game-grid {
     display: flex;
     gap: $game-tile-gap;
@@ -201,7 +147,6 @@
 }
 
 // キーボードナビゲーション
-
 .game-tile {
     &:focus {
         outline: none;
@@ -214,7 +159,6 @@
 }
 
 // アニメーション
-
 @keyframes spin {
     0% {
         transform: translate(-50%, -50%) rotate(0deg);
@@ -247,11 +191,9 @@
 }
 
 // ダークモード特有のスタイル
-
 .theme-dark {
     .game-tile {
         &__image {
-            // ダークテーマでは少し明度を下げる
             filter: brightness(0.9);
         }
 
@@ -263,20 +205,9 @@
     }
 }
 
-
 // ライトモード特有のスタイル
-
-
 .theme-light {
     .game-tile {
-
-        &__category,
-        &__playtime {
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--text-primary);
-            backdrop-filter: blur(8px);
-        }
-
         &__title {
             background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
             color: var(--text-primary);
@@ -285,7 +216,6 @@
 }
 
 // ユーティリティクラス
-
 .game-tile-skeleton {
     @include game-tile-base;
     background: var(--bg-secondary);

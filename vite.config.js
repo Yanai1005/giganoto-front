@@ -53,9 +53,5 @@ export default defineConfig({
     }
   },
 
-  assetsInclude: ['**/*.hdr'],
-
-  optimizeDeps: {
-    exclude: ['**/games/**']
-  }
+  assetsInclude: ['**/*.hdr']
 })

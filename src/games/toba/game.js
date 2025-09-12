@@ -5,19 +5,14 @@ export const initializeGame = (container) => {
     const config = {
         type: Phaser.AUTO,
         width: 800,
-        height: 530,
+        height: 600,
         parent: container,
         backgroundColor: '#1a1a2e',
         physics: {
             default: 'arcade',
-            arcade: {
-                gravity: { y: 100 },
-                debug: false
-            }
+            arcade: { gravity: { y: 0 } }
         },
         scene: [GameScene]
     };
-
-    const game = new Phaser.Game(config);
-    return game;
+    return new Phaser.Game(config);
 };
