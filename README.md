@@ -17,10 +17,6 @@
 困った時は[ここ](https://github.com/Yanai1005/giganoto-front/wiki/Phaser%E3%81%AB%E9%96%A2%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8)
 
 ### ゲームの追加
-
-```
-npm run game space "スペースゲーム"
-```
-上記で`games/space`ディレクトリが作成され、必要なファイルが生成されます。
-`"スペースゲーム"`の部分はゲーム一覧に表示される名前です。日本語も可能です。
-`space`の部分は任意の名前に変更可能ですが、半角英数字とハイフンのみ使用可能です。
+Makefileを使ってゲームの雛形を生成できます。
+下記の詳細なコマンドを記載しています
+[ゲームシーン追加手順](https://github.com/Yanai1005/giganoto-front/wiki/%E9%96%8B%E7%99%BA%EF%BC%9A%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%B7%E3%83%BC%E3%83%B3%E3%82%92%E8%BF%BD%E5%8A%A0)
