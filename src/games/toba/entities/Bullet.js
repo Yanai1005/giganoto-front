@@ -28,8 +28,10 @@ export class PlayerBullet extends Phaser.Physics.Arcade.Sprite {
     }
     
     onHit() {
-        // ヒット時のエフェクトがあれば追加
-        this.destroy();
+        // 弾丸を非表示・非アクティブ化
+        this.setActive(false);
+        this.setVisible(false);
+        // 必要ならエフェクトやスコア加算処理もここに
     }
 }
 

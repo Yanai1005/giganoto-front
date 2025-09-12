@@ -321,11 +321,23 @@ class GameScene extends Phaser.Scene {
         this.powerUps.add(powerUp);
     }
 
-    hitEnemy(bullet, enemy) {
-        bullet.onHit();
-        
-        const isDead = enemy.takeDamage(1);
-        if (isDead) {
+        hitEnemy(bullet, enemy) {
+        // bulletがonHitメソッドを持つか確認して安全に呼び出す
+        if (typeof bullet.onHit === 'function') {
+            bullet.onHit();
+        } else {
+            bullet.setActive(false);
+            bullet.setVisible(false);
+        }
+
+        // enemyがtakeDamageメソッドを持つか確認して安全に呼び出す
+        if (typeof enemy.takeDamage === 'function') {
+            const isDead = enemy.takeDamage(1);
+            if (isDead) {
+                this.enemies.remove(enemy);
+            }
+        } else {
+            // 万が一takeDamageが無い場合は敵を削除のみ行う
             this.enemies.remove(enemy);
         }
     }

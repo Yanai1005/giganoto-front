@@ -69,15 +69,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     fire() {
-        const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
+    // 弾丸プールから弾丸を取得
+    const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
     if (!bullet) {
         // 弾丸が取得できなかった場合は何もしない
         return;
     }
-    bullet.setActive(true);
-    bullet.setVisible(true);
-    bullet.setVelocityY(-this.stats.bulletSpeed);
+    // bulletがPlayerBulletインスタンスか確認し、onHitメソッドがある場合は初期化
+    if (typeof bullet.onHit === 'function') {
+        bullet.setActive(true);
+        bullet.setVisible(true);
+        bullet.setVelocityY(-this.bulletSpeed);
+    } else {
+        // 万が一PlayerBullet以外が返された場合の安全処理
+        bullet.setActive(true);
+        bullet.setVisible(true);
+        bullet.setVelocityY(-this.bulletSpeed);
     }
+}
     
     takeDamage() {
         if (this.invulnerable) return false;
