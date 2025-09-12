@@ -69,25 +69,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     fire() {
-        const bullets = this.scene.playerBullets;
-        
-        if (this.bulletCount === 1) {
-            // 単発
-            const bullet = bullets.create(this.x, this.y - 15, 'player_bullet');
-            bullet.setVelocityY(-this.bulletSpeed);
-        } else {
-            // 複数弾
-            for (let i = 0; i < this.bulletCount; i++) {
-                const angle = (i - (this.bulletCount - 1) / 2) * this.spreadAngle;
-                const bullet = bullets.create(this.x, this.y - 15, 'player_bullet');
-                const radians = Phaser.Math.DegToRad(angle);
-                
-                bullet.setVelocity(
-                    Math.sin(radians) * this.bulletSpeed,
-                    -Math.cos(radians) * this.bulletSpeed
-                );
-            }
-        }
+        const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
+    if (!bullet) {
+        // 弾丸が取得できなかった場合は何もしない
+        return;
+    }
+    bullet.setActive(true);
+    bullet.setVisible(true);
+    bullet.setVelocityY(-this.stats.bulletSpeed);
     }
     
     takeDamage() {
