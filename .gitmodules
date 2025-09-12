@@ -1,3 +1,6 @@
 [submodule "giganoto-infra"]
 	path = giganoto-infra
 	url = git@github.com:Yanai1005/giganoto-infra.git
+[submodule "path/to/joycon-lib"]
+	path = path/to/joycon-lib
+	url = https://github.com/Yanai1005/Joystick.git
