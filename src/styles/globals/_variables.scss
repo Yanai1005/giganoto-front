@@ -79,6 +79,7 @@ $z-toast: 1080;
 
 $border-radius-sm: 0.25rem;
 $border-radius-base: 0.5rem;
+$border-radius-md: 0.375rem;
 $border-radius-lg: 0.75rem;
 $border-radius-xl: 1rem;
 $border-radius-2xl: 1.5rem;
@@ -105,7 +106,6 @@ $system-icon-size: 3rem;
 $system-menu-height: 5rem;
 $system-menu-padding: $spacing-6;
 
-
 $top-bar-height: 3.75rem;
 $user-avatar-size: 2.5rem;
 
@@ -119,3 +119,15 @@ $duration-smooth: 300ms;
 $duration-slow: 500ms;
 
 $development-mode: true;
+
+// 追加の変数
+$border-radius-md: 0.375rem;
+$border-radius-xs: 0.125rem;
+
+// シャドウ関連の変数
+$shadow-color: var(--shadow-color);
+$shadow-hover: var(--shadow-hover);
+
+// テーマ関連の変数
+$glass-bg: rgba(255, 255, 255, 0.1);
+$system-menu-bg: rgba(0, 0, 0, 0.8);

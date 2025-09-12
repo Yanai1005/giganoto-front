@@ -2,18 +2,28 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import GameRegistry from '../gameManager/GameRegistry';
 import HomeMenu from '../components/HomeMenu';
+import { useJoyConContext } from '../contexts/JoyConContext';
 
 const Game = () => {
     const gameRef = useRef(null);
     const phaserGameRef = useRef(null);
     const location = useLocation();
     const [gameControls, setGameControls] = useState('');
+    const { disconnectAllJoyCons } = useJoyConContext();
 
     const gameType = location.state?.gameType;
     const gameTitle = location.state?.gameTitle;
 
     useEffect(() => {
         const loadGame = async () => {
+            // 前のJoyConセッションをクリーンアップ
+            try {
+                await disconnectAllJoyCons();
+                console.log('✅ 前のJoyConセッションをクリーンアップしました');
+            } catch (error) {
+                console.warn('⚠️ JoyConセッションのクリーンアップでエラーが発生しました:', error);
+            }
+
             // ゲームレジストリを初期化
             if (!GameRegistry.isInitialized()) {
                 const gamesData = await import('../data/games.json');
@@ -54,7 +64,7 @@ const Game = () => {
             GameRegistry.cleanupCurrentGame();
             phaserGameRef.current = null;
         };
-    }, [gameType]);
+    }, [gameType, disconnectAllJoyCons]);
 
     return (
         <div className="switch-game">
