@@ -28,11 +28,6 @@ const GameTile = forwardRef(({
         className
     ].filter(Boolean).join(' ');
 
-    const imageClasses = [
-        'game-tile__image',
-        loading && 'game-tile__image--loading'
-    ].filter(Boolean).join(' ');
-
     return (
         <div
             ref={ref}
@@ -44,19 +39,14 @@ const GameTile = forwardRef(({
             aria-label={`${game.title}を選択`}
             aria-pressed={selected}
         >
-            <div className="game-tile__content">
-                <div className={imageClasses}>
-                    <img
-                        src={game.image}
-                        alt={game.title}
-                        loading="lazy"
-                    />
-                </div>
-                <div className="game-tile__info">
-                    <h3 className="game-tile__title">{game.title}</h3>
-                    <p className="game-tile__description">{game.description}</p>
-                </div>
+            <div className="game-tile__image">
+                <img
+                    src={game.image}
+                    alt={game.title}
+                    loading="lazy"
+                />
             </div>
+            <div className="game-tile__title">{game.title}</div>
 
             {loading && (
                 <div className="game-tile__loading">
