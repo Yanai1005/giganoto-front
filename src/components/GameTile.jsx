@@ -1,12 +1,13 @@
+import { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
-const GameTile = ({
+const GameTile = forwardRef(({
     game,
     selected = false,
     onClick,
     className = '',
     loading = false
-}) => {
+}, ref) => {
     const handleClick = () => {
         if (!loading) {
             onClick?.(game);
@@ -29,44 +30,53 @@ const GameTile = ({
 
     const imageClasses = [
         'game-tile__image',
-        !game.image && 'game-tile__image--placeholder'
+        loading && 'game-tile__image--loading'
     ].filter(Boolean).join(' ');
 
     return (
         <div
+            ref={ref}
             className={tileClasses}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
-            tabIndex={loading ? -1 : 0}
+            tabIndex={0}
             role="button"
             aria-label={`${game.title}を選択`}
             aria-pressed={selected}
-            aria-disabled={loading}
         >
-            <div className="game-tile__container">
-                <div
-                    className={imageClasses}
-                    style={{
-                        backgroundImage: game.image ? `url(${game.image})` : 'none'
-                    }}
-                >
-                    {!game.image && !loading && '🎮'}
+            <div className="game-tile__content">
+                <div className={imageClasses}>
+                    <img
+                        src={game.image}
+                        alt={game.title}
+                        loading="lazy"
+                    />
                 </div>
-
-                <div className="game-tile__title">
-                    {game.title}
+                <div className="game-tile__info">
+                    <h3 className="game-tile__title">{game.title}</h3>
+                    <p className="game-tile__description">{game.description}</p>
                 </div>
             </div>
+
+            {loading && (
+                <div className="game-tile__loading">
+                    <div className="game-tile__spinner"></div>
+                </div>
+            )}
         </div>
     );
-};
+});
+
+GameTile.displayName = 'GameTile';
 
 GameTile.propTypes = {
     game: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        id: PropTypes.string.isRequired,
         title: PropTypes.string.isRequired,
-        image: PropTypes.string,
-        path: PropTypes.string.isRequired
+        description: PropTypes.string.isRequired,
+        image: PropTypes.string.isRequired,
+        path: PropTypes.string.isRequired,
+        gameType: PropTypes.string.isRequired
     }).isRequired,
     selected: PropTypes.bool,
     onClick: PropTypes.func,
