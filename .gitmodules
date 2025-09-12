@@ -4,3 +4,6 @@
 [submodule "path/to/joycon-lib"]
 	path = path/to/joycon-lib
 	url = https://github.com/Yanai1005/Joystick.git
+[submodule "lib/joycon-lib"]
+	path = lib/joycon-lib
+	url = https://github.com/Yanai1005/Joystick.git
