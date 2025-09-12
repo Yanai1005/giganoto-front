@@ -9,7 +9,7 @@ const Settings = () => {
     const { theme, changeTheme, toggleTheme, getThemeInfo } = useTheme();
     const [selectedCategory, setSelectedCategory] = useState('theme');
 
-    // Joy-Conカーソル機能を有効化
+    // Joy-Conカーソル機能を有効化（右Joy-ConのAボタンでクリック）
     const {
         mousePosition,
         isClicking,
@@ -18,10 +18,11 @@ const Settings = () => {
     } = useJoyConCursor({
         enabled: true,
         sensitivity: 0.8,
-        deadzone: 0.05,
+        deadzone: 0.2,
         showCursor: true,
         smoothing: 0.85,
-        invertY: true
+        invertY: true,
+        useRightJoyConForClick: true  // 右Joy-ConのAボタンでクリック
     });
 
     const settingsOptions = [
@@ -123,11 +124,11 @@ const Settings = () => {
                                     <span className="joycon-instructions__action">カーソル移動</span>
                                 </div>
                                 <div className="joycon-instructions__item">
-                                    <span className="joycon-instructions__button">Aボタン</span>
+                                    <span className="joycon-instructions__button">右Joy-Con Aボタン</span>
                                     <span className="joycon-instructions__action">左クリック</span>
                                 </div>
                                 <div className="joycon-instructions__item">
-                                    <span className="joycon-instructions__button">Bボタン</span>
+                                    <span className="joycon-instructions__button">右Joy-Con Bボタン</span>
                                     <span className="joycon-instructions__action">右クリック</span>
                                 </div>
                             </div>

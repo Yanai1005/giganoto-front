@@ -1,0 +1,429 @@
+@use '../globals/variables' as *;
+@use '../globals/mixins' as *;
+@use '../globals/themes' as *;
+
+.joycon-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: $z-modal;
+    @include flex-center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.joycon-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: $border-radius-xl;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideInUp 0.3s ease-out;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: $spacing-6 $spacing-6 $spacing-4;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-primary);
+    }
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: $spacing-3;
+        margin: 0;
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        @include themed-text('primary');
+    }
+
+    &__icon {
+        font-size: $font-size-2xl;
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    &__close {
+        @include button-reset;
+        @include flex-center;
+        width: 32px;
+        height: 32px;
+        border-radius: $border-radius-md;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        transition: all $transition-smooth;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transform: scale(1.05);
+        }
+    }
+
+    &__content {
+        padding: $spacing-6;
+        max-height: 60vh;
+        overflow-y: auto;
+        @include scrollbar-hidden;
+    }
+
+    &__status {
+        @include flex-column;
+        gap: $spacing-4;
+    }
+
+    &__status-header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        background: rgba(0, 255, 0, 0.1);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: $border-radius-lg;
+    }
+
+    &__status-icon {
+        font-size: $font-size-lg;
+    }
+
+    &__status-text {
+        font-size: $font-size-base;
+        font-weight: $font-weight-medium;
+        color: #00ff00;
+    }
+
+    &__controllers {
+        @include flex-column;
+        gap: $spacing-2;
+    }
+
+    &__controller {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: $spacing-3 $spacing-4;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: $border-radius-md;
+    }
+
+    &__controller-info {
+        @include flex-column;
+        gap: $spacing-1;
+    }
+
+    &__controller-name {
+        @include themed-text('primary');
+        font-weight: $font-weight-medium;
+        font-size: $font-size-sm;
+    }
+
+    &__controller-status {
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+
+        &.connected {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        &.disconnected {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff4444;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+    }
+
+    &__disconnect-btn {
+        @include themed-button('secondary');
+        padding: $spacing-1 $spacing-3;
+        font-size: $font-size-xs;
+        border-radius: $border-radius-sm;
+        transition: all $transition-smooth;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        gap: $spacing-3;
+        margin-top: $spacing-4;
+    }
+
+    &__button {
+        @include themed-button('primary');
+        @include flex-center;
+        gap: $spacing-2;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        padding: $spacing-3 $spacing-4;
+        border-radius: $border-radius-md;
+        transition: all $transition-smooth;
+        flex: 1;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px var(--shadow-hover);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        &--primary {
+            @include themed-button('primary');
+        }
+
+        &--secondary {
+            @include themed-button('secondary');
+        }
+    }
+
+    &__spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: $border-radius-full;
+        animation: spin 1s linear infinite;
+    }
+
+    &__prompt {
+        @include flex-column;
+        align-items: center;
+        gap: $spacing-4;
+        text-align: center;
+    }
+
+    &__prompt-content {
+        @include flex-column;
+        align-items: center;
+        gap: $spacing-3;
+    }
+
+    &__prompt-icon {
+        font-size: 3rem;
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    &__prompt-text {
+        font-size: $font-size-lg;
+        @include themed-text('secondary');
+        font-weight: $font-weight-medium;
+    }
+
+    &__status-info {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: $border-radius-lg;
+        padding: $spacing-4;
+        margin-top: $spacing-4;
+
+        h3 {
+            margin: 0 0 $spacing-3 0;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-semibold;
+            @include themed-text('primary');
+        }
+
+        &__item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: $spacing-2 0;
+            border-bottom: 1px solid var(--border-color);
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        &__label {
+            font-size: $font-size-sm;
+            @include themed-text('secondary');
+            font-weight: $font-weight-medium;
+        }
+
+        &__value {
+            font-size: $font-size-sm;
+            font-weight: $font-weight-medium;
+            padding: $spacing-1 $spacing-2;
+            border-radius: $border-radius-sm;
+
+            &.active {
+                background: rgba(0, 255, 0, 0.1);
+                color: #00ff00;
+            }
+
+            &.inactive {
+                background: rgba(128, 128, 128, 0.1);
+                color: var(--text-secondary);
+            }
+        }
+    }
+
+    &__instructions {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: $border-radius-lg;
+        padding: $spacing-4;
+        margin-top: $spacing-4;
+
+        h3 {
+            margin: 0 0 $spacing-3 0;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-semibold;
+            @include themed-text('primary');
+        }
+
+        &__list {
+            @include flex-column;
+            gap: $spacing-2;
+        }
+
+        &__item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: $spacing-2 $spacing-3;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: $border-radius-md;
+        }
+
+        &__button {
+            font-size: $font-size-sm;
+            font-weight: $font-weight-medium;
+            @include themed-text('primary');
+            background: var(--bg-secondary);
+            padding: $spacing-1 $spacing-2;
+            border-radius: $border-radius-sm;
+            border: 1px solid var(--border-color);
+        }
+
+        &__action {
+            font-size: $font-size-sm;
+            @include themed-text('secondary');
+        }
+    }
+
+    &__error {
+        margin-top: $spacing-4;
+        padding: $spacing-3 $spacing-4;
+        background: rgba(255, 0, 0, 0.1);
+        border: 1px solid rgba(255, 0, 0, 0.3);
+        border-radius: $border-radius-md;
+        @include flex-center;
+        gap: $spacing-2;
+    }
+
+    &__error-icon {
+        font-size: $font-size-lg;
+    }
+
+    &__error-text {
+        color: #ff4444;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+    }
+}
+
+// アニメーション
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// テーマ固有のスタイル
+.theme-dark {
+    .joycon-modal {
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.theme-light {
+    .joycon-modal {
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+}
+
+// レスポンシブ対応
+@include sm {
+    .joycon-modal {
+        width: 95%;
+        max-height: 90vh;
+
+        &__content {
+            padding: $spacing-4;
+        }
+
+        &__actions {
+            flex-direction: column;
+        }
+
+        &__button {
+            flex: none;
+        }
+    }
+}
