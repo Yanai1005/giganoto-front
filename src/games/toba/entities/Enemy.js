@@ -1,3 +1,5 @@
+// ~/games/toba/entities/Enemy.js
+
 import Phaser from 'phaser';
 import { EFFECTS_CONFIG, GAME_CONFIG } from '../utils/Constants.js';
 
@@ -88,14 +90,20 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (!player || !player.active) return;
         
         // 敵弾を発射
-        const bullet = this.scene.enemyBullets.fireBullet(
-            this.x, 
-            this.y + 10,
-            player.x,  // targetX
-            player.y   // targetY
-        );
-        
-        // 発射音効果などがあれば追加
+        const bullet = this.scene.enemyBullets.get(this.x, this.y + 10, 'enemy_bullet');
+        if (bullet) {
+            bullet.setActive(true);
+            bullet.setVisible(true);
+            bullet.setDisplaySize(8, 8); // 弾丸サイズ調整
+            
+            // プレイヤーに向かって発射
+            const angle = Phaser.Math.Angle.Between(this.x, this.y, player.x, player.y);
+            const speed = 150;
+            bullet.setVelocity(
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed
+            );
+        }
     }
     
     takeDamage(damage = 1) {

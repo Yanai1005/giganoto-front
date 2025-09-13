@@ -25,6 +25,9 @@ export default class PowerUp extends Phaser.Physics.Arcade.Sprite {
         // 落下速度設定
         this.setVelocityY(POWERUP_CONFIG.FALL_SPEED);
         
+        // 画像サイズ調整
+        this.setDisplaySize(32, 32);
+        
         // パワーアップタイプに応じた色設定
         const typeConfig = POWERUP_CONFIG.TYPES[this.powerType.toUpperCase()];
         if (typeConfig) {

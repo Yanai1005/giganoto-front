@@ -26,72 +26,119 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        // 動的にアセットを作成
-        this.createAssets();
+        // 画像ファイルを読み込み（画像がある場合）
+        this.loadImageAssets();
+        
+        // 読み込み完了イベントを設定
+        this.load.on('complete', () => {
+            this.createFallbackAssets();
+        });
+        
+        // 読み込みエラーイベントを設定
+        this.load.on('loaderror', (file) => {
+            console.warn(`画像読み込み失敗: ${file.key} - フォールバックグラフィックを使用します`);
+        });
     }
 
-    createAssets() {
-        // プレイヤー
-        this.add.graphics()
-            .fillStyle(0x00ff00)
-            .fillTriangle(0, 0, 15, 30, -15, 30)
-            .generateTexture('player', 30, 30);
+    loadImageAssets() {
+        // プレイヤー画像
+        this.load.image('player', 'assets/images/player/player_ship.png');
+        
+        // 敵画像（5種類）
+        this.load.image('enemy_type1', 'assets/images/enemies/enemy_type1.png');
+        this.load.image('enemy_type2', 'assets/images/enemies/enemy_type2.png');
+        this.load.image('enemy_type3', 'assets/images/enemies/enemy_type3.png');
+        this.load.image('enemy_type4', 'assets/images/enemies/enemy_type4.png');
+        this.load.image('enemy_type5', 'assets/images/enemies/enemy_type5.png');
+        
+        // 弾丸画像
+        this.load.image('player_bullet', 'assets/images/bullets/player_bullet.png');
+        this.load.image('enemy_bullet', 'assets/images/bullets/enemy_bullet.png');
+        
+        // パワーアップ画像
+        this.load.image('powerup', 'assets/images/powerups/powerup.png');
+        
+        // 背景要素
+        this.load.image('star', 'assets/images/background/star.png');
+        
+        // オプション: 背景画像
+        // this.load.image('bg_space', 'assets/images/background/bg_space.png');
+    }
 
-        // プレイヤーの弾丸
-        this.add.graphics()
-            .fillStyle(BULLET_CONFIG.PLAYER_BULLET.color)
-            .fillCircle(0, 0, BULLET_CONFIG.PLAYER_BULLET.size / 2)
-            .generateTexture(BULLET_CONFIG.PLAYER_BULLET.key, BULLET_CONFIG.PLAYER_BULLET.size, BULLET_CONFIG.PLAYER_BULLET.size);
-
-        // 敵の弾丸
-        this.add.graphics()
-            .fillStyle(BULLET_CONFIG.ENEMY_BULLET.color)
-            .fillCircle(0, 0, BULLET_CONFIG.ENEMY_BULLET.size / 2)
-            .generateTexture(BULLET_CONFIG.ENEMY_BULLET.key, BULLET_CONFIG.ENEMY_BULLET.size, BULLET_CONFIG.ENEMY_BULLET.size);
-
-        // 敵キャラクター（5種類）
-        Object.values(ENEMY_TYPES).forEach(enemyType => {
+    createFallbackAssets() {
+        // プレイヤーのフォールバック
+        if (!this.textures.exists('player')) {
             this.add.graphics()
-                .fillStyle(enemyType.color)
-                .fillRect(0, 0, enemyType.size.width, enemyType.size.height)
-                .generateTexture(enemyType.key, enemyType.size.width, enemyType.size.height);
+                .fillStyle(0x00ff00)
+                .fillTriangle(0, 0, 15, 30, -15, 30)
+                .generateTexture('player', 30, 30);
+        }
+
+        // プレイヤー弾丸のフォールバック
+        if (!this.textures.exists('player_bullet')) {
+            this.add.graphics()
+                .fillStyle(BULLET_CONFIG.PLAYER_BULLET.color)
+                .fillCircle(0, 0, BULLET_CONFIG.PLAYER_BULLET.size / 2)
+                .generateTexture(BULLET_CONFIG.PLAYER_BULLET.key, BULLET_CONFIG.PLAYER_BULLET.size, BULLET_CONFIG.PLAYER_BULLET.size);
+        }
+
+        // 敵弾丸のフォールバック
+        if (!this.textures.exists('enemy_bullet')) {
+            this.add.graphics()
+                .fillStyle(BULLET_CONFIG.ENEMY_BULLET.color)
+                .fillCircle(0, 0, BULLET_CONFIG.ENEMY_BULLET.size / 2)
+                .generateTexture(BULLET_CONFIG.ENEMY_BULLET.key, BULLET_CONFIG.ENEMY_BULLET.size, BULLET_CONFIG.ENEMY_BULLET.size);
+        }
+
+        // 敵キャラクターのフォールバック
+        Object.values(ENEMY_TYPES).forEach(enemyType => {
+            if (!this.textures.exists(enemyType.key)) {
+                this.add.graphics()
+                    .fillStyle(enemyType.color)
+                    .fillRect(0, 0, enemyType.size.width, enemyType.size.height)
+                    .generateTexture(enemyType.key, enemyType.size.width, enemyType.size.height);
+            }
         });
 
-        // パワーアップアイテム
-        const starGraphics = this.add.graphics();
-        starGraphics.fillStyle(0xffd700);
-        const points = [];
-        const cx = 16, cy = 16, spikes = 5, outerRadius = 16, innerRadius = 8;
-        let rot = Math.PI / 2 * 3;
-        let x = cx, y = cy;
-        let step = Math.PI / spikes;
+        // パワーアップのフォールバック（星型）
+        if (!this.textures.exists('powerup')) {
+            const starGraphics = this.add.graphics();
+            starGraphics.fillStyle(0xffd700);
+            const points = [];
+            const cx = 16, cy = 16, spikes = 5, outerRadius = 16, innerRadius = 8;
+            let rot = Math.PI / 2 * 3;
+            let x = cx, y = cy;
+            let step = Math.PI / spikes;
 
-        for (let i = 0; i < spikes; i++) {
-            x = cx + Math.cos(rot) * outerRadius;
-            y = cy + Math.sin(rot) * outerRadius;
-            points.push(x, y);
-            rot += step;
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                points.push(x, y);
+                rot += step;
 
-            x = cx + Math.cos(rot) * innerRadius;
-            y = cy + Math.sin(rot) * innerRadius;
-            points.push(x, y);
-            rot += step;
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                points.push(x, y);
+                rot += step;
+            }
+            starGraphics.beginPath();
+            starGraphics.moveTo(points[0], points[1]);
+            for (let i = 2; i < points.length; i += 2) {
+                starGraphics.lineTo(points[i], points[i + 1]);
+            }
+            starGraphics.closePath();
+            starGraphics.fillPath();
+            starGraphics.generateTexture('powerup', 32, 32);
+            starGraphics.destroy();
         }
-        starGraphics.beginPath();
-        starGraphics.moveTo(points[0], points[1]);
-        for (let i = 2; i < points.length; i += 2) {
-            starGraphics.lineTo(points[i], points[i + 1]);
-        }
-        starGraphics.closePath();
-        starGraphics.fillPath();
-        starGraphics.generateTexture('powerup', 32, 32);
-        starGraphics.destroy();
 
-        // 星空背景用
-        this.add.graphics()
-            .fillStyle(0xffffff)
-            .fillCircle(0, 0, 1)
-            .generateTexture('star', 2, 2);
+        // 星のフォールバック
+        if (!this.textures.exists('star')) {
+            this.add.graphics()
+                .fillStyle(0xffffff)
+                .fillCircle(0, 0, 1)
+                .generateTexture('star', 2, 2);
+        }
     }
 
     create() {

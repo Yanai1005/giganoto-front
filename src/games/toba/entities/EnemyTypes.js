@@ -1,3 +1,5 @@
+// ~/games/toba/entities/EnemyTypes.js
+
 import Enemy from './Enemy.js';
 import { ENEMY_TYPES } from '../utils/Constants.js';
 
@@ -156,8 +158,11 @@ export class EnemyType5 extends Enemy {
             const angleOffset = (i - (this.fanShotCount - 1) / 2) * (this.fanShotAngle / (this.fanShotCount - 1));
             const shotAngle = baseAngle + Phaser.Math.DegToRad(angleOffset);
             
-            const bullet = this.scene.enemyBullets.fireBullet(this.x, this.y + 10);
+            const bullet = this.scene.enemyBullets.get(this.x, this.y + 10, 'enemy_bullet');
             if (bullet) {
+                bullet.setActive(true);
+                bullet.setVisible(true);
+                bullet.setDisplaySize(8, 8); // 弾丸サイズ調整
                 const speed = 120;
                 bullet.setVelocity(
                     Math.cos(shotAngle) * speed,

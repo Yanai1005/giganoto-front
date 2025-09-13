@@ -126,3 +126,45 @@ export const EFFECTS_CONFIG = {
     DEATH_SCALE: 1.5,
     DEATH_DURATION: 50
 };
+
+export const ASSET_CONFIG = {
+    PLAYER: {
+        key: 'player',
+        displayWidth: 30,
+        displayHeight: 30,
+        scale: 1.0
+    },
+    BULLETS: {
+        PLAYER: {
+            key: 'player_bullet',
+            displayWidth: 6,
+            displayHeight: 6,
+            scale: 1.0
+        },
+        ENEMY: {
+            key: 'enemy_bullet',
+            displayWidth: 8,
+            displayHeight: 8,
+            scale: 1.0
+        }
+    },
+    POWERUP: {
+        key: 'powerup',
+        displayWidth: 32,
+        displayHeight: 32,
+        scale: 1.0
+    },
+    STAR: {
+        key: 'star',
+        displayWidth: 2,
+        displayHeight: 2,
+        scale: 1.0
+    },
+    ENEMIES: {
+        TYPE1: { displayWidth: 20, displayHeight: 20 },
+        TYPE2: { displayWidth: 25, displayHeight: 25 },
+        TYPE3: { displayWidth: 22, displayHeight: 22 },
+        TYPE4: { displayWidth: 18, displayHeight: 18 },
+        TYPE5: { displayWidth: 30, displayHeight: 30 }
+    }
+};

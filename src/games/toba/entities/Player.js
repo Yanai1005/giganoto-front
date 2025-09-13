@@ -1,3 +1,4 @@
+// ~/games/toba/entities/Player.js
 
 import Phaser from 'phaser';
 import { PLAYER_CONFIG, EFFECTS_CONFIG } from '../utils/Constants.js';
@@ -18,6 +19,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // 物理設定
         this.setCollideWorldBounds(true);
         this.setDrag(300, 300); // 慣性制御
+        
+        // 画像サイズ調整
+        this.setDisplaySize(30, 30); // 標準サイズに調整
         
         // プレイヤーステータス
         this.hp = PLAYER_CONFIG.MAX_HP;
@@ -69,24 +73,32 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     fire() {
-    // 弾丸プールから弾丸を取得
-    const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
-    if (!bullet) {
-        // 弾丸が取得できなかった場合は何もしない
-        return;
+        if (this.bulletCount === 1) {
+            // 単発
+            const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
+            if (bullet) {
+                bullet.setActive(true);
+                bullet.setVisible(true);
+                bullet.setVelocityY(-this.bulletSpeed);
+            }
+        } else {
+            // 複数弾
+            for (let i = 0; i < this.bulletCount; i++) {
+                const angle = (i - (this.bulletCount - 1) / 2) * this.spreadAngle;
+                const bullet = this.scene.playerBullets.get(this.x, this.y - 20);
+                if (bullet) {
+                    bullet.setActive(true);
+                    bullet.setVisible(true);
+                    const radians = Phaser.Math.DegToRad(angle);
+                    
+                    bullet.setVelocity(
+                        Math.sin(radians) * this.bulletSpeed,
+                        -Math.cos(radians) * this.bulletSpeed
+                    );
+                }
+            }
+        }
     }
-    // bulletがPlayerBulletインスタンスか確認し、onHitメソッドがある場合は初期化
-    if (typeof bullet.onHit === 'function') {
-        bullet.setActive(true);
-        bullet.setVisible(true);
-        bullet.setVelocityY(-this.bulletSpeed);
-    } else {
-        // 万が一PlayerBullet以外が返された場合の安全処理
-        bullet.setActive(true);
-        bullet.setVisible(true);
-        bullet.setVelocityY(-this.bulletSpeed);
-    }
-}
     
     takeDamage() {
         if (this.invulnerable) return false;
