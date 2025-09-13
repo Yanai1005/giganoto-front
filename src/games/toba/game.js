@@ -10,9 +10,14 @@ export const initializeGame = (container) => {
         backgroundColor: '#1a1a2e',
         physics: {
             default: 'arcade',
-            arcade: { gravity: { y: 0 } }
+            arcade: { 
+                gravity: { y: 0 },
+                debug: false // デバッグ表示をfalseに
+            }
         },
         scene: [GameScene]
     };
-    return new Phaser.Game(config);
+
+    const game = new Phaser.Game(config);
+    return game;
 };
